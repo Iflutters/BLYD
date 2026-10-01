@@ -17,6 +17,14 @@ export const routes: RouteObject[] = [
     children: [{ index: true, ...page(() => import('@/features/auth/LoginPage').then((m) => ({ default: m.LoginPage }))) }],
   },
   {
+    path: '/forgot-password',
+    element: <GuestOnly />,
+    errorElement: <RouteErrorPage />,
+    children: [{ index: true, ...page(() => import('@/features/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage }))) }],
+  },
+  // link do e-mail (redefinir senha ou convite): vale com ou sem sessão aberta
+  { path: '/reset-password', errorElement: <RouteErrorPage />, ...page(() => import('@/features/auth/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage }))) },
+  {
     path: '/',
     element: (
       <RequireAuth>
@@ -87,12 +95,16 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'settings',
-        element: <PermissionGate anyOf={['platform.manage', 'settings.manage', 'permissions.manage', 'audit.view']} />,
+        element: <PermissionGate anyOf={['platform.manage', 'integrations.manage', 'settings.manage', 'permissions.manage', 'audit.view']} />,
         children: [
           { index: true, element: <SettingsIndexRedirect /> },
           {
             element: <PermissionGate permission="platform.manage" />,
             children: [{ path: 'general', ...page(() => import('@/features/settings/GeneralSettingsPage').then((m) => ({ default: m.GeneralSettingsPage }))) }],
+          },
+          {
+            element: <PermissionGate permission="integrations.manage" />,
+            children: [{ path: 'integrations', ...page(() => import('@/features/settings/IntegrationsPage').then((m) => ({ default: m.IntegrationsPage }))) }],
           },
           {
             element: <PermissionGate permission="settings.manage" />,

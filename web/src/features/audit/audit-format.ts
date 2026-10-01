@@ -122,9 +122,15 @@ export const AUDIT_ACTIONS = [
   'platform_settings.branding_update',
   'platform_settings.branding_remove',
   'audit_log.purge',
+  'email_settings.update',
+  'email_settings.test_sent',
+  'auth.password_reset_requested',
+  'auth.password_reset',
+  'auth.invite_accepted',
+  'user.invited',
 ] as const
 
-export const AUDIT_ENTITY_TYPES = ['user', 'role', 'project', 'task_type', 'custom_field', 'status', 'priority', 'task', 'tag', 'sprint', 'doc_space', 'doc_page', 'plan_item', 'platform_settings', 'audit_log'] as const
+export const AUDIT_ENTITY_TYPES = ['user', 'role', 'project', 'task_type', 'custom_field', 'status', 'priority', 'task', 'tag', 'sprint', 'doc_space', 'doc_page', 'plan_item', 'platform_settings', 'audit_log', 'email_settings'] as const
 
 export function actionLabel(t: TFunction, action: string): string {
   return t(`audit.actions.${action}`, { defaultValue: action })

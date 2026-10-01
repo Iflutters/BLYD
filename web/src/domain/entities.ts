@@ -13,6 +13,8 @@ export interface User {
   roleId: string
   locale: Language
   theme: ThemePreference
+  /** Recebe as notificações também por e-mail (quando o envio está ligado). */
+  emailNotifications: boolean
   createdAt: Date | null
   updatedAt: Date | null
   lastLoginAt: Date | null

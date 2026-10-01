@@ -9,7 +9,8 @@ import { ArrowRight, KeyRound } from 'lucide-react'
 import { isAppError } from '@/core/errors/app-error'
 import type { CurrentUser } from '@/domain/entities'
 import { changePasswordSchemaFor, type ChangePasswordInput } from '@/domain/validation'
-import { AppAvatar, AppBadge, AppButton, AppCard, AppTextField, notify } from '@/presentation/components'
+import { AppAvatar, AppBadge, AppButton, AppCard, AppSwitch, AppTextField, notify } from '@/presentation/components'
+import { usePlatformInfo } from '@/presentation/common/use-platform'
 import { PageHeader } from '@/presentation/layouts/PageHeader'
 import { useRepositories } from '@/presentation/common/repositories-context'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
@@ -35,6 +36,7 @@ export function AccountPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <ProfileCard current={current} />
         <PasswordCard />
+        <EmailNotificationsCard current={current} />
         <AppCard title={t('account.sessions')} description={t('account.sessionsDescription')} className="lg:col-span-2">
           <AppButton asChild variant="secondary" rightIcon={<ArrowRight />}>
             <Link to="/account/sessions">{t('account.manageSessions')}</Link>
@@ -89,6 +91,34 @@ function ProfileCard({ current }: { current: CurrentUser }) {
           </AppButton>
         </div>
       </form>
+    </AppCard>
+  )
+}
+
+/** Notificações também por e-mail (só aparece com o envio de e-mail ligado na plataforma). */
+function EmailNotificationsCard({ current }: { current: CurrentUser }) {
+  const { t } = useTranslation()
+  const { users } = useRepositories()
+  const queryClient = useQueryClient()
+  const errorMessage = useErrorMessage()
+  const emailEnabled = usePlatformInfo().passwordReset
+  const save = useMutation({
+    mutationFn: (on: boolean) => users.update(current.user.id, { emailNotifications: on }),
+    onSuccess: (user) => {
+      queryClient.setQueryData<CurrentUser | null>(SESSION_QUERY_KEY, (prev) => (prev ? { ...prev, user } : prev))
+      notify.success(user.emailNotifications ? t('account.emailNotificationsOn') : t('account.emailNotificationsOff'))
+    },
+    onError: (error) => notify.error(errorMessage(error)),
+  })
+  if (!emailEnabled) return null
+  return (
+    <AppCard title={t('account.emailNotifications')} description={t('account.emailNotificationsDescription')}>
+      <AppSwitch
+        checked={current.user.emailNotifications}
+        disabled={save.isPending}
+        onCheckedChange={(on) => save.mutate(on)}
+        label={t('account.emailNotificationsToggle', { email: current.user.email })}
+      />
     </AppCard>
   )
 }

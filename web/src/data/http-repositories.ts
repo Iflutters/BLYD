@@ -22,7 +22,10 @@ import { toJournalEntry, toPlanColumn, toPlanIssue, toPlanReport } from './mappe
 import type { ColumnTypePreview } from '@/domain/plan-columns'
 import type { PasswordPolicyDto, PlatformInfoDto, PlatformSettingsDto } from './dtos'
 import { fromPlatformValues, toPasswordPolicy, toPlatformInfo, toPlatformSettings } from './mappers'
-import type { PlatformRepository } from '@/domain/repositories'
+import type { EmailRepository, PlatformRepository } from '@/domain/repositories'
+import type { EmailSettingsDto, OutboxSummaryDto, ResetTokenCheckDto } from './dtos'
+import { fromEmailPatch, toEmailSettings, toOutboxSummary, toResetTokenCheck } from './mappers'
+import type { FlushResult } from '@/domain/email'
 import type { IssueInput, JournalInput } from '@/domain/plan-management'
 import type { PlanBulkInput, PlanBulkResult, PlanGroupInput, PlanImportResult, PlanImportRow, PlanItemInput } from '@/domain/plan'
 import type { DocPageDto, DocSpaceDto, DocTreePageDto } from './dtos'
@@ -122,6 +125,38 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
       const { data } = await api.get<PasswordPolicyDto>('/auth/password-policy')
       return toPasswordPolicy(data)
     },
+    async requestPasswordReset(email) {
+      await api.post('/auth/password-reset/request', { email })
+    },
+    async checkResetToken(token) {
+      const { data } = await api.get<ResetTokenCheckDto>('/auth/password-reset/check', { query: { token } })
+      return toResetTokenCheck(data)
+    },
+    async confirmPasswordReset(token, password) {
+      const { data } = await api.post<{ purpose: 'reset' | 'invite' }>('/auth/password-reset/confirm', { token, password })
+      return { purpose: data.purpose }
+    },
+  }
+}
+
+export function createHttpEmailRepository(api: ApiClient): EmailRepository {
+  return {
+    async getSettings() {
+      return toEmailSettings((await api.get<EmailSettingsDto>('/settings/email')).data)
+    },
+    async updateSettings(patch) {
+      return toEmailSettings((await api.patch<EmailSettingsDto>('/settings/email', fromEmailPatch(patch))).data)
+    },
+    async sendTest(to) {
+      const { data } = await api.post<{ to: string }>('/settings/email/test', to ? { to } : {})
+      return { to: data.to }
+    },
+    async outbox() {
+      return toOutboxSummary((await api.get<OutboxSummaryDto>('/settings/email/outbox')).data)
+    },
+    async flush() {
+      return (await api.post<FlushResult>('/settings/email/outbox/flush')).data
+    },
   }
 }
 
@@ -185,7 +220,7 @@ export function createHttpUserRepository(api: ApiClient): UserRepository {
       const { data } = await api.post<UserDto>('/users', {
         name: input.name,
         email: input.email,
-        password: input.password,
+        ...(input.sendInvite ? { send_invite: true } : { password: input.password }),
         role_id: input.roleId,
         locale: input.locale,
       })
@@ -198,6 +233,7 @@ export function createHttpUserRepository(api: ApiClient): UserRepository {
       if (input.roleId !== undefined) body.role_id = input.roleId
       if (input.locale !== undefined) body.locale = input.locale
       if (input.theme !== undefined) body.theme = input.theme
+      if (input.emailNotifications !== undefined) body.email_notifications = input.emailNotifications
       const { data } = await api.patch<UserDto>(path(id), body)
       return toUser(data)
     },
@@ -207,6 +243,9 @@ export function createHttpUserRepository(api: ApiClient): UserRepository {
     },
     async resetPassword(id, password) {
       await api.post(`${path(id)}/password`, { password })
+    },
+    async resendInvite(id) {
+      await api.post(`${path(id)}/invite`)
     },
     async history(id, query) {
       const { data, meta } = await api.get<AuditEntryDto[], PageMetaDto>(`${path(id)}/history`, {
@@ -445,6 +484,7 @@ export function createHttpRepositories(api: ApiClient): Repositories {
     docs: createHttpDocsRepository(api),
     sprints: createHttpSprintRepository(api),
     platform: createHttpPlatformRepository(api),
+    email: createHttpEmailRepository(api),
   }
 }
 

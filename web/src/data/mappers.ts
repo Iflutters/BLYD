@@ -2,6 +2,8 @@ import { DEPENDENCY_RULES, PLAN_STATUS_CATEGORIES, PROGRESS_SOURCES, type Plan, 
 import type { PlanFile, PlanUpdate } from '@/domain/plan-updates'
 import type { JournalEntryDto, PlanColumnDto, PlanFileDto, PlanIssueDto, PlanReportDto, PlanUpdateDto } from './dtos'
 import type { PasswordPolicyDto, PlatformInfoDto, PlatformSettingsDto, PlatformValuesDto } from './dtos'
+import type { EmailSettingsDto, OutboxSummaryDto, ResetTokenCheckDto } from './dtos'
+import type { EmailSettingsPatch, EmailSettingsView, OutboxKind, OutboxStatus, OutboxSummary, ResetTokenCheck, ResetTokenState } from '@/domain/email'
 import { BRANDING_SLOTS, type PasswordPolicy, type PlatformInfo, type PlatformSettings, type PlatformSettingsValues } from '@/domain/platform'
 import { COLUMN_TYPES, type PlanColumn } from '@/domain/plan-columns'
 import { HEALTH_FACTORS, ISSUE_STATES, type HealthFactorKey, type HealthLevel, type JournalEntry, type PlanIssue, type PlanReport } from '@/domain/plan-management'
@@ -58,6 +60,7 @@ export function toUser(dto: UserDto): User {
     roleId: dto.role_id,
     locale: isSupportedLanguage(dto.locale) ? dto.locale : DEFAULT_LANGUAGE,
     theme: isThemePreference(dto.theme) ? dto.theme : 'system',
+    emailNotifications: dto.email_notifications !== false,
     createdAt: toDate(dto.created_at),
     updatedAt: toDate(dto.updated_at),
     lastLoginAt: toDate(dto.last_login_at),
@@ -766,7 +769,13 @@ export function toPlanColumn(dto: PlanColumnDto): PlanColumn {
 // ---------------------------------------------------------------- Configurador geral
 
 export function toPlatformInfo(dto: PlatformInfoDto): PlatformInfo {
-  return { name: dto.name || 'KAMBAN', logoLightUrl: dto.logo_light_url ?? null, logoDarkUrl: dto.logo_dark_url ?? null, faviconUrl: dto.favicon_url ?? null }
+  return {
+    name: dto.name || 'KAMBAN',
+    logoLightUrl: dto.logo_light_url ?? null,
+    logoDarkUrl: dto.logo_dark_url ?? null,
+    faviconUrl: dto.favicon_url ?? null,
+    passwordReset: dto.password_reset === true,
+  }
 }
 
 function toPlatformValues(dto: PlatformValuesDto): PlatformSettingsValues {
@@ -826,5 +835,56 @@ export function toPasswordPolicy(dto: PasswordPolicyDto): PasswordPolicy {
     requireLettersNumbers: dto.require_letters_numbers,
     requireMixedCase: dto.require_mixed_case,
     requireSymbol: dto.require_symbol,
+  }
+}
+
+// ---------------------------------------------------------------- e-mail (integrações)
+
+export function toEmailSettings(dto: EmailSettingsDto): EmailSettingsView {
+  const v = dto.values
+  return {
+    values: { enabled: v.enabled, host: v.host, port: v.port, username: v.username, tls: v.tls, senderName: v.sender_name, senderAddress: v.sender_address, appUrl: v.app_url },
+    hasPassword: dto.has_password,
+  }
+}
+
+export function fromEmailPatch(patch: EmailSettingsPatch): Record<string, unknown> {
+  const keys: Record<string, string> = { senderName: 'sender_name', senderAddress: 'sender_address', appUrl: 'app_url' }
+  const out: Record<string, unknown> = {}
+  Object.entries(patch).forEach(([key, value]) => {
+    if (value !== undefined) out[keys[key] ?? key] = value
+  })
+  return out
+}
+
+const OUTBOX_STATUSES: OutboxStatus[] = ['pending', 'sent', 'failed']
+const OUTBOX_KINDS: OutboxKind[] = ['notification', 'password_reset', 'invite', 'test']
+
+export function toOutboxSummary(dto: OutboxSummaryDto): OutboxSummary {
+  return {
+    counts: dto.counts,
+    recent: dto.recent.map((m) => ({
+      id: m.id,
+      to: m.to,
+      kind: oneOf(OUTBOX_KINDS, m.kind, 'notification'),
+      subject: m.subject,
+      status: oneOf(OUTBOX_STATUSES, m.status, 'pending'),
+      attempts: m.attempts,
+      lastError: m.last_error,
+      createdAt: toDate(m.created_at),
+      sentAt: toDate(m.sent_at),
+    })),
+  }
+}
+
+const TOKEN_STATES: ResetTokenState[] = ['valid', 'used', 'expired', 'invalid']
+
+export function toResetTokenCheck(dto: ResetTokenCheckDto): ResetTokenCheck {
+  return {
+    valid: dto.valid === true,
+    state: oneOf(TOKEN_STATES, dto.state, 'invalid'),
+    purpose: dto.purpose === 'reset' || dto.purpose === 'invite' ? dto.purpose : null,
+    name: dto.name ?? null,
+    policy: dto.policy ? toPasswordPolicy(dto.policy) : null,
   }
 }

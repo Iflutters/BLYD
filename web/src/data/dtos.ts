@@ -9,6 +9,7 @@ export interface UserDto {
   role_id: string
   locale: string
   theme: string
+  email_notifications?: boolean
   created_at: string | null
   updated_at: string | null
   last_login_at: string | null
@@ -580,6 +581,7 @@ export interface PlatformInfoDto {
   logo_light_url: string | null
   logo_dark_url: string | null
   favicon_url: string | null
+  password_reset?: boolean
 }
 
 export interface PlatformValuesDto {
@@ -613,4 +615,24 @@ export interface PasswordPolicyDto {
   require_letters_numbers: boolean
   require_mixed_case: boolean
   require_symbol: boolean
+}
+
+// ---------------------------------------------------------------- e-mail (integrações)
+
+export interface EmailSettingsDto {
+  values: { enabled: boolean; host: string; port: number; username: string; tls: boolean; sender_name: string; sender_address: string; app_url: string }
+  has_password: boolean
+}
+
+export interface OutboxSummaryDto {
+  counts: { pending: number; sent: number; failed: number }
+  recent: Array<{ id: string; to: string; kind: string; subject: string; status: string; attempts: number; last_error: string | null; created_at: string | null; sent_at: string | null }>
+}
+
+export interface ResetTokenCheckDto {
+  valid: boolean
+  state: string
+  purpose?: string
+  name?: string
+  policy?: PasswordPolicyDto
 }

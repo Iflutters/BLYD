@@ -298,6 +298,20 @@ Conteúdo: JSON do editor (TipTap/ProseMirror). Blocos aceitos: `paragraph`, `he
 
 Senhas (`POST /users`, `POST /users/{id}/password`, `POST /auth/password`) seguem a política: além de `too_short`, `too_long` e `weak_password`, podem voltar `needs_mixed_case` e `needs_symbol`. O bloqueio de login (`ACCOUNT_LOCKED`) segue as tentativas e os tempos configurados. Auditoria: `platform_settings.update` (antes/depois), `platform_settings.branding_update/branding_remove` e `audit_log.purge` (rotina diária às 03:45 ou "Limpar agora").
 
+## Endpoints — E-mail (integrações)
+| Método | Rota | Descrição |
+|---|---|---|
+| GET/PATCH | `/settings/email` | `integrations.manage`: `{ values: { enabled, host, port, username, tls, sender_name, sender_address, app_url }, has_password }`. PATCH parcial; ligado exige `host`, `sender_address`, `app_url` (`required`); `password` vazia mantém, `null` remove; erros `invalid_format`, `invalid_email`, `invalid_url`, `too_small`/`too_large` (porta), `unknown_field` |
+| POST | `/settings/email/test` | envia na hora (para quem pediu ou `{ to }`) → `{ sent, to }`; `EMAIL_NOT_CONFIGURED` (409), `EMAIL_SEND_FAILED` (502, `details.reason`) |
+| GET | `/settings/email/outbox` | `{ counts: { pending, sent, failed }, recent: [...] }` (20 mais recentes; sem o corpo) |
+| POST | `/settings/email/outbox/flush` | envia a fila agora → `{ sent, failed, retrying }` (`busy` se a rotina já está enviando; `skipped` com o envio desligado) |
+| POST | `/auth/password-reset/request` | **público**: `{ email }` → `{ requested: true }` sempre |
+| GET | `/auth/password-reset/check?token=` | **público**: `{ valid, state: valid\|used\|expired\|invalid, purpose: reset\|invite, name, policy }` |
+| POST | `/auth/password-reset/confirm` | **público**: `{ token, password }` → `{ changed, purpose }`; `RESET_TOKEN_INVALID` (400); `password` pela política |
+| POST | `/users/{id}/invite` | `users.create`: reenvia o convite; `USER_ALREADY_ACTIVE` (409), `EMAIL_NOT_CONFIGURED` |
+
+`POST /users` aceita `send_invite: true` (sem `password`; exige o envio ligado). `PATCH /users/{id}` aceita `email_notifications` (a própria pessoa), e o usuário tem `email_notifications` na resposta. `GET /platform` ganhou `password_reset` (envio de e-mail ligado). Auditoria: `email_settings.update` (sem a senha; `password_changed`), `email_settings.test_sent`, `auth.password_reset_requested`, `auth.password_reset`, `auth.invite_accepted`, `user.invited`. Rotina `kamban_email_outbox` a cada minuto.
+
 ## Exemplo
 ```bash
 curl -c jar -X POST http://127.0.0.1:8090/api/v1/auth/login \

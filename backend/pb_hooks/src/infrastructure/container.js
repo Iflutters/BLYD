@@ -32,6 +32,9 @@ const { createPlanColumnsService } = require('../application/plan-columns')
 const { createDocSpaceService } = require('../application/doc-spaces')
 const { createDocPageService } = require('../application/doc-pages')
 const { createPlatformSettingsService } = require('../application/platform-settings')
+const { createEmailService } = require('../application/email')
+const { createAccountLinkService } = require('../application/account-links')
+const { createMailer } = require('./email-repositories')
 const contentLocale = require('../domain/content-locale')
 const config = require('./config')
 
@@ -69,6 +72,7 @@ function createContainer(app, options) {
       hash: (token) => $security.sha256(token),
     },
     sessionPolicy: settings.session,
+    mailer: createMailer(app),
     unitOfWork: createUnitOfWork(app),
   })
 
@@ -104,6 +108,8 @@ function createContainer(app, options) {
     docSpaces: createDocSpaceService(deps),
     docPages: createDocPageService(deps),
     platformSettings: createPlatformSettingsService(deps),
+    email: createEmailService(deps),
+    accountLinks: createAccountLinkService(deps),
   }
 }
 

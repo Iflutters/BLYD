@@ -32,6 +32,7 @@ export const PERMISSION_CODES = [
   'settings.manage',
   'permissions.manage',
   'platform.manage',
+  'integrations.manage',
 ] as const
 
 export type PermissionCode = (typeof PERMISSION_CODES)[number]

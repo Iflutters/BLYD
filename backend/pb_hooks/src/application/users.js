@@ -10,6 +10,8 @@ const userDomain = require('../domain/user')
 const { buildAuditEntry, diff } = require('./audit')
 const { toUserDto } = require('./presenters')
 const { currentPasswordPolicy } = require('./platform-settings')
+const { emailContext } = require('./email')
+const { createAccountLinkService } = require('./account-links')
 
 /** Senha conferida pela política vigente do Configurador geral. */
 function passwordRule(deps) {
@@ -33,6 +35,7 @@ const UPDATE_SCHEMA = {
   role_id: [rules.required(), rules.maxLength(40)],
   locale: [rules.oneOf(userDomain.LOCALES)],
   theme: [rules.oneOf(userDomain.THEMES)],
+  email_notifications: [rules.boolean()],
 }
 
 const LIST_SCHEMA = {
@@ -45,7 +48,7 @@ const LIST_SCHEMA = {
 const SORTABLE = { name: 'name', email: 'email', status: 'status', created_at: 'created', last_login_at: 'last_login_at' }
 
 /** Mapeamento entidade (camelCase) -> nome público (auditoria/API). */
-const PUBLIC_KEYS = { name: 'name', email: 'email', roleId: 'role_id', locale: 'locale', theme: 'theme', status: 'status' }
+const PUBLIC_KEYS = { name: 'name', email: 'email', roleId: 'role_id', locale: 'locale', theme: 'theme', status: 'status', emailNotifications: 'email_notifications' }
 
 function toPublic(obj) {
   const out = {}
@@ -61,6 +64,10 @@ function fromPublic(data) {
   if (out.role_id !== undefined) {
     out.roleId = out.role_id
     delete out.role_id
+  }
+  if (out.email_notifications !== undefined) {
+    out.emailNotifications = out.email_notifications
+    delete out.email_notifications
   }
   return out
 }
@@ -108,9 +115,23 @@ function createUserService(deps) {
     return toUserDto(findUserOrFail(id))
   }
 
+  /**
+   * `send_invite: true` dispensa a senha: a pessoa recebe por e-mail um link para criar a dela
+   * (exige o envio de e-mail ligado).
+   */
   function createUser(ctx, input) {
     rbac.assertCan(ctx.principal, 'users.create')
-    const data = fromPublic(assertValid(input, createSchema(deps)))
+    const source = Object.assign({}, input || {})
+    const invite = source.send_invite === true
+    if (source.send_invite !== undefined && typeof source.send_invite !== 'boolean') {
+      throw appError('VALIDATION_ERROR', undefined, { fields: { send_invite: 'invalid_type' } })
+    }
+    delete source.send_invite
+    const schema = createSchema(deps)
+    if (invite) delete schema.password
+    const data = fromPublic(assertValid(source, schema))
+    const mail = invite ? emailContext(deps) : null
+    if (invite && !mail) throw appError('EMAIL_NOT_CONFIGURED')
     const role = findAssignableRole(ctx.principal, data.roleId)
     const email = userDomain.normalizeEmail(data.email)
     if (deps.userRepository.emailExists(email)) throw appError('EMAIL_ALREADY_IN_USE')
@@ -119,7 +140,8 @@ function createUserService(deps) {
       const created = repos.userRepository.create({
         name: data.name,
         email,
-        password: data.password,
+        // convite: senha aleatória que ninguém conhece (a pessoa cria a dela pelo link)
+        password: invite ? deps.tokens.generate() : data.password,
         roleId: role.id,
         status: userDomain.USER_STATUS.ACTIVE,
         locale: data.locale || 'pt-BR',
@@ -133,6 +155,7 @@ function createUserService(deps) {
           newValue: { name: created.name, email: created.email, role_id: role.id, status: created.status },
         }),
       )
+      if (invite) createAccountLinkService(deps).inviteOnCreate(repos, ctx, created, mail)
       return created
     })
     return toUserDto(user)
@@ -166,7 +189,7 @@ function createUserService(deps) {
       throw appError('EMAIL_ALREADY_IN_USE')
     }
 
-    const changes = diff(target, data, ['name', 'email', 'roleId', 'locale', 'theme'])
+    const changes = diff(target, data, ['name', 'email', 'roleId', 'locale', 'theme', 'emailNotifications'])
     if (!changes) return toUserDto(target)
 
     const updated = deps.unitOfWork.run((repos) => {

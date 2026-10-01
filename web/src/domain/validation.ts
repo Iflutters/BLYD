@@ -38,13 +38,15 @@ export type LoginInput = z.infer<typeof loginSchema>
 const name = z.string().trim().min(1, 'required').max(120, 'too_long')
 const locale = z.enum(SUPPORTED_LANGUAGES)
 
-export function createUserSchemaFor(policy: PasswordPolicy) {
+/** Com `invite`, a senha não é pedida: a pessoa cria a dela pelo link do e-mail. */
+export function createUserSchemaFor(policy: PasswordPolicy, invite = false) {
   return z.object({
     name,
     email,
-    password: passwordSchemaFor(policy),
+    password: invite ? z.string() : passwordSchemaFor(policy),
     roleId: z.string().min(1, 'required'),
     locale,
+    sendInvite: z.boolean(),
   })
 }
 export const createUserSchema = createUserSchemaFor(DEFAULT_PASSWORD_POLICY)

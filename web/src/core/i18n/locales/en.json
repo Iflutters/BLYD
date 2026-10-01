@@ -197,7 +197,11 @@
     "PLAN_FILE_NOT_FOUND": "File not found.",
     "PLAN_JOURNAL_NOT_FOUND": "Journal entry not found.",
     "PLAN_ISSUE_NOT_FOUND": "Issue not found.",
-    "PLAN_COLUMN_NOT_FOUND": "Column not found."
+    "PLAN_COLUMN_NOT_FOUND": "Column not found.",
+    "EMAIL_NOT_CONFIGURED": "Email delivery is not configured. Ask an administrator (Settings → Integrations).",
+    "EMAIL_SEND_FAILED": "The mail server refused or did not answer.",
+    "RESET_TOKEN_INVALID": "This link is no longer valid: it expired or was already used. Request a new one.",
+    "USER_ALREADY_ACTIVE": "This person has already signed in; there is no invitation to resend."
   },
   "nav": {
     "main": "Main navigation",
@@ -227,7 +231,8 @@
     "timeline": "Timeline",
     "docs": "Documentation",
     "management": "Project management",
-    "general": "General"
+    "general": "General",
+    "integrations": "Integrations"
   },
   "commandPalette": {
     "title": "Command palette",
@@ -276,7 +281,32 @@
     "logout": "Sign out",
     "signedOut": "You signed out safely. See you soon!",
     "lockedFor_one": "Too many sign-in attempts for this account. For security, try again in {{minutes}} minute.",
-    "lockedFor_other": "Too many sign-in attempts for this account. For security, try again in {{minutes}} minutes."
+    "lockedFor_other": "Too many sign-in attempts for this account. For security, try again in {{minutes}} minutes.",
+    "forgotPassword": "Forgot my password",
+    "backToLogin": "Back to sign in",
+    "forgot": {
+      "title": "Forgot my password",
+      "subtitle": "Enter your email and we'll send a link to create a new password.",
+      "submit": "Send link",
+      "sent": "If {{email}} has an account, the link arrives in a moment. It is valid for 60 minutes. Check your spam folder too."
+    },
+    "reset": {
+      "title": "New password",
+      "inviteTitle": "Create your password",
+      "invalidTitle": "Invalid link",
+      "hello": "Hi, {{name}}.",
+      "password": "New password",
+      "submit": "Save new password",
+      "createSubmit": "Create password",
+      "changed": "Password changed. Sign in with the new one.",
+      "created": "Password created. Sign in to get started.",
+      "requestNew": "Request a new link",
+      "states": {
+        "used": "This link was already used. Each link works once.",
+        "expired": "This link has expired. Request a new one.",
+        "invalid": "This link isn't valid. Check that you copied the whole address."
+      }
+    }
   },
   "account": {
     "menu": "Account menu",
@@ -311,7 +341,12 @@
     "revokeOthersTitle_other": "End {{count}} other sessions?",
     "revokeOthersDescription": "All other devices will be signed out. This session stays active.",
     "otherSessionsRevoked_one": "{{count}} session ended.",
-    "otherSessionsRevoked_other": "{{count}} sessions ended."
+    "otherSessionsRevoked_other": "{{count}} sessions ended.",
+    "emailNotifications": "Email notifications",
+    "emailNotificationsDescription": "Mentions, assigned tasks, comments and due dates also arrive in your email.",
+    "emailNotificationsToggle": "Receive at {{email}}",
+    "emailNotificationsOn": "Email notifications on.",
+    "emailNotificationsOff": "Email notifications off."
   },
   "dashboard": {
     "goodMorning": "Good morning, {{name}}",
@@ -394,7 +429,12 @@
     "tabs": {
       "details": "Details",
       "history": "History"
-    }
+    },
+    "sendInvite": "Send invitation by email",
+    "sendInviteHint": "The person gets a link to create their own password (valid for 7 days).",
+    "invited": "Invitation sent to {{email}}.",
+    "resendInvite": "Resend invitation",
+    "inviteResent": "Invitation resent to {{email}}."
   },
   "roles": {
     "title": "Roles",
@@ -484,7 +524,8 @@
       "plan.view": "View the management board",
       "plan.edit": "Edit board items",
       "plan.manage": "Manage board groups and labels",
-      "platform.manage": "Configure the platform (security and branding)"
+      "platform.manage": "Configure the platform (security and branding)",
+      "integrations.manage": "Configure integrations (email, webhooks and tokens)"
     }
   },
   "audit": {
@@ -524,7 +565,8 @@
       "doc_page": "Documentation page",
       "plan_item": "Board item",
       "platform_settings": "Platform settings",
-      "audit_log": "Audit history"
+      "audit_log": "Audit history",
+      "email_settings": "Email settings"
     },
     "fields": {
       "name": "Name",
@@ -639,7 +681,18 @@
       "slot": "Image",
       "removed": "Records removed",
       "retention_months": "Retention (months)",
-      "before": "Older than"
+      "before": "Older than",
+      "enabled": "On",
+      "host": "Server",
+      "port": "Port",
+      "username": "Username",
+      "tls": "TLS",
+      "sender_name": "Sender name",
+      "sender_address": "Sender email",
+      "app_url": "Platform address",
+      "password_changed": "Password changed",
+      "to": "To",
+      "resent": "Resent"
     },
     "actions": {
       "auth.login": "Signed in",
@@ -756,7 +809,13 @@
       "platform_settings.update": "Platform settings changed",
       "platform_settings.branding_update": "Logo or icon uploaded",
       "platform_settings.branding_remove": "Logo or icon removed",
-      "audit_log.purge": "Old history removed (retention)"
+      "audit_log.purge": "Old history removed (retention)",
+      "email_settings.update": "Email settings changed",
+      "email_settings.test_sent": "Test email sent",
+      "auth.password_reset_requested": "Password reset requested",
+      "auth.password_reset": "Password reset via email link",
+      "auth.invite_accepted": "Invitation accepted (password created)",
+      "user.invited": "Invitation sent"
     }
   },
   "projects": {
@@ -2891,6 +2950,72 @@
       "ran_one": "{{count}} record removed.",
       "ran_other": "{{count}} records removed.",
       "ran_zero": "Nothing to remove: the history is within the period."
+    }
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Platform email — and, soon, webhooks and API tokens.",
+    "tabs": {
+      "email": "Email"
+    },
+    "email": {
+      "smtpTitle": "Mail server (SMTP)",
+      "smtpDescription": "Used for \"Forgot my password\", invitations and email notifications.",
+      "enabled": "Send emails",
+      "enabledHint": "When off, nothing is sent and the sign-in page hides \"Forgot my password\".",
+      "host": "Server",
+      "port": "Port",
+      "tls": "Direct TLS (port 465)",
+      "tlsHint": "When off, uses STARTTLS if the server offers it (port 587).",
+      "username": "Username",
+      "password": "Password",
+      "passwordSaved": "•••••••• (saved)",
+      "passwordKeep": "Leave blank to keep the saved password.",
+      "removePassword": "Remove saved password",
+      "passwordRemoved": "Password removed.",
+      "senderName": "Sender name",
+      "senderAddress": "Sender email",
+      "appUrl": "Platform address",
+      "appUrlHint": "Used in email links (e.g. https://kamban.company.com).",
+      "saved": "Email settings saved.",
+      "testTitle": "Test delivery",
+      "testDescription": "Sends a test message to {{email}} with the saved settings.",
+      "testSend": "Send test email",
+      "testDisabled": "Turn on and save delivery to test.",
+      "testSent": "Test email sent to {{email}}.",
+      "testFailed": "The mail server refused: {{reason}}",
+      "outboxTitle": "Outbox",
+      "outboxDescription": "Emails go out within 1 minute; failures retry up to 5 times.",
+      "outboxEmpty": "No emails yet",
+      "flush": "Send now",
+      "flushed": "Outbox processed: {{sent}} sent, {{failed}} failed.",
+      "flushBusy": "The outbox is already being sent.",
+      "flushSkipped": "Email delivery is off.",
+      "counts": {
+        "pending_one": "{{count}} queued",
+        "pending_other": "{{count}} queued",
+        "sent_one": "{{count}} sent",
+        "sent_other": "{{count}} sent",
+        "failed_one": "{{count}} failed",
+        "failed_other": "{{count}} failed"
+      },
+      "outbox": {
+        "to": "To",
+        "kind": "Type",
+        "status": "Status",
+        "created": "Created"
+      },
+      "kinds": {
+        "notification": "Notification",
+        "password_reset": "Password reset",
+        "invite": "Invitation",
+        "test": "Test"
+      },
+      "statuses": {
+        "pending": "Queued",
+        "sent": "Sent",
+        "failed": "Failed"
+      }
     }
   }
 }

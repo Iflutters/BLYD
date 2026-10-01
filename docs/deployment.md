@@ -71,6 +71,10 @@ Todos os dados (banco SQLite, anexos, imagens e arquivos da documentação) fica
 3. Docker: `git pull && docker compose up -d --build`. Sem Docker: `git pull`, `npm ci` em `backend/` e `web/`, `npm --prefix backend run setup` (troca o binário se a versão do PocketBase mudou), `npm run build` e reinicie o `serve`.
 4. As migrations rodam sozinhas ao subir; acompanhe os logs e confira `GET /api/v1/health`.
 
+## E-mail
+- Configure em **Configurações → Integrações → E-mail** (servidor SMTP, remetente e o **endereço público da plataforma**, usado nos links) e use "Enviar e-mail de teste". Os e-mails saem por uma fila em até 1 minuto.
+- Recomendado em produção: subir o PocketBase com `--encryptionEnv=PB_ENCRYPTION_KEY` e definir a variável com 32 caracteres aleatórios — a senha do SMTP (e as demais configurações) ficam cifradas no banco. Guarde a chave: sem ela as configurações não abrem.
+
 ## Observabilidade
 - Logs estruturados do PocketBase (painel → Logs), com `correlationId`, método, caminho e status nos erros da API.
 - Toda resposta traz `X-Correlation-Id`; o frontend mostra a referência em estados de erro para o suporte localizar o log.

@@ -21,9 +21,11 @@ export interface PlatformInfo {
   logoLightUrl: string | null
   logoDarkUrl: string | null
   faviconUrl: string | null
+  /** O envio de e-mail está ligado: "Esqueci minha senha", convites e notificações por e-mail. */
+  passwordReset: boolean
 }
 
-export const DEFAULT_PLATFORM_INFO: PlatformInfo = { name: 'KAMBAN', logoLightUrl: null, logoDarkUrl: null, faviconUrl: null }
+export const DEFAULT_PLATFORM_INFO: PlatformInfo = { name: 'KAMBAN', logoLightUrl: null, logoDarkUrl: null, faviconUrl: null, passwordReset: false }
 
 export interface PlatformSettingsValues {
   auditRetentionMonths: number

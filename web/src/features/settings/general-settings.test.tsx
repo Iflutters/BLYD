@@ -124,7 +124,7 @@ describe('Configurações gerais', () => {
 describe('Identidade e política de senha nas outras telas', () => {
   it('menu mostra o nome e o logo configurados', async () => {
     const repositories = fakeRepositories({
-      platform: { getInfo: () => Promise.resolve({ name: 'Portal da Obra', logoLightUrl: '/api/v1/platform/branding/logo_light?v=1', logoDarkUrl: null, faviconUrl: null }) },
+      platform: { getInfo: () => Promise.resolve({ name: 'Portal da Obra', logoLightUrl: '/api/v1/platform/branding/logo_light?v=1', logoDarkUrl: null, faviconUrl: null, passwordReset: false }) },
     })
     renderRoutes([{ path: '/', element: <BrandMark /> }], { repositories, initialPath: '/' })
     expect(await screen.findByText('Portal da Obra')).toBeInTheDocument()

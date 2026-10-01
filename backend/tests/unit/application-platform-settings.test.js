@@ -162,7 +162,7 @@ describe('application/platform-settings — políticas aplicadas', () => {
 describe('application/platform-settings — identidade', () => {
   it('logo e ícone: tipo conferido, histórico, informação pública com endereço versionado; remover', () => {
     const { deps, service, admin, manager, ctxOf } = setup()
-    assert.deepEqual(service.publicInfo(), { name: 'KAMBAN', logo_light_url: null, logo_dark_url: null, favicon_url: null })
+    assert.deepEqual(service.publicInfo(), { name: 'KAMBAN', logo_light_url: null, logo_dark_url: null, favicon_url: null, password_reset: false })
     assert.equal(codeOf(() => service.uploadBranding(ctxOf(manager), 'logo_light', { name: 'm.png', size: 12, bytes: PNG })), 'FORBIDDEN')
 
     const view = service.uploadBranding(ctxOf(admin), 'logo_light', { name: 'marca.png', size: 12, bytes: PNG, handle: {} })

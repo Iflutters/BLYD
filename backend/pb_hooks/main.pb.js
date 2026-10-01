@@ -301,6 +301,17 @@ routerAdd('PATCH', '/api/v1/settings/platform', (e) => require(`${__hooks}/src/h
 routerAdd('POST', '/api/v1/settings/platform/branding/{slot}', (e) => require(`${__hooks}/src/http/routes.js`).uploadPlatformBranding(e), $apis.bodyLimit(2 * 1024 * 1024))
 routerAdd('DELETE', '/api/v1/settings/platform/branding/{slot}', (e) => require(`${__hooks}/src/http/routes.js`).removePlatformBranding(e))
 routerAdd('POST', '/api/v1/settings/platform/purge-audit', (e) => require(`${__hooks}/src/http/routes.js`).runAuditRetention(e))
+// e-mail (integrações): configurações, teste e fila; links de senha e convite (públicos)
+cronAdd('kamban_email_outbox', '* * * * *', () => require(`${__hooks}/src/http/routes.js`).flushEmailOutbox())
+routerAdd('GET', '/api/v1/settings/email', (e) => require(`${__hooks}/src/http/routes.js`).getEmailSettings(e))
+routerAdd('PATCH', '/api/v1/settings/email', (e) => require(`${__hooks}/src/http/routes.js`).updateEmailSettings(e), JSON_BODY_LIMIT)
+routerAdd('POST', '/api/v1/settings/email/test', (e) => require(`${__hooks}/src/http/routes.js`).sendTestEmail(e), JSON_BODY_LIMIT)
+routerAdd('GET', '/api/v1/settings/email/outbox', (e) => require(`${__hooks}/src/http/routes.js`).emailOutbox(e))
+routerAdd('POST', '/api/v1/settings/email/outbox/flush', (e) => require(`${__hooks}/src/http/routes.js`).flushEmailOutboxNow(e))
+routerAdd('POST', '/api/v1/auth/password-reset/request', (e) => require(`${__hooks}/src/http/routes.js`).requestPasswordReset(e), JSON_BODY_LIMIT)
+routerAdd('GET', '/api/v1/auth/password-reset/check', (e) => require(`${__hooks}/src/http/routes.js`).checkPasswordReset(e))
+routerAdd('POST', '/api/v1/auth/password-reset/confirm', (e) => require(`${__hooks}/src/http/routes.js`).confirmPasswordReset(e), JSON_BODY_LIMIT)
+routerAdd('POST', '/api/v1/users/{id}/invite', (e) => require(`${__hooks}/src/http/routes.js`).resendInvite(e))
 routerAdd('GET', '/api/v1/auth/password-policy', (e) => require(`${__hooks}/src/http/routes.js`).passwordPolicy(e))
 
 // tags

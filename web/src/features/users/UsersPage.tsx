@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Copy, KeyRound, UserCheck, UserPlus } from 'lucide-react'
+import { Copy, KeyRound, Mail, UserCheck, UserPlus } from 'lucide-react'
 import { isAppError } from '@/core/errors/app-error'
 import { formatDate, formatDateTime, formatRelative } from '@/core/utils/format'
 import type { User } from '@/domain/entities'
@@ -20,7 +20,8 @@ import { PageHeader } from '@/presentation/layouts/PageHeader'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { useCan, useSession } from '@/features/auth/session'
 import { useRoles } from '@/features/settings/queries'
-import { useSetUserStatus, useUsersList } from './queries'
+import { useResendInvite, useSetUserStatus, useUsersList } from './queries'
+import { usePlatformInfo } from '@/presentation/common/use-platform'
 import { UserDetailsDrawer } from './UserDetailsDrawer'
 import { UserFormDialog } from './UserFormDialog'
 import { UserStatusBadge } from './UserStatusBadge'
@@ -38,6 +39,8 @@ export function UsersPage() {
   const users = useUsersList(table.query)
   const roles = useRoles()
   const setStatus = useSetUserStatus()
+  const resendInvite = useResendInvite()
+  const emailEnabled = usePlatformInfo().passwordReset
 
   const [viewing, setViewing] = useState<User | null>(null)
   const [editing, setEditing] = useState<User | null>(null)
@@ -196,6 +199,20 @@ export function UsersPage() {
               : []),
             ...(actionsFor(user).includes('enable')
               ? [{ key: 'enable', label: t('users.enable'), icon: <UserCheck />, onSelect: () => changeStatus(user, 'active') }]
+              : []),
+            ...(emailEnabled && actionsFor(user).includes('resend_invite')
+              ? [
+                  {
+                    key: 'invite',
+                    label: t('users.resendInvite'),
+                    icon: <Mail />,
+                    onSelect: () =>
+                      resendInvite.mutate(user.id, {
+                        onSuccess: () => notify.success(t('users.inviteResent', { email: user.email })),
+                        onError: (error) => notify.error(errorMessage(error)),
+                      }),
+                  },
+                ]
               : []),
           ],
         }}

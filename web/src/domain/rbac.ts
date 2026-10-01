@@ -35,7 +35,7 @@ export function assignableRoles(current: CurrentUser | null, roles: Role[]): Rol
   )
 }
 
-export type UserAction = 'edit' | 'disable' | 'enable' | 'change_role' | 'reset_password'
+export type UserAction = 'edit' | 'disable' | 'enable' | 'change_role' | 'reset_password' | 'resend_invite'
 
 /** Ações disponíveis para `target` na visão do usuário atual. */
 export function userActions(current: CurrentUser | null, target: User, targetRoleCode: string | null): UserAction[] {
@@ -49,6 +49,8 @@ export function userActions(current: CurrentUser | null, target: User, targetRol
   if (!isSelf && current.permissions.includes('users.disable') && !protectedTarget) {
     actions.push(target.status === 'active' ? 'disable' : 'enable')
   }
+  // convite: só para quem nunca entrou (a tela também exige o envio de e-mail ligado)
+  if (!isSelf && current.permissions.includes('users.create') && !target.lastLoginAt && target.status === 'active') actions.push('resend_invite')
   return actions
 }
 

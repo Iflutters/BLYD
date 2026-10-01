@@ -75,3 +75,11 @@ Regras do PocketBase (seed): login 10/min por IP; `/api/v1/` 600/min; `/api/` 30
 - **Imagens da identidade** (logo/ícone): até 1 MB, tipo conferido pelo conteúdo (PNG, JPEG, WebP, ICO); **SVG** só sem conteúdo ativo — recusado se tiver `<script>`, atributos `on*`, `foreignObject`/`iframe`/`embed`/`object`, `DOCTYPE`/`ENTITY`, `javascript:`, `@import` ou referências externas (só âncoras `#` e `data:image/`). Servidas com `X-Content-Type-Options: nosniff` e `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` (segunda barreira se aberto direto no navegador); na tela entram por `<img>`, que não executa script.
 - **Rotas públicas novas:** só `GET /api/v1/platform` (nome e endereços) e as imagens — sem dados de configuração. Rotas públicas **não limpam** o cookie de uma sessão inválida (só as protegidas, que respondem `SESSION_EXPIRED`): a identidade carrega junto com o `/auth/me`, e limpar antes faria a tela perder o aviso "Sua sessão expirou". A varredura de segurança (`security-sweep.test.js`) as trata como públicas; todo o resto continua exigindo sessão.
 - **Retenção do histórico:** limpeza diária com registro da própria limpeza; encurtar o prazo exige confirmação na tela com a contagem do que sairá.
+
+## E-mail e links de senha
+- **Links de uso único:** token aleatório de 48 caracteres; só o **hash** vai para o banco (`auth_tokens`). Redefinição vale 60 minutos; convite, 7 dias; usar ou pedir outro invalida. Confirmar a nova senha **encerra todas as sessões** e libera o bloqueio de login.
+- **Sem enumeração de contas:** o pedido de redefinição responde sempre `{ requested: true }`, exista ou não a conta, esteja ou não ativa; no máximo 3 pedidos por conta por hora (além do rate limit por IP).
+- **Sem envenenamento de link:** os links usam o **endereço da plataforma configurado**, nunca o `Host` da requisição.
+- **Senha do SMTP:** só escrita — nunca volta na API nem vai para o histórico. Para cifrar as configurações do PocketBase em repouso, suba com `--encryptionEnv=PB_ENCRYPTION_KEY` (32 caracteres).
+- **Fila sem segredos guardados:** o corpo do e-mail (que pode ter um link) é apagado depois de enviado ou desistido; a lista da fila mostra só destinatário, tipo, assunto e situação.
+- **Conteúdo:** todo texto vindo de pessoas é escapado no HTML do e-mail.

@@ -31,6 +31,8 @@ Deve crescer depois sem reescrever a arquitetura. Não é só um quadro Kanban: 
 
 **Configurador geral (2026-10-01) ✅:** Configurações → Geral, permissão própria `platform.manage` (só Admin por padrão): nome/logo/ícone públicos (`GET /platform`), política de senha (mínimo 8–64, letras e números sempre; maiúsculas/minúsculas e símbolo opcionais), bloqueio de login (3–20 tentativas, tempo que dobra até o teto) e retenção do histórico (1–24 meses ou sempre; limpeza diária, prévia ao encurtar). Limites seguros no domínio `domain/platform-settings.js`; regras em regras-de-negocio.md §15; ADR-034.
 
+**E-mail (2026-10-01) ✅:** Configurações → Integrações (`integrations.manage`): SMTP do próprio PocketBase, fila `email_outbox` (rotina a cada minuto, novas tentativas, corpo apagado após envio), "Esqueci minha senha" e convite por links de uso único (`auth_tokens`, só o hash; sem revelar contas) e notificações também por e-mail (preferência em Minha conta). Regras §16; ADR-035.
+
 ## 2. Princípios fundamentais (obrigatórios)
 
 Clean Architecture; SOLID; TDD; componentização; baixo acoplamento; alta coesão; reutilização máxima; separação clara entre domínio, aplicação, infraestrutura e apresentação; segurança desde o início; API-first; responsividade; acessibilidade; UX consistente; código legível e documentado; testes automatizados; **nenhuma regra de negócio importante diretamente na UI**.

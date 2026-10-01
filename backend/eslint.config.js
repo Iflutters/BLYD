@@ -6,7 +6,7 @@ const pocketbaseGlobals = Object.fromEntries(
   [
     '$app', '$apis', '$os', '$security', '$dbx', '$http', '$filesystem', '$mails', '$template',
     '__hooks', 'routerAdd', 'routerUse', 'migrate', 'cronAdd', 'onBootstrap',
-    'Record', 'Collection', 'Cookie', 'Command', 'Middleware', 'DynamicModel',
+    'Record', 'Collection', 'Cookie', 'Command', 'Middleware', 'DynamicModel', 'MailerMessage',
     'SelectField', 'RelationField', 'DateField', 'TextField', 'BoolField', 'NumberField', 'JSONField',
     'arrayOf', 'unmarshal', 'toString', 'toBytes', 'sleep',
   ].map((name) => [name, 'readonly']),

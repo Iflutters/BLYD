@@ -117,7 +117,7 @@ function deleteRole(e) {
 /** Aceita apenas os campos públicos conhecidos do body. */
 function userInput(body) {
   const input = {}
-  ;['name', 'email', 'password', 'role_id', 'locale', 'theme'].forEach((key) => {
+  ;['name', 'email', 'password', 'role_id', 'locale', 'theme', 'email_notifications', 'send_invite'].forEach((key) => {
     if (body[key] !== undefined) input[key] = body[key]
   })
   return input
@@ -600,6 +600,54 @@ function purgeAuditLogs() {
   return result
 }
 
+// ---------------------------------------------------------------- e-mail (integrações)
+
+const getEmailSettings = configAction('email', (s, ctx) => s.getSettings(ctx))
+const updateEmailSettings = configAction('email', (s, ctx, r) => s.updateSettings(ctx, r.body()))
+const sendTestEmail = configAction('email', (s, ctx, r) => s.sendTest(ctx, r.body()))
+const emailOutbox = configAction('email', (s, ctx) => s.outboxSummary(ctx))
+const resendInvite = configAction('accountLinks', (s, ctx, r) => s.resendInvite(ctx, r.id))
+
+/** Uma execução por vez (a rotina por minuto e o "Enviar agora" não mandam o mesmo e-mail duas vezes). */
+function withEmailLock(fn) {
+  const store = $app.store()
+  const key = 'kamban.email.flush'
+  const since = store.get(key)
+  if (since && Date.now() - since < 5 * 60000) return { sent: 0, failed: 0, retrying: 0, busy: true }
+  store.set(key, Date.now())
+  try {
+    return fn()
+  } finally {
+    store.remove(key)
+  }
+}
+
+function flushEmailOutboxNow(e) {
+  return handle(e, ({ ctx, services }) => ({ data: withEmailLock(() => services.email.flushNow(ctx)) }))
+}
+
+/** Rotina por minuto (cron): envia a fila de e-mails. */
+function flushEmailOutbox() {
+  const { createContainer } = require(`${__hooks}/src/infrastructure/container.js`)
+  const result = withEmailLock(() => createContainer($app).email.flushOutbox())
+  if (result.sent || result.failed || result.retrying) $app.logger().info('kamban: fila de e-mails', 'sent', result.sent, 'failed', result.failed, 'retrying', result.retrying)
+  return result
+}
+
+/** Público: "Esqueci minha senha" — responde igual exista ou não a conta. */
+function requestPasswordReset(e) {
+  return handle(e, ({ ctx, services, body }) => ({ data: services.accountLinks.requestReset(body(), ctx) }), PUBLIC)
+}
+
+/** Público: a tela de nova senha confere o link (e recebe as exigências da senha). */
+function checkPasswordReset(e) {
+  return handle(e, ({ services, query }) => ({ data: services.accountLinks.checkToken(query().token) }), PUBLIC)
+}
+
+function confirmPasswordReset(e) {
+  return handle(e, ({ ctx, services, body }) => ({ data: services.accountLinks.confirm(body(), ctx) }), PUBLIC)
+}
+
 // ---------------------------------------------------------------- misc
 
 function notFound(e) {
@@ -787,6 +835,16 @@ module.exports = {
   uploadPlatformBranding,
   removePlatformBranding,
   passwordPolicy,
+  getEmailSettings,
+  updateEmailSettings,
+  sendTestEmail,
+  emailOutbox,
+  flushEmailOutboxNow,
+  flushEmailOutbox,
+  requestPasswordReset,
+  checkPasswordReset,
+  confirmPasswordReset,
+  resendInvite,
   runAuditRetention,
   runDueRemindersNow,
   uploadTaskAttachments,

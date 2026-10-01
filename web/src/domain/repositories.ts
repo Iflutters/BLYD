@@ -49,6 +49,7 @@ import type {
 } from './projects'
 import type { Language } from '@/core/i18n'
 import type { BrandingSlot, PasswordPolicy, PlatformInfo, PlatformSettings, PlatformSettingsValues } from './platform'
+import type { EmailSettingsPatch, EmailSettingsView, FlushResult, OutboxSummary, ResetTokenCheck } from './email'
 import type { ThemePreference } from '@/core/theme/theme'
 
 /**
@@ -74,6 +75,20 @@ export interface AuthRepository {
   changePassword(currentPassword: string, newPassword: string): Promise<{ otherSessionsRevoked: number }>
   /** Exigências vigentes para senhas (Configurador geral). */
   passwordPolicy(): Promise<PasswordPolicy>
+  /** "Esqueci minha senha": responde igual exista ou não a conta. */
+  requestPasswordReset(email: string): Promise<void>
+  /** Confere o link de senha/convite (e traz as exigências da senha). */
+  checkResetToken(token: string): Promise<ResetTokenCheck>
+  confirmPasswordReset(token: string, password: string): Promise<{ purpose: 'reset' | 'invite' }>
+}
+
+/** E-mail (integrations.manage): configurações do SMTP, teste e fila de saída. */
+export interface EmailRepository {
+  getSettings(): Promise<EmailSettingsView>
+  updateSettings(patch: EmailSettingsPatch): Promise<EmailSettingsView>
+  sendTest(to?: string): Promise<{ to: string }>
+  outbox(): Promise<OutboxSummary>
+  flush(): Promise<FlushResult>
 }
 
 /** Configurador geral: identidade pública e configurações da plataforma (platform.manage). */
@@ -93,9 +108,11 @@ export interface PlatformRepository {
 export interface CreateUserData {
   name: string
   email: string
-  password: string
+  /** Dispensada com `sendInvite` (a pessoa cria a dela pelo link do e-mail). */
+  password?: string
   roleId: string
   locale: Language
+  sendInvite?: boolean
 }
 
 export interface UpdateUserData {
@@ -104,6 +121,7 @@ export interface UpdateUserData {
   roleId?: string
   locale?: Language
   theme?: ThemePreference
+  emailNotifications?: boolean
 }
 
 export interface UserRepository {
@@ -113,6 +131,8 @@ export interface UserRepository {
   update(id: string, data: UpdateUserData): Promise<User>
   setStatus(id: string, status: UserStatus): Promise<User>
   resetPassword(id: string, password: string): Promise<void>
+  /** Reenvia o convite por e-mail (quem ainda não entrou). */
+  resendInvite(id: string): Promise<void>
   history(id: string, query: Pick<ListQuery, 'page' | 'perPage'>): Promise<Page<AuditEntry>>
 }
 
@@ -461,4 +481,5 @@ export interface Repositories {
   docs: DocsRepository
   sprints: SprintRepository
   platform: PlatformRepository
+  email: EmailRepository
 }

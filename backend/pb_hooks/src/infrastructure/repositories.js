@@ -23,6 +23,7 @@ function createUserRepository(app) {
       roleId: record.getString('role_id'),
       locale: record.getString('locale') || 'pt-BR',
       theme: record.getString('theme') || 'system',
+      emailNotifications: !record.getBool('email_notifications_off'),
       createdAt: toDate(record.getDateTime('created')),
       updatedAt: toDate(record.getDateTime('updated')),
       lastLoginAt: toDate(record.getDateTime('last_login_at')),
@@ -97,6 +98,7 @@ function createUserRepository(app) {
         if (key === 'email') record.setEmail(patch.email)
         else if (key === 'password') record.setPassword(patch.password)
         else if (key === 'lastLoginAt') record.set('last_login_at', toPbDate(patch.lastLoginAt))
+        else if (key === 'emailNotifications') record.set('email_notifications_off', !patch.emailNotifications)
         else if (USER_FIELDS[key]) record.set(USER_FIELDS[key], patch[key])
       })
       app.save(record)
@@ -2223,7 +2225,9 @@ function createRepositories(app) {
   const { createPlanManagementRepositories } = require('./plan-management-repositories')
   // Configurador geral em arquivo próprio
   const { createPlatformSettingsRepository } = require('./platform-repositories')
-  return Object.assign(createDocRepositories(app), createPlanCollabRepositories(app), createPlanManagementRepositories(app), {
+  // e-mail (integrações) em arquivo próprio
+  const { createEmailRepositories } = require('./email-repositories')
+  return Object.assign(createDocRepositories(app), createPlanCollabRepositories(app), createPlanManagementRepositories(app), createEmailRepositories(app), {
     platformSettingsRepository: createPlatformSettingsRepository(app),
     taskRepository: createTaskRepository(app),
     relationRepository: createRelationRepository(app),

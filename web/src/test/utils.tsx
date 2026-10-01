@@ -24,6 +24,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     createdAt: new Date('2026-01-01T10:00:00Z'),
     updatedAt: new Date('2026-01-01T10:00:00Z'),
     lastLoginAt: null,
+    emailNotifications: true,
     ...overrides,
   }
 }
@@ -74,6 +75,7 @@ export function fakeRepositories(overrides: {
   plan?: Partial<Repositories['plan']>
   docs?: Partial<Repositories['docs']>
   platform?: Partial<Repositories['platform']>
+  email?: Partial<Repositories['email']>
 } = {}): Repositories {
   const emptyPage: Page<User> = { items: [], page: 1, perPage: 20, total: 0, totalPages: 0 }
   return {
@@ -86,6 +88,9 @@ export function fakeRepositories(overrides: {
       revokeOtherSessions: notImplemented,
       changePassword: notImplemented,
       passwordPolicy: () => Promise.resolve(DEFAULT_PASSWORD_POLICY),
+      requestPasswordReset: notImplemented,
+      checkResetToken: notImplemented,
+      confirmPasswordReset: notImplemented,
       ...overrides.auth,
     },
     users: {
@@ -95,6 +100,7 @@ export function fakeRepositories(overrides: {
       update: notImplemented,
       setStatus: notImplemented,
       resetPassword: notImplemented,
+      resendInvite: notImplemented,
       history: notImplemented,
       ...overrides.users,
     },
@@ -322,6 +328,14 @@ export function fakeRepositories(overrides: {
       removeBranding: notImplemented,
       runRetention: notImplemented,
       ...overrides.platform,
+    },
+    email: {
+      getSettings: notImplemented,
+      updateSettings: notImplemented,
+      sendTest: notImplemented,
+      outbox: notImplemented,
+      flush: notImplemented,
+      ...overrides.email,
     },
   }
 }

@@ -120,6 +120,7 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       ['sessões', '/account/sessions'],
       ['usuários', '/users'],
       ['configurações gerais', '/settings/general'],
+      ['integrações', '/settings/integrations'],
       ['tipos de tarefa', '/settings/task-types'],
       ['tipo de tarefa', `/settings/task-types/${type.id}`],
       ['campos personalizados', '/settings/custom-fields'],
@@ -163,6 +164,10 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       const publicErrors = watchErrors(publicPage)
       await publicPage.goto(`${app.baseUrl}/login`)
       await check(publicPage, 'login', false)
+      await publicPage.goto(`${app.baseUrl}/forgot-password`)
+      await check(publicPage, 'esqueci minha senha', false)
+      await publicPage.goto(`${app.baseUrl}/reset-password?token=invalido`)
+      await check(publicPage, 'nova senha (link inválido)', false)
       await context.close()
 
       const { page, context: session, errors } = await login(browser, app.baseUrl, ADMIN.email, ADMIN.password, { ...mode, axe: true })

@@ -17,7 +17,7 @@
 | reports | `reports.view` |
 | audit | `audit.view` (desde a migration 1790000002) |
 | docs | `docs.view`, `docs.edit`, `docs.manage` (expansão Onda 2, migration 1790000019) |
-| settings | `settings.manage`, `permissions.manage`, `platform.manage` (Configurador geral, migration 1790000027) |
+| settings | `settings.manage`, `permissions.manage`, `platform.manage` (Configurador geral, migration 1790000027), `integrations.manage` (e-mail, webhooks e tokens, migration 1790000028) |
 
 ## Matriz inicial (seed)
 | Permissão | SUPER_ADMIN | ADMIN | MANAGER | MEMBER | VIEWER |
@@ -37,6 +37,7 @@
 | audit.view | ✓ | ✓ | | | |
 | settings.manage / permissions.manage | ✓ | ✓ | | | |
 | platform.manage | ✓ | ✓ | | | |
+| integrations.manage | ✓ | ✓ | | | |
 | docs.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | docs.edit | ✓ | ✓ | ✓ | ✓ | |
 | docs.manage | ✓ | ✓ | ✓ | | |
@@ -162,3 +163,7 @@ Permissão global **e** regra do espaço (`domain/docs.js` → `spaceAccess`):
 - `platform.manage` cobre a **segurança e a identidade da plataforma** (bloqueio de login, política de senha, retenção do histórico, nome, logo e ícone) — separada de `settings.manage`, que cobre a configuração das tarefas (tipos, campos, status, tags) e pode ser delegada a quem cuida do processo.
 - Concedida por padrão só ao Admin (migration 1790000027, idempotente). As regras anti-escalonamento valem como em toda permissão: só concede quem a possui.
 - A identidade (`GET /platform` e as imagens) é pública; `GET /auth/password-policy` exige só estar logado.
+
+## Integrações
+- `integrations.manage` cobre o **envio de e-mail** (servidor, teste, fila) e, nas próximas etapas, webhooks e os tokens de API de todos. Concedida por padrão só ao Admin (migration 1790000028).
+- Reenviar convite exige `users.create`. As rotas de "Esqueci minha senha" são públicas (quem esqueceu não tem sessão), sem revelar contas.

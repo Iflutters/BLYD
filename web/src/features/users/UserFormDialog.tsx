@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { isAppError } from '@/core/errors/app-error'
@@ -7,7 +7,8 @@ import { SUPPORTED_LANGUAGES, currentLanguage } from '@/core/i18n'
 import type { Role, User } from '@/domain/entities'
 import { assignableRoles } from '@/domain/rbac'
 import { createUserSchemaFor, updateUserSchema, type CreateUserInput } from '@/domain/validation'
-import { AppButton, AppDialog, AppSelect, AppTextField, notify } from '@/presentation/components'
+import { AppButton, AppDialog, AppSelect, AppSwitch, AppTextField, notify } from '@/presentation/components'
+import { usePlatformInfo } from '@/presentation/common/use-platform'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { usePasswordHint, usePasswordPolicy } from '@/features/auth/use-password-policy'
 import { useSession } from '@/features/auth/session'
@@ -43,13 +44,17 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
 
   const policy = usePasswordPolicy()
   const passwordHint = usePasswordHint(policy)
-  const schema = useMemo(() => (isEdit ? updateUserSchema : createUserSchemaFor(policy)) as ReturnType<typeof createUserSchemaFor>, [isEdit, policy])
+  // convite por e-mail só quando o envio está ligado (Configurações → Integrações)
+  const emailEnabled = usePlatformInfo().passwordReset
+  const canInvite = !isEdit && emailEnabled
   const form = useForm<CreateUserInput>({
-    // Na edição a senha não é enviada; o schema de edição ignora o campo.
-    resolver: zodResolver(schema),
-    defaultValues: { name: '', email: '', password: '', roleId: '', locale: currentLanguage() },
+    // Na edição a senha não é enviada; com convite, também não (a pessoa cria a dela).
+    resolver: (values, context, options) =>
+      zodResolver((isEdit ? updateUserSchema : createUserSchemaFor(policy, values.sendInvite)) as ReturnType<typeof createUserSchemaFor>)(values, context, options),
+    defaultValues: { name: '', email: '', password: '', roleId: '', locale: currentLanguage(), sendInvite: false },
   })
   const { register, handleSubmit, reset, control, setError, formState } = form
+  const sendInvite = useWatch({ control, name: 'sendInvite' })
 
   useEffect(() => {
     if (!open) return
@@ -59,11 +64,12 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
       password: '',
       roleId: user?.roleId ?? roleOptions.find((o) => roles.find((r) => r.id === o.value)?.code === 'MEMBER')?.value ?? '',
       locale: user?.locale ?? currentLanguage(),
+      sendInvite: canInvite,
     })
     createUser.reset()
     updateUser.reset()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, user])
+  }, [open, user, canInvite])
 
   const onSubmit = handleSubmit((values) => {
     const onError = (error: unknown) => {
@@ -80,7 +86,7 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
       notify.error(errorMessage(error))
     }
     const onSuccess = () => {
-      notify.success(isEdit ? t('users.updated') : t('users.created'))
+      notify.success(isEdit ? t('users.updated') : values.sendInvite ? t('users.invited', { email: values.email }) : t('users.created'))
       onOpenChange(false)
     }
 
@@ -97,7 +103,7 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
         { onSuccess, onError },
       )
     } else {
-      createUser.mutate(values, { onSuccess, onError })
+      createUser.mutate(values.sendInvite ? { ...values, password: undefined, sendInvite: true } : { ...values, sendInvite: false }, { onSuccess, onError })
     }
   })
 
@@ -133,7 +139,22 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
           error={errors.email?.message}
           {...register('email')}
         />
-        {!isEdit && (
+        {canInvite && (
+          <Controller
+            control={control}
+            name="sendInvite"
+            render={({ field }) => (
+              <AppSwitch
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                label={t('users.sendInvite')}
+                description={t('users.sendInviteHint')}
+                className="sm:col-span-2"
+              />
+            )}
+          />
+        )}
+        {!isEdit && !sendInvite && (
           <AppTextField
             label={t('users.fields.password')}
             type="password"

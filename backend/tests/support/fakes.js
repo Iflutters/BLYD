@@ -82,6 +82,11 @@ function createFakeStore() {
     loginAttempts: [],
     /** Configurador geral (registro único). */
     platformSettings: { values: {}, files: {}, updatedAt: null },
+    /** E-mail (integrações): configurações, fila e links de uso único. */
+    emailSettings: { values: {}, password: '' },
+    emailOutbox: [],
+    authTokens: [],
+    apiTokens: [],
     /** Tarefas por status/prioridade; os testes ajustam para simular uso. */
     lookupTaskCounts: {},
   }
@@ -150,6 +155,7 @@ function createFakeRepositories(store) {
         roleId: data.roleId,
         locale: data.locale || 'pt-BR',
         theme: data.theme || 'system',
+        emailNotifications: data.emailNotifications !== false,
         createdAt: new Date(),
         updatedAt: new Date(),
         lastLoginAt: null,
@@ -277,6 +283,62 @@ function createFakeRepositories(store) {
       touchPlatform()
     },
     fileKeyOf: (slot) => `platform/${slot}`,
+  }
+
+  const { DEFAULT_SETTINGS: EMAIL_DEFAULTS } = require('../../pb_hooks/src/domain/email')
+  const emailSettingsRepository = {
+    get: () => ({ values: Object.assign({}, EMAIL_DEFAULTS, store.emailSettings.values), hasPassword: !!store.emailSettings.password }),
+    save: (values, password) => {
+      store.emailSettings.values = Object.assign({}, values)
+      if (password !== undefined) store.emailSettings.password = password
+    },
+  }
+
+  const emailOutboxRepository = {
+    enqueue: (entry) => {
+      const item = Object.assign({ id: nextId('mail_'), status: 'pending', attempts: 0, lastError: '', nextAttemptAt: null, sentAt: null, createdAt: new Date() }, entry)
+      store.emailOutbox.push(item)
+      return item
+    },
+    listDue: (now, limit) => store.emailOutbox.filter((m) => m.status === 'pending' && (!m.nextAttemptAt || m.nextAttemptAt <= now)).slice(0, limit),
+    update: (id, patch) => Object.assign(store.emailOutbox.find((m) => m.id === id), patch),
+    counts: () => ({
+      pending: store.emailOutbox.filter((m) => m.status === 'pending').length,
+      sent: store.emailOutbox.filter((m) => m.status === 'sent').length,
+      failed: store.emailOutbox.filter((m) => m.status === 'failed').length,
+    }),
+    listRecent: (limit) => store.emailOutbox.slice().reverse().slice(0, limit),
+  }
+
+  const apiTokenRepository = {
+    create: (data) => {
+      const token = Object.assign({ id: nextId('pat_'), lastUsedAt: null, lastUsedIp: '', revokedAt: null }, data)
+      store.apiTokens.push(token)
+      return token
+    },
+    findById: (id) => store.apiTokens.find((t) => t.id === id) || null,
+    findByHash: (hash) => store.apiTokens.find((t) => t.tokenHash === hash) || null,
+    listByUser: (userId) => store.apiTokens.filter((t) => t.userId === userId).slice().reverse(),
+    listAll: () => store.apiTokens.slice().reverse(),
+    countActiveByUser: (userId, now) => store.apiTokens.filter((t) => t.userId === userId && !t.revokedAt && (!t.expiresAt || t.expiresAt > now)).length,
+    touch: (id, at, ip) => Object.assign(store.apiTokens.find((t) => t.id === id), { lastUsedAt: at, lastUsedIp: ip }),
+    revoke: (id, at) => Object.assign(store.apiTokens.find((t) => t.id === id), { revokedAt: at }),
+  }
+
+  const authTokenRepository = {
+    create: (data) => {
+      const token = Object.assign({ id: nextId('tok_'), usedAt: null }, data)
+      store.authTokens.push(token)
+      return token
+    },
+    findByHash: (hash) => store.authTokens.find((t) => t.tokenHash === hash) || null,
+    markUsed: (id, at) => {
+      store.authTokens.find((t) => t.id === id).usedAt = at
+    },
+    invalidateForUser: (userId, purpose, at) => {
+      store.authTokens.filter((t) => t.userId === userId && t.purpose === purpose && !t.usedAt).forEach((t) => (t.usedAt = at))
+    },
+    countSince: (userId, purpose, since) => store.authTokens.filter((t) => t.userId === userId && t.purpose === purpose && t.createdAt >= since).length,
   }
 
   const SORT_FIELDS = { name: 'name', key: 'key', created: 'createdAt', due_date: 'dueDate', status: 'status', priority: 'priority' }
@@ -1126,6 +1188,10 @@ function createFakeRepositories(store) {
     relationRepository,
     loginAttemptRepository,
     platformSettingsRepository,
+    emailSettingsRepository,
+    emailOutboxRepository,
+    authTokenRepository,
+    apiTokenRepository,
     sprintRepository,
     milestoneRepository,
     projectGroupRepository,
@@ -1154,6 +1220,25 @@ function createFakeRepositories(store) {
   }
 }
 
+/** Mailer em memória: guarda o que foi enviado; `failNext(motivo)` faz o próximo envio falhar. */
+function createFakeMailer() {
+  let failure = null
+  return {
+    sent: [],
+    failNext(reason) {
+      failure = reason
+    },
+    send(message) {
+      if (failure) {
+        const reason = failure
+        failure = null
+        throw new Error(reason)
+      }
+      this.sent.push(message)
+    },
+  }
+}
+
 function createFakeDeps(options) {
   const store = createFakeStore()
   const repos = createFakeRepositories(store)
@@ -1164,6 +1249,7 @@ function createFakeDeps(options) {
     tokens: createFakeTokens(),
     sessionPolicy: { ttlHours: 12, rememberTtlDays: 30, idleMinutes: 120, touchIntervalSeconds: 300 },
     unitOfWork: { run: (fn) => fn(repos) },
+    mailer: createFakeMailer(),
     logger: { info() {}, warn() {}, error() {} },
   })
 }

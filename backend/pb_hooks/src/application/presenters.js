@@ -17,6 +17,7 @@ function toUserDto(user) {
     role_id: user.roleId,
     locale: user.locale,
     theme: user.theme,
+    email_notifications: user.emailNotifications !== false,
     created_at: iso(user.createdAt),
     updated_at: iso(user.updatedAt),
     last_login_at: iso(user.lastLoginAt),

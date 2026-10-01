@@ -230,3 +230,10 @@ A migration `1790000021` também concede `plan.view/edit/manage` aos perfis padr
 - `platform_settings` — **registro único**: `values` (JSON só com o que foi alterado; o que falta usa o padrão do domínio `domain/platform-settings.js`), `files` (JSON com nome, tipo e tamanho de cada imagem) e os arquivos protegidos `logo_light`, `logo_dark`, `favicon` (até 1 MB; servidos só por `/api/v1/platform/branding/{slot}`). Sem regras de API (acesso só por `/api/v1`). Se o registro sumir, é recriado vazio.
 - Permissão `platform.manage` criada e concedida ao Admin.
 - **Retenção do histórico:** a rotina diária `kamban_audit_retention` (03:45) apaga de `audit_logs` o que é anterior ao corte, em lotes de 1.000 (índice `idx_audit_created`), e grava `audit_log.purge`.
+
+## E-mail (migration 1790000028)
+- **Servidor de e-mail:** nas configurações do próprio PocketBase (`smtp` e `meta.senderName/senderAddress/appURL`) — não há collection nova para isso. Com `--encryptionEnv` (ver implantação), o PocketBase guarda as configurações cifradas.
+- `email_outbox` — fila de saída: `to`, `kind` (notification, password_reset, invite, test), `subject`, `html`, `text` (apagados depois de enviar ou desistir), `status` (pending, sent, failed), `attempts`, `last_error`, `next_attempt_at`, `sent_at`; índice `(status, next_attempt_at, created)`.
+- `auth_tokens` — links de uso único: `user_id` (cascade), `purpose` (reset, invite), `token_hash` (único; o token em si nunca é gravado), `expires_at`, `used_at`.
+- `users.email_notifications_off` — a pessoa desligou as notificações por e-mail.
+- Permissão `integrations.manage` criada e concedida ao Admin.

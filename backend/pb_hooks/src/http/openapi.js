@@ -792,6 +792,31 @@ function build() {
       '/settings/platform/purge-audit': {
         post: op('Aplica a retenção do histórico agora (platform.manage; mesma regra da rotina diária) → { removed }', ['platform'], { 200: ok('Resultado', { type: 'object' }) }, { parameters: [csrfHeader] }),
       },
+      '/settings/email': {
+        get: op('Configurações do envio de e-mail (integrations.manage): { values: { enabled, host, port, username, tls, sender_name, sender_address, app_url }, has_password } — a senha nunca volta', ['integrations'], { 200: ok('Configurações', { type: 'object' }) }),
+        patch: op('Altera (integrations.manage), parcial; ligado exige host, sender_address e app_url; password vazia mantém, null remove', ['integrations'], { 200: ok('Configurações', { type: 'object' }), 400: errorResponse('VALIDATION_ERROR') }, { parameters: [csrfHeader] }),
+      },
+      '/settings/email/test': {
+        post: op('Envia na hora um e-mail de teste para quem pediu (ou { to }) → { sent, to }; EMAIL_NOT_CONFIGURED (409), EMAIL_SEND_FAILED (502, details.reason)', ['integrations'], { 200: ok('Enviado', { type: 'object' }) }, { parameters: [csrfHeader] }),
+      },
+      '/settings/email/outbox': {
+        get: op('Fila de envio: { counts: { pending, sent, failed }, recent: [{ id, to, kind, subject, status, attempts, last_error, created_at, sent_at }] }', ['integrations'], { 200: ok('Fila', { type: 'object' }) }),
+      },
+      '/settings/email/outbox/flush': {
+        post: op('Envia a fila agora (a rotina roda a cada minuto) → { sent, failed, retrying, busy?, skipped? }', ['integrations'], { 200: ok('Resultado', { type: 'object' }) }, { parameters: [csrfHeader] }),
+      },
+      '/auth/password-reset/request': {
+        post: op('Público: { email } → { requested: true } sempre (não revela se a conta existe); no máximo 3 por conta por hora; o link vale 60 min', ['auth'], { 200: ok('Pedido', { type: 'object' }) }, { parameters: [csrfHeader] }),
+      },
+      '/auth/password-reset/check': {
+        get: op('Público: ?token= → { valid, state: valid|used|expired|invalid, purpose: reset|invite, name, policy }', ['auth'], { 200: ok('Situação do link', { type: 'object' }) }, { parameters: [{ name: 'token', in: 'query', required: true, schema: { type: 'string' } }] }),
+      },
+      '/auth/password-reset/confirm': {
+        post: op('Público: { token, password } (política vigente) → { changed, purpose }; encerra as sessões; RESET_TOKEN_INVALID (400)', ['auth'], { 200: ok('Senha definida', { type: 'object' }), 400: errorResponse('RESET_TOKEN_INVALID') }, { parameters: [csrfHeader] }),
+      },
+      '/users/{id}/invite': {
+        post: op('Reenvia o convite (users.create) a quem ainda não entrou; o link anterior deixa de valer; USER_ALREADY_ACTIVE, EMAIL_NOT_CONFIGURED', ['users'], { 200: ok('Convidado', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
       '/auth/password-policy': {
         get: op('Exigências vigentes para senhas (quem está logado): { min_length, max_length, require_letters_numbers, require_mixed_case, require_symbol }', ['auth'], { 200: ok('Política', { type: 'object' }) }),
       },

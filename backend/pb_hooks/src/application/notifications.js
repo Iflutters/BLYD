@@ -13,6 +13,8 @@ const rbac = require('../domain/rbac')
 const workflow = require('../domain/workflow')
 const notificationDomain = require('../domain/notification')
 const { iso, toUserSummary } = require('./presenters')
+const emailDomain = require('../domain/email')
+const { emailContext } = require('./email')
 
 /** Gera notificações; `repos` é o conjunto de repositórios da transação atual. */
 function createNotifier(deps) {
@@ -32,15 +34,20 @@ function createNotifier(deps) {
     deps.userRepository.findManyByIds(list.map((r) => r.userId)).forEach((u) => {
       users[u.id] = u
     })
+    const mail = emailContext(deps)
+    const actor = mail && event.actorId ? deps.userRepository.findById(event.actorId) : null
     let created = 0
     list.forEach((recipient) => {
       const user = users[recipient.userId]
       if (!user || user.status !== 'active' || !hasAccess(event.project, user.id)) return
       const dedupeKey = event.dedupeKey ? event.dedupeKey(recipient.type) : ''
       if (dedupeKey && repos.notificationRepository.existsKey(user.id, dedupeKey)) return
-      repos.notificationRepository.create(
-        Object.assign({ userId: user.id, type: recipient.type, actorId: event.actorId || null, data: Object.assign({}, baseData, event.data || {}), dedupeKey }, target),
-      )
+      const notification = Object.assign({ userId: user.id, type: recipient.type, actorId: event.actorId || null, data: Object.assign({}, baseData, event.data || {}), dedupeKey }, target)
+      repos.notificationRepository.create(notification)
+      if (mail && user.emailNotifications !== false && user.email) {
+        const message = emailDomain.renderNotificationEmail(notification, { locale: user.locale, actorName: actor ? actor.name : null, platform: mail.platform, appUrl: mail.appUrl })
+        repos.emailOutboxRepository.enqueue({ to: user.email, kind: 'notification', subject: message.subject, html: message.html, text: message.text })
+      }
       created++
     })
     return created

@@ -145,7 +145,14 @@ function createPlatformSettingsService(deps) {
     const values = settingsDomain.normalizeSettings(row.values)
     const stamp = row.updatedAt ? row.updatedAt.getTime() : 0
     const url = (slot) => (row.files && row.files[slot] ? `${BRANDING_URL}${slot}?v=${stamp}` : null)
-    return { name: values.platform_name, logo_light_url: url('logo_light'), logo_dark_url: url('logo_dark'), favicon_url: url('favicon') }
+    const email = deps.emailSettingsRepository ? deps.emailSettingsRepository.get().values : null
+    return {
+      name: values.platform_name,
+      logo_light_url: url('logo_light'),
+      logo_dark_url: url('logo_dark'),
+      favicon_url: url('favicon'),
+      password_reset: !!(email && email.enabled),
+    }
   }
 
   /** Arquivo público da identidade: { key, name, mime } — lugar desconhecido ou vazio = NOT_FOUND. */

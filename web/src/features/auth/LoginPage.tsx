@@ -1,17 +1,15 @@
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, Info, Lock, Mail } from 'lucide-react'
 import { isAppError } from '@/core/errors/app-error'
 import { loginSchema, type LoginInput } from '@/domain/validation'
 import { AppButton, AppCheckbox, AppTextField } from '@/presentation/components'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
-import { BrandMark, DefaultBrandIcon } from '@/presentation/navigation/Sidebar'
 import { usePlatformInfo } from '@/presentation/common/use-platform'
-import { logoFor } from '@/domain/platform'
-import { PreferencesQuickBar } from '@/features/preferences/PreferencesQuickBar'
+import { AuthLayout } from './AuthLayout'
 import { safeRedirect, useLogin } from './session'
 import { useSessionStore } from './session-store'
 
@@ -23,8 +21,6 @@ export function LoginPage() {
   const errorMessage = useErrorMessage()
   const endReason = useSessionStore((s) => s.endReason)
   const platform = usePlatformInfo()
-  // o painel lateral tem fundo da marca (escuro): usa a versão escura do logo
-  const heroLogo = logoFor(platform, 'dark')
 
   const {
     register,
@@ -57,94 +53,64 @@ export function LoginPage() {
   const fieldErrors = isAppError(serverError) ? serverError.fieldErrors() : {}
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
-      <aside className="relative hidden overflow-hidden bg-brand-gradient p-10 text-white lg:flex lg:flex-col lg:justify-between">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_1px,transparent_1px)] [background-size:28px_28px]"
+    <AuthLayout title={t('auth.title')} subtitle={t('auth.subtitle')}>
+      {endReason && !serverError && (
+        <div role="status" className="mt-6 flex gap-2 rounded-lg border border-border bg-info-soft px-3 py-2.5 text-sm text-info-soft-fg">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>{endReason === 'expired' ? t('auth.sessionExpired') : t('auth.signedOut')}</span>
+        </div>
+      )}
+      {serverError && (
+        <div role="alert" className="mt-6 flex gap-2 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2.5 text-sm text-danger-soft-fg">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>
+            {isAppError(serverError) && serverError.code === 'ACCOUNT_LOCKED'
+              ? t('auth.lockedFor', { minutes: Math.max(1, Math.ceil(Number(serverError.details.retry_after_seconds ?? 60) / 60)) })
+              : errorMessage(serverError)}
+          </span>
+        </div>
+      )}
+
+      <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
+        <AppTextField
+          label={t('auth.email')}
+          type="email"
+          autoComplete="username"
+          inputMode="email"
+          leftIcon={<Mail />}
+          required
+          error={errors.email?.message ?? fieldErrors.email}
+          {...register('email')}
         />
-        <div className="relative flex items-center gap-2.5">
-          {heroLogo ? (
-            <img src={heroLogo} alt="" className="size-9 rounded-lg object-contain" />
-          ) : (
-            <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-              <DefaultBrandIcon className="size-5" />
-            </div>
+        <AppTextField
+          label={t('auth.password')}
+          type="password"
+          autoComplete="current-password"
+          leftIcon={<Lock />}
+          revealable
+          required
+          error={errors.password?.message ?? fieldErrors.password}
+          {...register('password')}
+        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Controller
+            control={control}
+            name="remember"
+            render={({ field }) => (
+              <AppCheckbox checked={field.value} onCheckedChange={field.onChange} label={t('auth.remember')} />
+            )}
+          />
+          {platform.passwordReset && (
+            <Link to="/forgot-password" className="rounded text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring">
+              {t('auth.forgotPassword')}
+            </Link>
           )}
-          <span className="text-lg font-semibold tracking-tight">{platform.name}</span>
         </div>
-        <div className="relative max-w-md">
-          <h2 className="text-3xl font-semibold leading-tight tracking-tight">{t('auth.heroTitle')}</h2>
-          <p className="mt-3 text-base text-white/80">{t('auth.heroSubtitle')}</p>
-        </div>
-        <p className="relative text-sm text-white/60">
-          © {new Date().getFullYear()} {platform.name}
-        </p>
-      </aside>
-
-      <main className="relative flex flex-col items-center justify-center px-4 py-10 sm:px-6">
-        <div className="absolute right-4 top-4">
-          <PreferencesQuickBar />
-        </div>
-        <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
-            <BrandMark />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">{t('auth.title')}</h1>
-          <p className="mt-1.5 text-sm text-muted">{t('auth.subtitle')}</p>
-
-          {endReason && !serverError && (
-            <div role="status" className="mt-6 flex gap-2 rounded-lg border border-border bg-info-soft px-3 py-2.5 text-sm text-info-soft-fg">
-              <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>{endReason === 'expired' ? t('auth.sessionExpired') : t('auth.signedOut')}</span>
-            </div>
-          )}
-          {serverError && (
-            <div role="alert" className="mt-6 flex gap-2 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2.5 text-sm text-danger-soft-fg">
-              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                {isAppError(serverError) && serverError.code === 'ACCOUNT_LOCKED'
-                  ? t('auth.lockedFor', { minutes: Math.max(1, Math.ceil(Number(serverError.details.retry_after_seconds ?? 60) / 60)) })
-                  : errorMessage(serverError)}
-              </span>
-            </div>
-          )}
-
-          <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
-            <AppTextField
-              label={t('auth.email')}
-              type="email"
-              autoComplete="username"
-              inputMode="email"
-              leftIcon={<Mail />}
-              required
-              error={errors.email?.message ?? fieldErrors.email}
-              {...register('email')}
-            />
-            <AppTextField
-              label={t('auth.password')}
-              type="password"
-              autoComplete="current-password"
-              leftIcon={<Lock />}
-              revealable
-              required
-              error={errors.password?.message ?? fieldErrors.password}
-              {...register('password')}
-            />
-            <Controller
-              control={control}
-              name="remember"
-              render={({ field }) => (
-                <AppCheckbox checked={field.value} onCheckedChange={field.onChange} label={t('auth.remember')} />
-              )}
-            />
-            <AppButton type="submit" size="lg" block loading={login.isPending}>
-              {t('auth.submit')}
-            </AppButton>
-          </form>
-          <p className="mt-6 text-center text-xs text-subtle">{t('auth.securityNote')}</p>
-        </div>
-      </main>
-    </div>
+        <AppButton type="submit" size="lg" block loading={login.isPending}>
+          {t('auth.submit')}
+        </AppButton>
+      </form>
+      <p className="mt-6 text-center text-xs text-subtle">{t('auth.securityNote')}</p>
+    </AuthLayout>
   )
 }

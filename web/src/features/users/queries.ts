@@ -19,6 +19,12 @@ export function useUsersList(query: ListQuery, enabled = true) {
   })
 }
 
+/** Reenvia o convite por e-mail (quem ainda não entrou). */
+export function useResendInvite() {
+  const { users } = useRepositories()
+  return useMutation({ mutationFn: (id: string) => users.resendInvite(id) })
+}
+
 export function useCreateUser() {
   const { users } = useRepositories()
   const queryClient = useQueryClient()

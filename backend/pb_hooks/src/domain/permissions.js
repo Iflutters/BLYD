@@ -46,6 +46,8 @@ const PERMISSIONS = Object.freeze([
   { code: 'permissions.manage', module: 'settings' },
   // Configurador geral: segurança e identidade da plataforma (só Admin por padrão)
   { code: 'platform.manage', module: 'settings' },
+  // Integrações: e-mail, webhooks e tokens de API de todos (só Admin por padrão)
+  { code: 'integrations.manage', module: 'settings' },
 ])
 
 const ROLE_CODES = Object.freeze({

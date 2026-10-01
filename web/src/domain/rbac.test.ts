@@ -12,6 +12,7 @@ const user = (id: string, status: User['status'] = 'active'): User => ({
   roleId: 'r',
   locale: 'pt-BR',
   theme: 'system',
+  emailNotifications: true,
   createdAt: null,
   updatedAt: null,
   lastLoginAt: null,

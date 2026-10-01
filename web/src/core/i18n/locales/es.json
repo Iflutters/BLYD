@@ -197,7 +197,11 @@
     "PLAN_FILE_NOT_FOUND": "Archivo no encontrado.",
     "PLAN_JOURNAL_NOT_FOUND": "Registro del diario no encontrado.",
     "PLAN_ISSUE_NOT_FOUND": "Problema no encontrado.",
-    "PLAN_COLUMN_NOT_FOUND": "Columna no encontrada."
+    "PLAN_COLUMN_NOT_FOUND": "Columna no encontrada.",
+    "EMAIL_NOT_CONFIGURED": "El envío de correo no está configurado. Pídelo al administrador (Configuración → Integraciones).",
+    "EMAIL_SEND_FAILED": "El servidor de correo rechazó o no respondió.",
+    "RESET_TOKEN_INVALID": "Este enlace ya no vale: venció o ya se usó. Pide otro.",
+    "USER_ALREADY_ACTIVE": "Esta persona ya entró en la plataforma; no hay invitación para reenviar."
   },
   "nav": {
     "main": "Navegación principal",
@@ -227,7 +231,8 @@
     "timeline": "Cronograma",
     "docs": "Documentación",
     "management": "Gestión de proyectos",
-    "general": "General"
+    "general": "General",
+    "integrations": "Integraciones"
   },
   "commandPalette": {
     "title": "Paleta de comandos",
@@ -276,7 +281,32 @@
     "logout": "Cerrar sesión",
     "signedOut": "Cerró sesión de forma segura. ¡Hasta pronto!",
     "lockedFor_one": "Demasiados intentos de inicio de sesión para esta cuenta. Por seguridad, intente de nuevo en {{minutes}} minuto.",
-    "lockedFor_other": "Demasiados intentos de inicio de sesión para esta cuenta. Por seguridad, intente de nuevo en {{minutes}} minutos."
+    "lockedFor_other": "Demasiados intentos de inicio de sesión para esta cuenta. Por seguridad, intente de nuevo en {{minutes}} minutos.",
+    "forgotPassword": "Olvidé mi contraseña",
+    "backToLogin": "Volver al inicio de sesión",
+    "forgot": {
+      "title": "Olvidé mi contraseña",
+      "subtitle": "Indica tu correo y te enviaremos un enlace para crear una contraseña nueva.",
+      "submit": "Enviar enlace",
+      "sent": "Si {{email}} tiene una cuenta, el enlace llega en instantes. Vale 60 minutos. Revisa también la carpeta de spam."
+    },
+    "reset": {
+      "title": "Nueva contraseña",
+      "inviteTitle": "Crea tu contraseña",
+      "invalidTitle": "Enlace no válido",
+      "hello": "Hola, {{name}}.",
+      "password": "Nueva contraseña",
+      "submit": "Guardar nueva contraseña",
+      "createSubmit": "Crear contraseña",
+      "changed": "Contraseña cambiada. Inicia sesión con la nueva.",
+      "created": "Contraseña creada. Inicia sesión para empezar.",
+      "requestNew": "Pedir un enlace nuevo",
+      "states": {
+        "used": "Este enlace ya se usó. Cada enlace vale una vez.",
+        "expired": "Este enlace venció. Pide uno nuevo.",
+        "invalid": "Este enlace no es válido. Revisa que copiaste la dirección completa."
+      }
+    }
   },
   "account": {
     "menu": "Menú de la cuenta",
@@ -311,7 +341,12 @@
     "revokeOthersTitle_other": "¿Cerrar {{count}} otras sesiones?",
     "revokeOthersDescription": "Todos los demás dispositivos se desconectarán. Esta sesión sigue activa.",
     "otherSessionsRevoked_one": "{{count}} sesión cerrada.",
-    "otherSessionsRevoked_other": "{{count}} sesiones cerradas."
+    "otherSessionsRevoked_other": "{{count}} sesiones cerradas.",
+    "emailNotifications": "Notificaciones por correo",
+    "emailNotificationsDescription": "Menciones, tareas asignadas, comentarios y plazos también llegan a tu correo.",
+    "emailNotificationsToggle": "Recibir en {{email}}",
+    "emailNotificationsOn": "Notificaciones por correo activadas.",
+    "emailNotificationsOff": "Notificaciones por correo desactivadas."
   },
   "dashboard": {
     "goodMorning": "Buenos días, {{name}}",
@@ -394,7 +429,12 @@
     "tabs": {
       "details": "Detalles",
       "history": "Historial"
-    }
+    },
+    "sendInvite": "Enviar invitación por correo",
+    "sendInviteHint": "La persona recibe un enlace para crear su propia contraseña (vale 7 días).",
+    "invited": "Invitación enviada a {{email}}.",
+    "resendInvite": "Reenviar invitación",
+    "inviteResent": "Invitación reenviada a {{email}}."
   },
   "roles": {
     "title": "Perfiles",
@@ -484,7 +524,8 @@
       "plan.view": "Ver el tablero de gestión",
       "plan.edit": "Editar elementos del tablero",
       "plan.manage": "Gestionar grupos y etiquetas del tablero",
-      "platform.manage": "Configurar la plataforma (seguridad e identidad)"
+      "platform.manage": "Configurar la plataforma (seguridad e identidad)",
+      "integrations.manage": "Configurar integraciones (correo, webhooks y tokens)"
     }
   },
   "audit": {
@@ -524,7 +565,8 @@
       "doc_page": "Página de documentación",
       "plan_item": "Elemento del tablero",
       "platform_settings": "Configuración de la plataforma",
-      "audit_log": "Historial de auditoría"
+      "audit_log": "Historial de auditoría",
+      "email_settings": "Configuración de correo"
     },
     "fields": {
       "name": "Nombre",
@@ -639,7 +681,18 @@
       "slot": "Imagen",
       "removed": "Registros eliminados",
       "retention_months": "Retención (meses)",
-      "before": "Anteriores a"
+      "before": "Anteriores a",
+      "enabled": "Activado",
+      "host": "Servidor",
+      "port": "Puerto",
+      "username": "Usuario",
+      "tls": "TLS",
+      "sender_name": "Nombre del remitente",
+      "sender_address": "Correo del remitente",
+      "app_url": "Dirección de la plataforma",
+      "password_changed": "Contraseña cambiada",
+      "to": "Para",
+      "resent": "Reenvío"
     },
     "actions": {
       "auth.login": "Inició sesión",
@@ -756,7 +809,13 @@
       "platform_settings.update": "Configuración de la plataforma modificada",
       "platform_settings.branding_update": "Logo o ícono enviado",
       "platform_settings.branding_remove": "Logo o ícono eliminado",
-      "audit_log.purge": "Historial antiguo eliminado (retención)"
+      "audit_log.purge": "Historial antiguo eliminado (retención)",
+      "email_settings.update": "Configuración de correo modificada",
+      "email_settings.test_sent": "Correo de prueba enviado",
+      "auth.password_reset_requested": "Restablecimiento de contraseña solicitado",
+      "auth.password_reset": "Contraseña restablecida por el enlace del correo",
+      "auth.invite_accepted": "Invitación aceptada (contraseña creada)",
+      "user.invited": "Invitación enviada"
     }
   },
   "projects": {
@@ -2891,6 +2950,72 @@
       "ran_one": "{{count}} registro eliminado.",
       "ran_other": "{{count}} registros eliminados.",
       "ran_zero": "Nada que eliminar: el historial está dentro del plazo."
+    }
+  },
+  "integrations": {
+    "title": "Integraciones",
+    "description": "Correo de la plataforma — y, pronto, webhooks y tokens de API.",
+    "tabs": {
+      "email": "Correo"
+    },
+    "email": {
+      "smtpTitle": "Servidor de correo (SMTP)",
+      "smtpDescription": "Se usa para \"Olvidé mi contraseña\", invitaciones y notificaciones por correo.",
+      "enabled": "Enviar correos",
+      "enabledHint": "Desactivado, no se envía nada y el inicio de sesión no muestra \"Olvidé mi contraseña\".",
+      "host": "Servidor",
+      "port": "Puerto",
+      "tls": "TLS directo (puerto 465)",
+      "tlsHint": "Desactivado, usa STARTTLS cuando el servidor lo ofrece (puerto 587).",
+      "username": "Usuario",
+      "password": "Contraseña",
+      "passwordSaved": "•••••••• (guardada)",
+      "passwordKeep": "Déjala en blanco para mantener la contraseña guardada.",
+      "removePassword": "Quitar contraseña guardada",
+      "passwordRemoved": "Contraseña quitada.",
+      "senderName": "Nombre del remitente",
+      "senderAddress": "Correo del remitente",
+      "appUrl": "Dirección de la plataforma",
+      "appUrlHint": "Se usa en los enlaces de los correos (ej.: https://kamban.empresa.com).",
+      "saved": "Configuración de correo guardada.",
+      "testTitle": "Probar envío",
+      "testDescription": "Envía un mensaje de prueba a {{email}} con la configuración guardada.",
+      "testSend": "Enviar correo de prueba",
+      "testDisabled": "Activa y guarda el envío para probar.",
+      "testSent": "Correo de prueba enviado a {{email}}.",
+      "testFailed": "El servidor de correo rechazó: {{reason}}",
+      "outboxTitle": "Cola de envío",
+      "outboxDescription": "Los correos salen en hasta 1 minuto; las fallas se reintentan hasta 5 veces.",
+      "outboxEmpty": "Ningún correo todavía",
+      "flush": "Enviar ahora",
+      "flushed": "Cola procesada: {{sent}} enviado(s), {{failed}} con falla.",
+      "flushBusy": "La cola ya se está enviando.",
+      "flushSkipped": "El envío de correo está desactivado.",
+      "counts": {
+        "pending_one": "{{count}} en cola",
+        "pending_other": "{{count}} en cola",
+        "sent_one": "{{count}} enviado",
+        "sent_other": "{{count}} enviados",
+        "failed_one": "{{count}} con falla",
+        "failed_other": "{{count}} con falla"
+      },
+      "outbox": {
+        "to": "Para",
+        "kind": "Tipo",
+        "status": "Estado",
+        "created": "Creado"
+      },
+      "kinds": {
+        "notification": "Notificación",
+        "password_reset": "Restablecer contraseña",
+        "invite": "Invitación",
+        "test": "Prueba"
+      },
+      "statuses": {
+        "pending": "En cola",
+        "sent": "Enviado",
+        "failed": "Falló"
+      }
     }
   }
 }

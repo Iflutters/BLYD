@@ -19,8 +19,18 @@ const RULES = [
   { label: '/api/', audience: '', duration: 10, maxRequests: 50000 },
 ]
 
-// identidade da plataforma (Configurador geral): a tela de login e a aba do navegador precisam dela sem sessão
-const PUBLIC = ['GET /api/v1/health', 'GET /api/v1/openapi.json', 'POST /api/v1/auth/login', 'GET /api/v1/platform', 'GET /api/v1/platform/branding/{slot}']
+const PUBLIC = [
+  'GET /api/v1/health',
+  'GET /api/v1/openapi.json',
+  'POST /api/v1/auth/login',
+  // identidade da plataforma (Configurador geral): a tela de login e a aba do navegador precisam dela sem sessão
+  'GET /api/v1/platform',
+  'GET /api/v1/platform/branding/{slot}',
+  // links de senha por e-mail: quem esqueceu a senha não tem sessão
+  'POST /api/v1/auth/password-reset/request',
+  'GET /api/v1/auth/password-reset/check',
+  'POST /api/v1/auth/password-reset/confirm',
+]
 const MUTATIONS = ['POST', 'PUT', 'PATCH', 'DELETE']
 
 function registeredRoutes() {
