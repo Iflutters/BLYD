@@ -37,7 +37,9 @@ Deve crescer depois sem reescrever a arquitetura. Não é só um quadro Kanban: 
 
 **Webhooks (2026-10-01) ✅:** Integrações → Webhooks (`integrations.manage`): catálogo público de eventos (nomes do histórico; `grupo.*`), entrega criada no próprio `auditRepository.record` (decorador `withWebhooks`), fila `webhook_deliveries` com rotina por minuto, POST assinado (HMAC-SHA256 de `timestamp.corpo`), novas tentativas 1/5/30/120/720 min, desligamento após 20 falhas, SSRF (https; metadados bloqueados; http/loopback só fora de produção). Regras §18; ADR-037.
 
-**Tempo real (2026-10-01) ✅:** SSE do PocketBase (`/api/realtime`) com tópicos `project:{id}`/`user:{id}`; assinatura pela sessão + CSRF em `onRealtimeSubscribeRequest`; avisos só com identificadores saindo de `onRecordAfter*Success`; web invalida o cache (`useLiveProject`, `useLiveNotifications`). Regras §19; ADR-039.
+**Tempo real (2026-10-01) ✅:** SSE do PocketBase (`/api/realtime`) com tópicos `project:{id}`/`user:{id}`; assinatura pela sessão + CSRF em `onRealtimeSubscribeRequest`; avisos só com identificadores saindo de `onRecordAfter*Success`; web invalida o cache (`useLiveProject`, `useLiveNotifications`; no máximo uma busca a cada 2,5 s por tela; polling de 5 min com o tempo real ligado; ressincroniza ao reconectar). Regras §19; ADR-039.
+
+**Desempenho e duas edições (2026-10-01):** fase 0 ✅ (pool de 60 VMs do JS, quadro do Kanban com consulta enxuta, polling como rede de segurança, limite de 2,5 s por tela; vazão útil 3×). Edições **Local** (PocketBase no instalador, sem configuração) e **Supabase** (URL + chave secreta + conexão do Postgres; Cloud ou auto-hospedado), escolhidas na instalação e travadas. Plano em plano-migracao-supabase.md; ADR-040.
 
 ## 2. Princípios fundamentais (obrigatórios)
 

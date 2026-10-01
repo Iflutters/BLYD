@@ -1,26 +1,36 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, render } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { act, render, renderHook } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { RealtimeClient, RealtimeEvent, RealtimeListener } from '@/core/realtime/realtime-client'
+import type { RealtimeClient, RealtimeEvent, RealtimeListener, RealtimeStatus } from '@/core/realtime/realtime-client'
 import { RealtimeContext } from './realtime-context'
-import { useLiveProject } from './use-live'
+import { LIVE_MIN_INTERVAL_MS, LIVE_SAFETY_NET_MS, useLiveProject, useLiveRefetchInterval, useRealtimeResync } from './use-live'
 
 afterEach(() => vi.useRealTimers())
 
-function fakeRealtime() {
+function fakeRealtime(initial: RealtimeStatus = 'live') {
   const listeners = new Map<string, Set<RealtimeListener>>()
+  const statusListeners = new Set<(status: RealtimeStatus) => void>()
+  let status = initial
   const client: RealtimeClient = {
     subscribe(topic, listener) {
       if (!listeners.has(topic)) listeners.set(topic, new Set())
       listeners.get(topic)!.add(listener)
       return () => listeners.get(topic)?.delete(listener)
     },
-    getStatus: () => 'live',
-    onStatus: () => () => {},
+    getStatus: () => status,
+    onStatus: (fn) => {
+      statusListeners.add(fn)
+      return () => statusListeners.delete(fn)
+    },
     close: () => {},
   }
   const emit = (topic: string, event: RealtimeEvent) => listeners.get(topic)?.forEach((fn) => fn(event))
-  return { client, emit, listeners }
+  const setStatus = (next: RealtimeStatus) => {
+    status = next
+    statusListeners.forEach((fn) => fn(next))
+  }
+  return { client, emit, listeners, setStatus }
 }
 
 function Live({ projectId }: { projectId?: string }) {
@@ -87,6 +97,41 @@ describe('useLiveProject', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['plan', 'p1'] })
   })
 
+  it('equipe mexendo sem parar: no máximo uma busca a cada 2,5 s por tela (a primeira sai na hora)', async () => {
+    vi.useFakeTimers()
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue()
+    const realtime = fakeRealtime()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RealtimeContext.Provider value={realtime.client}>
+          <Live projectId="p1" />
+        </RealtimeContext.Provider>
+      </QueryClientProvider>,
+    )
+    const event = (id: string): RealtimeEvent => ({ collection: 'plan_items', action: 'update', id, projectId: 'p1', taskId: null, itemId: id })
+    const boardFetches = () => invalidate.mock.calls.filter(([filters]) => JSON.stringify(filters?.queryKey) === JSON.stringify(['plan', 'p1'])).length
+    act(() => realtime.emit('project:p1', event('i1')))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300)
+    })
+    expect(boardFetches()).toBe(1)
+    // novos avisos logo depois esperam a janela de 2,5 s e saem juntos numa busca só
+    act(() => realtime.emit('project:p1', event('i2')))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000)
+    })
+    act(() => realtime.emit('project:p1', event('i3')))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800)
+    })
+    expect(boardFetches()).toBe(1)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(LIVE_MIN_INTERVAL_MS)
+    })
+    expect(boardFetches()).toBe(2)
+  })
+
   it('sem projeto não assina nada', () => {
     const realtime = fakeRealtime()
     render(
@@ -97,5 +142,35 @@ describe('useLiveProject', () => {
       </QueryClientProvider>,
     )
     expect(realtime.listeners.size).toBe(0)
+  })
+})
+
+describe('rede de segurança e reconexão', () => {
+  function wrapper(realtime: RealtimeClient, queryClient = new QueryClient()) {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeContext.Provider value={realtime}>{children}</RealtimeContext.Provider>
+      </QueryClientProvider>
+    )
+  }
+
+  it('com o tempo real ligado a consulta periódica vira rede de segurança de 5 min; sem ele, volta ao intervalo curto', () => {
+    const realtime = fakeRealtime('live')
+    const { result } = renderHook(() => useLiveRefetchInterval(15_000), { wrapper: wrapper(realtime.client) })
+    expect(result.current).toBe(LIVE_SAFETY_NET_MS)
+    act(() => realtime.setStatus('reconnecting'))
+    expect(result.current).toBe(15_000)
+  })
+
+  it('a conexão caiu e voltou: busca de novo o que está na tela (os avisos do intervalo se perderam)', () => {
+    const queryClient = new QueryClient()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue()
+    const realtime = fakeRealtime('connecting')
+    renderHook(() => useRealtimeResync(), { wrapper: wrapper(realtime.client, queryClient) })
+    act(() => realtime.setStatus('live'))
+    expect(invalidate).not.toHaveBeenCalled()
+    act(() => realtime.setStatus('reconnecting'))
+    act(() => realtime.setStatus('live'))
+    expect(invalidate).toHaveBeenCalledTimes(1)
   })
 })

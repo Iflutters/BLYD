@@ -11,4 +11,5 @@ if [ -n "$KAMBAN_ADMIN_EMAIL" ] && [ -n "$KAMBAN_ADMIN_PASSWORD" ]; then
 fi
 
 # shellcheck disable=SC2086
-exec /app/pocketbase serve --http="${KAMBAN_HTTP:-0.0.0.0:8090}" $ARGS
+# pool de VMs do JS (padrão do PocketBase: 15) — ver docs/deployment.md
+exec /app/pocketbase serve --http="${KAMBAN_HTTP:-0.0.0.0:8090}" --hooksPool="${KAMBAN_HOOKS_POOL:-60}" $ARGS

@@ -33,6 +33,22 @@ function pbArgs(env) {
   ]
 }
 
+/**
+ * Tamanho do pool de VMs do JS no `serve` (padrão do PocketBase: 15). Cada requisição ocupa uma VM e
+ * cada gravação observada pelo tempo real ocupa outra; com o pool esgotado a vazão cai — 60
+ * triplica a vazão útil no teste de carga (docs/plano-migracao-supabase.md §3). KAMBAN_HOOKS_POOL ajusta.
+ */
+const DEFAULT_HOOKS_POOL = 60
+
+function hooksPool(env) {
+  const value = Number(env.KAMBAN_HOOKS_POOL)
+  return Number.isInteger(value) && value >= 1 && value <= 500 ? value : DEFAULT_HOOKS_POOL
+}
+
+function serveArgs(env) {
+  return [`--hooksPool=${hooksPool(env)}`]
+}
+
 function assertBinary() {
   if (!fs.existsSync(BIN)) {
     console.error('PocketBase não encontrado. Rode: npm run setup')
@@ -40,4 +56,4 @@ function assertBinary() {
   }
 }
 
-module.exports = { ROOT, BIN, loadEnv, pbArgs, assertBinary }
+module.exports = { ROOT, BIN, DEFAULT_HOOKS_POOL, loadEnv, pbArgs, serveArgs, hooksPool, assertBinary }

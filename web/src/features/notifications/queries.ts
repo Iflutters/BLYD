@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRepositories } from '@/presentation/common/repositories-context'
+import { useLiveRefetchInterval } from '@/presentation/common/use-live'
 
 export const notificationKeys = {
   all: ['notifications'] as const,
@@ -8,15 +9,16 @@ export const notificationKeys = {
   list: (unreadOnly: boolean) => ['notifications', 'list', unreadOnly] as const,
 }
 
-/** Verifica novas notificações a cada 30 s e ao voltar para a aba. */
+/** Sem o tempo real ligado, verifica novas notificações a cada 30 s (e sempre ao voltar para a aba). */
 const POLL_MS = 30_000
 
 export function useUnreadCount() {
   const { notifications } = useRepositories()
+  const refreshMs = useLiveRefetchInterval(POLL_MS)
   return useQuery({
     queryKey: notificationKeys.unread,
     queryFn: () => notifications.unreadCount(),
-    refetchInterval: POLL_MS,
+    refetchInterval: refreshMs,
     refetchOnWindowFocus: true,
   })
 }

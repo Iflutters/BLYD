@@ -21,7 +21,7 @@ import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { Sidebar } from '@/presentation/navigation/Sidebar'
 import { CommandPalette } from '@/presentation/navigation/CommandPalette'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
-import { useLiveNotifications, useRealtimeStatus } from '@/presentation/common/use-live'
+import { useLiveNotifications, useRealtimeResync, useRealtimeStatus } from '@/presentation/common/use-live'
 import { findNavTrail, visibleNavItems } from '@/presentation/navigation/nav-items'
 
 /** Layout autenticado: sidebar, topbar, conteúdo e command palette. */
@@ -33,6 +33,7 @@ export function AppShell() {
   const setMobileNavOpen = useUiStore((s) => s.setMobileNavOpen)
   const items = visibleNavItems(current?.permissions ?? [])
   useLiveNotifications(current?.user.id)
+  useRealtimeResync()
 
   return (
     <div className="flex h-dvh overflow-hidden bg-bg">

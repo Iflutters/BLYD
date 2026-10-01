@@ -879,6 +879,75 @@ function createTaskRepository(app) {
     }
   }
 
+  /** Linha do quadro: as colunas do cartão (sem a descrição); -0 = número com casas decimais. */
+  const BOARD_ROW = {
+    id: '',
+    project_id: '',
+    number: 0,
+    code: '',
+    title: '',
+    task_type_id: '',
+    status_id: '',
+    priority_id: '',
+    creator_id: '',
+    assignee_id: '',
+    reporter_id: '',
+    parent_task_id: '',
+    forked_from_task_id: '',
+    sprint_id: '',
+    start_date: '',
+    due_date: '',
+    started_at: '',
+    completed_at: '',
+    estimated_hours: -0,
+    actual_hours: -0,
+    checklist: '',
+    position: -0,
+    created: '',
+    updated: '',
+  }
+  const BOARD_COLUMNS = Object.keys(BOARD_ROW).map((name) => (name === 'checklist' ? "COALESCE(checklist, '') AS checklist" : name))
+
+  /** Mesma entidade de `toEntity`, a partir da linha enxuta (a descrição não vai ao quadro). */
+  function boardRowToEntity(row) {
+    const hours = (value) => (value > 0 ? value : null)
+    let checklist = []
+    if (row.checklist && row.checklist !== 'null') {
+      try {
+        checklist = JSON.parse(row.checklist) || []
+      } catch (_) {
+        checklist = []
+      }
+    }
+    return {
+      id: row.id,
+      projectId: row.project_id,
+      number: row.number,
+      code: row.code,
+      title: row.title,
+      description: '',
+      typeId: row.task_type_id,
+      statusId: row.status_id,
+      priorityId: row.priority_id,
+      creatorId: row.creator_id || null,
+      assigneeId: row.assignee_id || null,
+      reporterId: row.reporter_id || null,
+      parentTaskId: row.parent_task_id || null,
+      forkedFromTaskId: row.forked_from_task_id || null,
+      sprintId: row.sprint_id || null,
+      startDate: toDate(row.start_date),
+      dueDate: toDate(row.due_date),
+      startedAt: toDate(row.started_at),
+      completedAt: toDate(row.completed_at),
+      estimatedHours: hours(row.estimated_hours),
+      actualHours: hours(row.actual_hours),
+      checklist,
+      position: row.position,
+      createdAt: toDate(row.created),
+      updatedAt: toDate(row.updated),
+    }
+  }
+
   const FIELDS = {
     projectId: 'project_id',
     number: 'number',
@@ -964,11 +1033,19 @@ function createTaskRepository(app) {
     listByProject(projectId, limit) {
       return app.findRecordsByFilter(COLLECTION, 'project_id = {:p}', 'number', limit || 0, 0, { p: projectId }).map(toEntity)
     },
+    // consulta enxuta (só as colunas do cartão, sem montar o registro completo): o quadro é a chamada
+    // mais frequente e a mais pesada em projetos grandes — ver docs/plano-migracao-supabase.md §3 e §4
     listForBoard(projectId, statusId, options) {
-      const sort = options.closed ? '-completed_at,-updated' : 'position,number'
-      return app
-        .findRecordsByFilter(COLLECTION, 'project_id = {:p} && status_id = {:s}', sort, options.limit, 0, { p: projectId, s: statusId })
-        .map(toEntity)
+      const rows = arrayOf(new DynamicModel(BOARD_ROW))
+      app
+        .db()
+        .select(...BOARD_COLUMNS)
+        .from(COLLECTION)
+        .where($dbx.hashExp({ project_id: projectId, status_id: statusId }))
+        .orderBy(...(options.closed ? ['completed_at DESC', 'updated DESC'] : ['position ASC', 'number ASC']))
+        .limit(options.limit)
+        .all(rows)
+      return rows.map(boardRowToEntity)
     },
 
     /** Backlog: tarefas nos status indicados, em ordem manual (limit 0 = todas). */

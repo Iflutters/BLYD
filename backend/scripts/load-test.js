@@ -6,10 +6,12 @@
  * Cada "usuário virtual" repete, sem pausa, uma mistura parecida com o uso real: Kanban, listas,
  * tarefa, comentários, sino, quadro da Gestão e ~10% de escritas (editar tarefa, comentar).
  *
- * Variáveis: LOAD_LEVELS=5,10,20,40,80  LOAD_SECONDS=20  LOAD_TASKS=400  KAMBAN_HOOKS_POOL (repassado ao PocketBase).
+ * Variáveis: LOAD_LEVELS=5,10,20,40,80  LOAD_SECONDS=20  LOAD_TASKS=400  KAMBAN_HOOKS_POOL (repassado ao PocketBase;
+ * padrão 60, o mesmo da produção).
  */
 
 const { startPocketBase, createClient } = require('../tests/support/pb-harness')
+const { hooksPool } = require('./env')
 
 const LEVELS = (process.env.LOAD_LEVELS || '5,10,20,40,80').split(',').map(Number)
 const SECONDS = Number(process.env.LOAD_SECONDS || 20)
@@ -92,8 +94,10 @@ async function main() {
       return MIX[0]
     }
 
-    // aquecimento (as VMs do JS carregam os módulos na primeira chamada)
-    await pool(Array.from({ length: 60 }, (_, i) => i), 15, async () => {
+    // aquecimento: cada VM do pool carrega os módulos na primeira chamada que atende; passar por todas
+    // mede o servidor já no ar há algum tempo (e não o custo de partida de cada VM)
+    const warm = hooksPool(process.env)
+    await pool(Array.from({ length: warm * 6 }, (_, i) => i), warm, async () => {
       const [, , fn] = choose()
       await fn(pick(people).client)
     })

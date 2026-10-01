@@ -50,8 +50,10 @@ KAMBAN_ENV=production ./bin/pocketbase serve \
   --http=127.0.0.1:8090 \
   --dir=/var/lib/kamban/pb_data \
   --hooksDir=./pb_hooks --migrationsDir=./pb_migrations --publicDir=./pb_public \
+  --hooksPool=60 \
   --origins=https://kamban.suaempresa.com
 ```
+- **`--hooksPool`** (padrão do PocketBase: 15): VMs do JavaScript prontas para atender. Cada requisição ocupa uma e cada gravação observada pelo tempo real ocupa outra; com o pool esgotado a vazão **cai**. Com 60 a vazão útil triplica no teste de carga ([plano-migracao-supabase.md](plano-migracao-supabase.md#3-capacidade-medida)). `npm run dev`, os testes e a imagem Docker já usam 60 (`KAMBAN_HOOKS_POOL` ajusta).
 - Coloque um proxy reverso com **HTTPS** (Caddy/Nginx) na frente e configure *Trusted proxy* no painel.
 - Migrations rodam automaticamente no `serve`.
 - Backup e atualização: ver abaixo.
