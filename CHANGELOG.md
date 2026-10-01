@@ -20,6 +20,7 @@ Todas as mudanças relevantes do projeto ficam aqui. Formato baseado em [Keep a 
 
 ### Corrigido
 - **Muitas pessoas conectadas deixavam o servidor lento:** cada aba aberta com o tempo real prendia VMs do JavaScript por causa de middlewares globais; com algumas dezenas de abas o pool acabava e as respostas passavam de segundos (500 leitores da documentação: 47 s). Os middlewares agora ficam só nas rotas da API e na rota do frontend, e um sinal de vida a cada 3 min evita que o PocketBase derrube as conexões paradas a cada 5 min. Com 500 leitores e 10 pessoas trabalhando: p95 de 44 ms.
+- **Versão e copyright** no rodapé do menu lateral (a versão vem do `package.json` no build; com o menu recolhido, só a versão).
 - **Kanban:** ao passar o mouse, a borda do cartão acende na cor da marca com um halo suave (animação de 200 ms); o cartão sendo arrastado fica destacado.
 - **Planejamento mais rápido:** o backlog usa a mesma consulta enxuta do Kanban e o formulário de tarefa não busca dados enquanto está fechado.
 - Relatórios da Gestão de projetos: o nome do recurso não fica mais cortado (o detalhe de pendentes e horas foi para uma linha própria).

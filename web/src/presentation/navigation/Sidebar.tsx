@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { env } from '@/core/config/env'
 import { cn } from '@/core/utils/cn'
 import { AppBadge, AppTooltip } from '@/presentation/components'
 import { useUiStore } from '@/presentation/state/ui-store'
@@ -25,6 +26,29 @@ export function BrandMark({ collapsed }: { collapsed?: boolean }) {
 const linkBase =
   'group flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-medium transition-colors ' +
   'text-muted hover:bg-surface-2 hover:text-fg aria-[current=page]:bg-primary-soft aria-[current=page]:text-primary-soft-fg'
+
+/** Versão do produto e copyright no rodapé do menu (recolhido: só a versão, com o resto na dica). */
+function SidebarFooterInfo({ collapsed }: { collapsed: boolean }) {
+  const { t } = useTranslation()
+  const { name } = usePlatformInfo()
+  const version = t('nav.version', { version: env.appVersion })
+  const copyright = t('nav.copyright', { year: new Date().getFullYear(), name })
+  if (collapsed) {
+    return (
+      <AppTooltip content={`${version} · ${copyright}`} side="right">
+        <p className="mt-1 text-center text-[10px] tabular-nums text-subtle">v{env.appVersion}</p>
+      </AppTooltip>
+    )
+  }
+  return (
+    <div className="mt-1 px-2.5 pb-1 text-[11px] leading-4 text-subtle">
+      <p className="tabular-nums">{version}</p>
+      <p className="truncate" title={copyright}>
+        {copyright}
+      </p>
+    </div>
+  )
+}
 
 function PhaseBadge({ phase }: { phase?: number }) {
   const { t } = useTranslation()
@@ -126,8 +150,8 @@ export function Sidebar({ items, collapsed, onNavigate, showCollapseToggle = tru
           })}
         </ul>
       </nav>
-      {showCollapseToggle && (
-        <div className={cn('border-t border-border p-2', collapsed && 'flex justify-center')}>
+      <div className={cn('border-t border-border p-2', collapsed && 'flex flex-col items-center')}>
+        {showCollapseToggle && (
           <button
             type="button"
             onClick={toggleSidebar}
@@ -137,8 +161,9 @@ export function Sidebar({ items, collapsed, onNavigate, showCollapseToggle = tru
             {collapsed ? <PanelLeftOpen className="size-[18px]" /> : <PanelLeftClose className="size-[18px]" />}
             {!collapsed && <span>{t('nav.collapse')}</span>}
           </button>
-        </div>
-      )}
+        )}
+        <SidebarFooterInfo collapsed={collapsed} />
+      </div>
     </div>
   )
 }

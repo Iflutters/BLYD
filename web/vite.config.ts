@@ -1,13 +1,17 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const API_TARGET = process.env.KAMBAN_API_TARGET ?? 'http://127.0.0.1:8090'
+// versão mostrada na tela (rodapé do menu): a do package.json, no build; VITE_APP_VERSION sobrescreve
+const APP_VERSION = process.env.VITE_APP_VERSION || (JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }).version
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

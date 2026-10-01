@@ -234,6 +234,8 @@
     "soon": "Pronto",
     "expand": "Expandir menú",
     "collapse": "Contraer menú",
+    "version": "Versión {{version}}",
+    "copyright": "© {{year}} {{name}}",
     "openMenu": "Abrir menú",
     "audit": "Auditoría",
     "planning": "Planificación",
