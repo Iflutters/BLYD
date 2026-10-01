@@ -773,7 +773,7 @@ export function toPlanColumn(dto: PlanColumnDto): PlanColumn {
 
 export function toPlatformInfo(dto: PlatformInfoDto): PlatformInfo {
   return {
-    name: dto.name || 'KAMBAN',
+    name: dto.name || 'BLYD Sync',
     logoLightUrl: dto.logo_light_url ?? null,
     logoDarkUrl: dto.logo_dark_url ?? null,
     faviconUrl: dto.favicon_url ?? null,

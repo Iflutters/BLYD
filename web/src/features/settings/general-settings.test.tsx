@@ -22,7 +22,7 @@ const SETTINGS: PlatformSettings = {
     passwordMinLength: 10,
     passwordRequireMixedCase: false,
     passwordRequireSymbol: false,
-    platformName: 'KAMBAN',
+    platformName: 'BLYD Sync',
   },
   defaults: {
     auditRetentionMonths: 3,
@@ -32,7 +32,7 @@ const SETTINGS: PlatformSettings = {
     passwordMinLength: 10,
     passwordRequireMixedCase: false,
     passwordRequireSymbol: false,
-    platformName: 'KAMBAN',
+    platformName: 'BLYD Sync',
   },
   limits: {
     lockoutThreshold: { min: 3, max: 20 },
@@ -60,7 +60,7 @@ describe('Configurações gerais', () => {
   it('mostra os blocos com os valores e o resumo do bloqueio; salva só o que mudou', async () => {
     const { updateSettings } = setup()
     const name = await screen.findByLabelText(/^Nome da plataforma/)
-    expect(name).toHaveValue('KAMBAN')
+    expect(name).toHaveValue('BLYD Sync')
     expect(screen.getByText(/Depois de 5 tentativas erradas a conta fica bloqueada por 5 min/)).toBeInTheDocument()
     expect(screen.getByText('Letras e números são sempre exigidos.')).toBeInTheDocument()
 

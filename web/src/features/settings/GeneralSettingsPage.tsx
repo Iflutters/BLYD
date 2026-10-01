@@ -7,6 +7,7 @@ import { Eraser, History, KeyRound, Save, ShieldAlert, Trash2, Type } from 'luci
 import { isAppError } from '@/core/errors/app-error'
 import {
   BRANDING_SLOTS,
+  DEFAULT_BRANDING,
   acceptFor,
   brandingFileIssue,
   changedSettings,
@@ -22,7 +23,6 @@ import { PageHeader } from '@/presentation/layouts/PageHeader'
 import { useRepositories } from '@/presentation/common/repositories-context'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { PLATFORM_INFO_QUERY_KEY, usePlatformInfo } from '@/presentation/common/use-platform'
-import { DefaultBrandIcon } from '@/presentation/navigation/Sidebar'
 import { PASSWORD_POLICY_QUERY_KEY } from '@/features/auth/use-password-policy'
 
 const SETTINGS_QUERY_KEY = ['platform', 'settings'] as const
@@ -236,13 +236,11 @@ function BrandingSlotTile({ slot, file }: { slot: BrandingSlot; file: PlatformSe
         )}
       </div>
       <div className={dark ? 'flex h-20 items-center justify-center rounded-md bg-brand-gradient' : 'flex h-20 items-center justify-center rounded-md bg-surface-2'}>
-        {url ? (
-          <img src={url} alt={t('platform.identity.previewAlt', { slot: t(`platform.identity.slots.${slot}`) })} className={slot === 'favicon' ? 'size-8 object-contain' : 'max-h-14 max-w-[80%] object-contain'} />
-        ) : (
-          <div className={dark ? 'flex size-10 items-center justify-center rounded-lg bg-white/15' : 'flex size-10 items-center justify-center rounded-lg bg-brand-gradient'} aria-hidden>
-            <DefaultBrandIcon className="size-6" />
-          </div>
-        )}
+        <img
+          src={url ?? DEFAULT_BRANDING[slot]}
+          alt={t('platform.identity.previewAlt', { slot: t(`platform.identity.slots.${slot}`) })}
+          className={slot === 'favicon' ? 'size-8 object-contain' : 'max-h-14 max-w-[80%] object-contain'}
+        />
       </div>
       <p className="truncate text-xs text-muted">{file ? `${file.name} · ${Math.max(1, Math.round(file.size / 1024))} KB` : t('platform.identity.usingDefault')}</p>
       <AppFileDrop multiple={false} accept={acceptFor(slot)} disabled={upload.isPending} onFiles={take} hint={t(slot === 'favicon' ? 'platform.identity.faviconTypes' : 'platform.identity.logoTypes')} className="py-3" />

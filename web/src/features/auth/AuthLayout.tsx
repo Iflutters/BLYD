@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { logoFor } from '@/domain/platform'
 import { usePlatformInfo } from '@/presentation/common/use-platform'
-import { BrandMark, DefaultBrandIcon } from '@/presentation/navigation/Sidebar'
+import { BrandMark } from '@/presentation/navigation/Sidebar'
 import { PreferencesQuickBar } from '@/features/preferences/PreferencesQuickBar'
 
 /** Moldura das telas sem sessão (login, esqueci minha senha, nova senha): painel da marca + conteúdo. */
@@ -20,13 +20,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_1px,transparent_1px)] [background-size:28px_28px]"
         />
         <div className="relative flex items-center gap-2.5">
-          {heroLogo ? (
-            <img src={heroLogo} alt="" className="size-9 rounded-lg object-contain" />
-          ) : (
-            <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-              <DefaultBrandIcon className="size-5" />
-            </div>
-          )}
+          <img src={heroLogo} alt="" className="size-10 object-contain" />
           <span className="text-lg font-semibold tracking-tight">{platform.name}</span>
         </div>
         <div className="relative max-w-md">

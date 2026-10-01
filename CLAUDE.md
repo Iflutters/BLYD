@@ -1,4 +1,6 @@
-# KAMBAN — Plataforma de Gestão de Projetos, Backlog e Kanban
+# BLYD Sync — Plataforma de Gestão de Projetos, Backlog e Kanban
+
+> Nome do produto: **BLYD Sync** ("Sincronize projetos, tarefas e equipes."), desde 2026-10-01; antes KAMBAN. A pasta, os pacotes npm e os identificadores técnicos continuam `kamban`/`KAMBAN` (cookie `kb_session`, `X-Requested-With: kamban`, tokens `kb_pat_`, variáveis `KAMBAN_*`, cabeçalhos `X-Kamban-*`) para não quebrar sessões, tokens e instalações — ADR-038. Logos padrão em `web/public/brand` (originais em `assets/`).
 
 A diretriz completa e obrigatória está em [docs/diretriz-desenvolvimento.md](docs/diretriz-desenvolvimento.md). Consulte a seção relevante antes de alterar qualquer módulo. Documentação técnica em [docs/](docs/) (comece por [architecture.md](docs/architecture.md)). Regras de negócio do fluxo (status, início/conclusão, transições, WIP, Kanban, backlog) em [regras-de-negocio.md](docs/regras-de-negocio.md) — manter atualizado a cada regra nova.
 

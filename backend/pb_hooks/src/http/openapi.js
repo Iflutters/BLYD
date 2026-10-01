@@ -117,10 +117,10 @@ function build() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'KAMBAN API',
+      title: 'BLYD Sync API',
       version: 'v1',
       description:
-        'API REST da plataforma KAMBAN. Autenticação por cookie de sessão HttpOnly (kb_session). ' +
+        'API REST da plataforma BLYD Sync. Autenticação por cookie de sessão HttpOnly (kb_session). ' +
         'Todas as respostas seguem o envelope { data, meta, error }.',
     },
     servers: [{ url: '/api/v1' }],

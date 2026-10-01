@@ -1,10 +1,9 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { DEFAULT_PLATFORM_INFO, type PlatformInfo } from '@/domain/platform'
+import { DEFAULT_BRANDING, DEFAULT_PLATFORM_INFO, type PlatformInfo } from '@/domain/platform'
 import { useRepositories } from './repositories-context'
 
 export const PLATFORM_INFO_QUERY_KEY = ['platform', 'info'] as const
-const DEFAULT_FAVICON = '/favicon.svg'
 
 /** Identidade da plataforma (Configurador geral): nome, logo e ícone — pública, vale até no login. */
 export function usePlatformInfo(): PlatformInfo {
@@ -23,7 +22,7 @@ export function usePlatformFavicon() {
       link.rel = 'icon'
       document.head.appendChild(link)
     }
-    const href = faviconUrl ?? DEFAULT_FAVICON
+    const href = faviconUrl ?? DEFAULT_BRANDING.favicon
     if (link.getAttribute('href') === href) return
     link.removeAttribute('type')
     link.href = href

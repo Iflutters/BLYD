@@ -10,30 +10,13 @@ import { useResolvedTheme } from '@/presentation/common/use-theme'
 import { logoFor } from '@/domain/platform'
 import type { NavItem } from './nav-items'
 
-/** Marca padrão (três barras do Kanban). */
-export function DefaultBrandIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect x="6" y="7" width="5" height="18" rx="1.5" fill="#fff" />
-      <rect x="13.5" y="7" width="5" height="12" rx="1.5" fill="#fff" opacity=".85" />
-      <rect x="21" y="7" width="5" height="8" rx="1.5" fill="#fff" opacity=".7" />
-    </svg>
-  )
-}
-
-/** Logo e nome da plataforma (Configurador geral); sem logo enviado, a marca padrão. */
+/** Logo e nome da plataforma (Configurador geral); sem logo enviado, a marca padrão do tema. */
 export function BrandMark({ collapsed }: { collapsed?: boolean }) {
   const info = usePlatformInfo()
   const logo = logoFor(info, useResolvedTheme())
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      {logo ? (
-        <img src={logo} alt="" className="size-8 shrink-0 rounded-lg object-contain" />
-      ) : (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-gradient shadow-sm" aria-hidden>
-          <DefaultBrandIcon className="size-5" />
-        </div>
-      )}
+      <img src={logo} alt="" className="size-8 shrink-0 object-contain" />
       {!collapsed && <span className="truncate text-[15px] font-semibold tracking-tight text-fg">{info.name}</span>}
     </div>
   )

@@ -20,7 +20,7 @@ const DEFAULTS = Object.freeze({
   password_min_length: 10,
   password_require_mixed_case: false,
   password_require_symbol: false,
-  platform_name: 'KAMBAN',
+  platform_name: 'BLYD Sync',
 })
 
 const LIMITS = Object.freeze({

@@ -67,12 +67,13 @@ describe('domain/platform', () => {
     expect(passwordSchemaFor(DEFAULT_PASSWORD_POLICY).safeParse('senhaForte123').success).toBe(true)
   })
 
-  it('logo do tema: escuro usa a versão escura (ou a clara); sem logo, a marca padrão', () => {
+  it('logo do tema: escuro usa a versão escura (ou a clara); sem logo enviado, a marca padrão do tema', () => {
     const info = { ...DEFAULT_PLATFORM_INFO, logoLightUrl: '/l.png', logoDarkUrl: '/d.png' }
     expect(logoFor(info, 'dark')).toBe('/d.png')
     expect(logoFor(info, 'light')).toBe('/l.png')
     expect(logoFor({ ...info, logoDarkUrl: null }, 'dark')).toBe('/l.png')
-    expect(logoFor(DEFAULT_PLATFORM_INFO, 'light')).toBeNull()
+    expect(logoFor(DEFAULT_PLATFORM_INFO, 'light')).toBe('/brand/logo-light.png')
+    expect(logoFor(DEFAULT_PLATFORM_INFO, 'dark')).toBe('/brand/logo-dark.png')
   })
 
   it('arquivo de identidade: tipos aceitos por lugar e até 1 MB', () => {

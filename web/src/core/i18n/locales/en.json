@@ -279,7 +279,7 @@
   "auth": {
     "title": "Sign in",
     "subtitle": "Access your account to continue.",
-    "heroTitle": "Projects, planning and Kanban in one place.",
+    "heroTitle": "Sync projects, tasks and teams.",
     "heroSubtitle": "Organize demands, track the flow and deliver predictably.",
     "email": "Email",
     "password": "Password",
@@ -1523,7 +1523,7 @@
     "emptyUnread": "You're all caught up",
     "emptyHint": "You'll be notified when someone mentions you, assigns you a task or comments on your tasks.",
     "unread": "Unread",
-    "system": "Kamban",
+    "system": "BLYD Sync",
     "newStatus": "New status: {{status}}",
     "dueOn": "Due: {{date}}",
     "filters": {

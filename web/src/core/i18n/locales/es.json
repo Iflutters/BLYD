@@ -279,7 +279,7 @@
   "auth": {
     "title": "Iniciar sesión",
     "subtitle": "Acceda a su cuenta para continuar.",
-    "heroTitle": "Proyectos, planificación y Kanban en un solo lugar.",
+    "heroTitle": "Sincroniza proyectos, tareas y equipos.",
     "heroSubtitle": "Organice demandas, siga el flujo y entregue con previsibilidad.",
     "email": "Correo electrónico",
     "password": "Contraseña",
@@ -1523,7 +1523,7 @@
     "emptyUnread": "Todo leído por aquí",
     "emptyHint": "Se le avisará cuando alguien lo mencione, le asigne una tarea o comente en sus tareas.",
     "unread": "Sin leer",
-    "system": "Kamban",
+    "system": "BLYD Sync",
     "newStatus": "Nuevo estado: {{status}}",
     "dueOn": "Plazo: {{date}}",
     "filters": {

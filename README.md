@@ -1,4 +1,8 @@
-# KAMBAN
+<p align="center"><img src="web/public/brand/logo-light.png" width="112" alt="" /></p>
+
+<h1 align="center">BLYD Sync</h1>
+
+<p align="center"><strong>Sincronize projetos, tarefas e equipes.</strong></p>
 
 **Plataforma open source para o time trabalhar e para o projeto ser gerido no mesmo lugar.** Tarefas, Kanban e sprints para o dia a dia; um quadro de gestão no estilo Monday (fases, cronograma com linha de base e saúde do projeto) para quem coordena; documentação no estilo Confluence para registrar o que se aprende. Um único binário, sem serviços externos, em português, inglês e espanhol.
 
@@ -66,7 +70,7 @@ docker compose up -d
 
 Abra http://localhost:8090 e entre com o e-mail e a senha do `.env`. Os dados ficam no volume `kamban_data`. Produção (HTTPS, backup, atualização): [docs/deployment.md](docs/deployment.md).
 
-**Dados de demonstração:** com o servidor no ar, `npm run demo` (no repositório, com `backend/.env` apontando para o servidor) cria o projeto **DEMO** — tarefas, sprint, quadro de gestão completo, colunas personalizadas, diário, problemas, linha de base e um espaço de documentação — e duas pessoas de exemplo (`carla.demo@kamban.local` e `rafael.demo@kamban.local`, senha `DemoKamban2026` ou a de `KAMBAN_DEMO_PASSWORD`). Rodar de novo não duplica nada.
+**Dados de demonstração:** com o servidor no ar, `npm run demo` (no repositório, com `backend/.env` apontando para o servidor) cria o projeto **DEMO** — tarefas, sprint, quadro de gestão completo, colunas personalizadas, diário, problemas, linha de base e um espaço de documentação — e duas pessoas de exemplo (`carla.demo@blydsync.local` e `rafael.demo@blydsync.local`, senha `DemoBlydSync2026` ou a de `KAMBAN_DEMO_PASSWORD`). Rodar de novo não duplica nada.
 
 ## Desenvolvimento
 

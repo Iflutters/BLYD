@@ -25,7 +25,14 @@ export interface PlatformInfo {
   passwordReset: boolean
 }
 
-export const DEFAULT_PLATFORM_INFO: PlatformInfo = { name: 'KAMBAN', logoLightUrl: null, logoDarkUrl: null, faviconUrl: null, passwordReset: false }
+export const DEFAULT_PLATFORM_INFO: PlatformInfo = { name: 'BLYD Sync', logoLightUrl: null, logoDarkUrl: null, faviconUrl: null, passwordReset: false }
+
+/** Marca padrão (pasta web/public/brand), usada enquanto ninguém envia outra no Configurador geral. */
+export const DEFAULT_BRANDING: Record<BrandingSlot, string> = {
+  logo_light: '/brand/logo-light.png',
+  logo_dark: '/brand/logo-dark.png',
+  favicon: '/brand/favicon-64.png',
+}
 
 export interface PlatformSettingsValues {
   auditRetentionMonths: number
@@ -118,9 +125,13 @@ export function passwordRuleKeys(policy: PasswordPolicy): ('letters_numbers' | '
   return keys
 }
 
-/** Logo do tema (escuro usa a versão escura, ou a clara); null = marca padrão. */
-export function logoFor(info: PlatformInfo, theme: 'light' | 'dark'): string | null {
-  return theme === 'dark' ? (info.logoDarkUrl ?? info.logoLightUrl) : info.logoLightUrl
+/**
+ * Logo do tema: o enviado no Configurador (no escuro, a versão escura ou, sem ela, a clara) ou a marca
+ * padrão do tema.
+ */
+export function logoFor(info: PlatformInfo, theme: 'light' | 'dark'): string {
+  if (theme === 'dark') return info.logoDarkUrl ?? info.logoLightUrl ?? DEFAULT_BRANDING.logo_dark
+  return info.logoLightUrl ?? DEFAULT_BRANDING.logo_light
 }
 
 export function acceptFor(slot: BrandingSlot): string {
