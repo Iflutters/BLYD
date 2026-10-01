@@ -98,9 +98,9 @@ Abra http://localhost:5173.
 
 **Stack:** React 19 + TypeScript + Vite, TanStack Query/Table, Radix UI, Tailwind 4 e i18next no web; [PocketBase](https://pocketbase.io) 0.40 (Go + SQLite) com hooks em JavaScript no backend, organizados em Clean Architecture (domínio puro testado com `node --test`). Detalhes em [docs/architecture.md](docs/architecture.md).
 
-## Próximos passos
+## Evoluções futuras
 
-1. **Login corporativo:** OAuth/OIDC (Google, Microsoft) e, depois, LDAP.
+- **Login corporativo (SSO):** OAuth/OIDC (Microsoft, Google) e, depois, LDAP.
 
 Ideias e prioridades são discutidas nas issues — veja [CONTRIBUTING.md](CONTRIBUTING.md).
 

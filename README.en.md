@@ -102,9 +102,9 @@ Open http://localhost:5173.
 
 The code, commits and technical docs are written in Portuguese; issues and pull requests in English are welcome.
 
-## Roadmap
+## Future work
 
-1. **Corporate login:** OAuth/OIDC (Google, Microsoft), then LDAP.
+- **Corporate login (SSO):** OAuth/OIDC (Microsoft, Google), then LDAP.
 
 ## License
 

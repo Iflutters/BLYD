@@ -148,6 +148,17 @@ Regras previstas:
 - **Identidade:** logo e ícone por upload com tipo verificado pelos bytes (PNG, SVG higienizado, ICO, WebP) e limite de tamanho; nome, logo e ícone são **públicos** (a tela de login e a aba do navegador precisam deles) por uma rota só de leitura; o resto das configurações só para administrador.
 - **Técnico:** configuração única no banco (collection de configurações), lida pelos casos de uso por uma porta (`settingsRepository`) com cache curto; toda alteração auditada na mesma transação (antes/depois); i18n pt-BR/en/es; testes de domínio, API e E2E; regras em regras-de-negocio.md.
 
+## Evoluções futuras
+
+### Login corporativo (SSO)
+> **Adiado** por decisão do usuário em 2026-10-01 — fica para uma etapa futura; não iniciar sem pedido.
+
+Entrar com a conta da empresa em vez de e-mail e senha: OAuth 2.0 / OpenID Connect (Microsoft Entra ID, Google e um "OIDC genérico" para Keycloak, Okta e afins) e, depois, LDAP/Active Directory. Decisões a tomar quando for retomado:
+- **Provedores** da primeira entrega (sugestão: Microsoft, Google e OIDC genérico), configurados em Configurações → Integrações.
+- **Primeiro acesso:** criar a conta na hora com um perfil padrão (sugestão: Membro) ou aceitar só quem o Admin já cadastrou.
+- **Domínios permitidos** (ex.: só e-mails da empresa) e se o login com senha continua disponível para todos ou só para administradores (acesso de emergência).
+- **Encaixe técnico previsto:** o PocketBase já tem OAuth2 nativo; a sessão continua sendo o cookie `kb_session` emitido pela API, com o mesmo RBAC, auditoria e bloqueios.
+
 ## Decisões do usuário (2026-09-30)
 - **Começar pela Onda 1** (Timeline).
 - **Leitura da documentação e do FAQ:** usuários logados conforme cada espaço (toda a empresa — inclusive outras áreas com perfil só de consulta — ou só membros do projeto) **e também link público** para páginas publicadas. Regras do link público (Onda 5, com segurança reforçada): só páginas **publicadas** de espaços que permitam; link com token aleatório longo e revogável; somente leitura, sem comentários nem menções a pessoas; imagens servidas pelo mesmo token; acesso auditado; o gestor do espaço vê e revoga os links.
