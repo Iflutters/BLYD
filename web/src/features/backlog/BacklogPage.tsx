@@ -26,6 +26,7 @@ import {
   type AppDropdownItem,
 } from '@/presentation/components'
 import { PageHeader } from '@/presentation/layouts/PageHeader'
+import { useLiveProject } from '@/presentation/common/use-live'
 import { useDocumentTitle } from '@/presentation/common/use-document-title'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { useSession } from '@/features/auth/session'
@@ -58,6 +59,7 @@ export function BacklogPage() {
 }
 
 function BacklogShell({ projectId }: { projectId?: string }) {
+  useLiveProject(projectId)
   const { t } = useTranslation()
   useDocumentTitle(t('backlog.title'))
   if (!projectId) {

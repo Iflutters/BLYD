@@ -7,6 +7,7 @@ import { readJson, safeStorage, writeJson } from '@/core/storage/safe-storage'
 import { buildLanes, EMPTY_FILTERS, matchesFilters, SWIMLANES, wipState, type BoardCard, type BoardFilters, type Swimlane } from '@/domain/kanban'
 import { AppBadge, AppButton, AppEmptyState, AppErrorState, AppFilterBar, AppSearch, AppSelect, AppSkeleton, notify, SELECT_ALL } from '@/presentation/components'
 import { PageHeader } from '@/presentation/layouts/PageHeader'
+import { useLiveProject } from '@/presentation/common/use-live'
 import { useDocumentTitle } from '@/presentation/common/use-document-title'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { useSession } from '@/features/auth/session'
@@ -40,6 +41,7 @@ export function KanbanPage() {
 
 function KanbanShell({ projectId }: { projectId?: string }) {
   const { t } = useTranslation()
+  useLiveProject(projectId)
   useDocumentTitle(t('kanban.title'))
   if (!projectId) {
     return (

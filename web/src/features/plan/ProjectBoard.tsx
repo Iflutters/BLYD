@@ -45,6 +45,7 @@ import { usePlanError } from './use-plan-error'
 import { MAIN_COLUMNS, SUB_COLUMNS, customColumnDefs, sortableColumnIds, usePlanColumns, type BoardCtx, type FilterFocus } from './use-plan-columns'
 import { ColumnDialog, ColumnTypeDialog, DeleteColumnConfirm, type ColumnDialogState } from './column-dialogs'
 import { customColumnId, type PlanColumn } from '@/domain/plan-columns'
+import { useLiveProject } from '@/presentation/common/use-live'
 
 /** Hoje no fuso de quem usa (AAAA-MM-DD). */
 function localToday(): string {
@@ -110,6 +111,7 @@ function PlanWorkspace({ plan }: { plan: Plan }) {
 function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string) => void }) {
   const { t, i18n } = useTranslation()
   const projectId = plan.project.id
+  useLiveProject(projectId)
   const mutations = usePlanMutations(projectId)
   const members = useProjectMembers(projectId)
   const canEdit = plan.capabilities.edit

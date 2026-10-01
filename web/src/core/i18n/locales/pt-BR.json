@@ -3163,5 +3163,9 @@
       "doc_page": "Páginas de documentação",
       "user": "Usuários"
     }
+  },
+  "realtime": {
+    "reconnecting": "Reconectando…",
+    "reconnectingHint": "A atualização em tempo real caiu e está voltando. A tela continua funcionando."
   }
 }

@@ -20,6 +20,7 @@ import {
   AppTabs,
   notify,
 } from '@/presentation/components'
+import { useLiveProject } from '@/presentation/common/use-live'
 import { useDocumentTitle } from '@/presentation/common/use-document-title'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { AuditTimeline } from '@/features/audit/AuditTimeline'
@@ -37,6 +38,7 @@ export function ProjectDetailPage() {
   const { t } = useTranslation()
   const project = useProject(projectId)
   useDocumentTitle(project.data?.name ?? t('nav.projects'))
+  useLiveProject(project.data?.id)
 
   if (project.isPending) {
     return (

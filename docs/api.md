@@ -313,6 +313,12 @@ curl -H "Authorization: Bearer kb_pat_..." https://kamban.empresa.com/api/v1/tas
 
 Auditoria: `api_token.created` (nome, prefixo, prazo — nunca o valor) e `api_token.revoked`.
 
+## Tempo real
+Conexão SSE do próprio PocketBase em `/api/realtime` (fora de `/api/v1`): o `GET` abre o fluxo e o primeiro evento, `PB_CONNECT`, traz o `clientId`; o `POST /api/realtime` `{ clientId, subscriptions }` define os tópicos e exige o **cookie de sessão** e o header `X-Requested-With: kamban` (401 sem sessão, 403 sem o header ou se o `clientId` for de outra pessoa).
+
+- Tópicos: `project:{id}` (só projetos que a pessoa vê) e `user:{id}` (só o dela); qualquer outro (inclusive assinaturas de coleção do PocketBase) é descartado sem erro.
+- Evento: nome = tópico; dados `{ collection, action: create|update|delete, id, project_id, task_id, item_id }` — só identificadores. Coleções: tarefas, comentários, anexos, relações, sprints, marcos, projeto e membros, todo o quadro da Gestão e notificações.
+
 ## Endpoints — Webhooks
 | Método | Rota | Descrição |
 |---|---|---|

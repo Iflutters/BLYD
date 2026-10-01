@@ -37,6 +37,8 @@ Deve crescer depois sem reescrever a arquitetura. Não é só um quadro Kanban: 
 
 **Webhooks (2026-10-01) ✅:** Integrações → Webhooks (`integrations.manage`): catálogo público de eventos (nomes do histórico; `grupo.*`), entrega criada no próprio `auditRepository.record` (decorador `withWebhooks`), fila `webhook_deliveries` com rotina por minuto, POST assinado (HMAC-SHA256 de `timestamp.corpo`), novas tentativas 1/5/30/120/720 min, desligamento após 20 falhas, SSRF (https; metadados bloqueados; http/loopback só fora de produção). Regras §18; ADR-037.
 
+**Tempo real (2026-10-01) ✅:** SSE do PocketBase (`/api/realtime`) com tópicos `project:{id}`/`user:{id}`; assinatura pela sessão + CSRF em `onRealtimeSubscribeRequest`; avisos só com identificadores saindo de `onRecordAfter*Success`; web invalida o cache (`useLiveProject`, `useLiveNotifications`). Regras §19; ADR-039.
+
 ## 2. Princípios fundamentais (obrigatórios)
 
 Clean Architecture; SOLID; TDD; componentização; baixo acoplamento; alta coesão; reutilização máxima; separação clara entre domínio, aplicação, infraestrutura e apresentação; segurança desde o início; API-first; responsividade; acessibilidade; UX consistente; código legível e documentado; testes automatizados; **nenhuma regra de negócio importante diretamente na UI**.

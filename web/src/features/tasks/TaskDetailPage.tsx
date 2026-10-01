@@ -17,6 +17,7 @@ import {
   AppTabs,
   notify,
 } from '@/presentation/components'
+import { useLiveProject } from '@/presentation/common/use-live'
 import { useDocumentTitle } from '@/presentation/common/use-document-title'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { AuditTimeline } from '@/features/audit/AuditTimeline'
@@ -38,6 +39,7 @@ export function TaskDetailPage() {
   const { t } = useTranslation()
   const task = useTask(taskId)
   useDocumentTitle(task.data ? `${task.data.code} · ${task.data.title}` : t('tasks.title'))
+  useLiveProject(task.data?.project?.id)
 
   if (task.isPending) {
     return (

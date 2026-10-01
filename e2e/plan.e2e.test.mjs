@@ -476,9 +476,16 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
       if (process.env.DEBUG_SHOT) await mario.page.screenshot({ path: process.env.DEBUG_SHOT })
       throw error
     })
-    const board = (await api(mario.page, 'GET', `/projects/${p}/plan`)).json.data
-    const feito = board.statuses.find((x) => x.category === 'done')
-    assert.equal(board.items.find((i) => i.id === kickoff.id).status_id, feito.id)
+    // a tela mostra na hora (otimista); o servidor grava logo em seguida
+    let saved = null
+    let feito = null
+    for (let i = 0; i < 40 && (!feito || saved !== feito.id); i++) {
+      const board = (await api(mario.page, 'GET', `/projects/${p}/plan`)).json.data
+      feito = board.statuses.find((x) => x.category === 'done')
+      saved = board.items.find((x) => x.id === kickoff.id).status_id
+      if (saved !== feito.id) await mario.page.waitForTimeout(150)
+    }
+    assert.equal(saved, feito.id)
 
     // Gestão: diário e problema
     await mario.page.getByRole('navigation', { name: 'Visões do quadro' }).getByRole('link', { name: 'Gestão' }).click()

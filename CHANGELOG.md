@@ -5,6 +5,7 @@ Todas as mudanças relevantes do projeto ficam aqui. Formato baseado em [Keep a 
 ## [Não lançado]
 
 ### Adicionado
+- **Tempo real:** Kanban, Planejamento, Timeline, quadro da Gestão de projetos, página do projeto, página da tarefa e o sino de notificações se atualizam sozinhos quando alguém muda algo (sem recarregar).
 - **Webhooks** (Configurações → Integrações → Webhooks): avisos assinados (HMAC-SHA256) para outros sistemas a cada evento do catálogo (tarefas, projetos, comentários, quadro, documentação…), com novas tentativas, desligamento automático, teste e reenvio.
 - **Tokens de API** pessoais (Minha conta → Tokens de API): acesso à API com `Authorization: Bearer`, prazo opcional, valor mostrado uma vez, revogação pela pessoa ou pelo Admin (Integrações).
 - **E-mail** (Configurações → Integrações, permissão `integrations.manage`): servidor SMTP com teste e fila de envio; "Esqueci minha senha" no login; convite de usuário por e-mail (a pessoa cria a própria senha); notificações também por e-mail, que cada pessoa liga ou desliga em Minha conta.

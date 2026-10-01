@@ -36,6 +36,7 @@ const { createEmailService } = require('../application/email')
 const { createAccountLinkService } = require('../application/account-links')
 const { createApiTokenService } = require('../application/api-tokens')
 const { createWebhookService } = require('../application/webhooks')
+const { createRealtimeService } = require('../application/realtime')
 const { createHttpClient, createCrypto } = require('./webhook-repositories')
 const { createMailer } = require('./email-repositories')
 const contentLocale = require('../domain/content-locale')
@@ -118,6 +119,7 @@ function createContainer(app, options) {
     accountLinks: createAccountLinkService(deps),
     apiTokens: createApiTokenService(deps),
     webhooks: createWebhookService(deps),
+    realtime: createRealtimeService(deps),
   }
 }
 

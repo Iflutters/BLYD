@@ -534,3 +534,12 @@ Em **Configurações → Integrações → Webhooks**, quem tem **Configurar int
 - **Falhas:** nova tentativa em 1, 5, 30, 120 e 720 minutos; na 6ª falha a entrega fica como falha. **20 tentativas seguidas com falha desligam o webhook** (fica no histórico); religar zera a contagem. Webhook desligado não recebe entregas novas.
 - **Segredo:** gerado na criação e mostrado **uma única vez**; "Gerar novo segredo" troca na hora (o antigo deixa de valer). Nunca aparece na lista nem no histórico.
 - **Acompanhar:** a lista mostra a situação, as falhas seguidas e a última entrega; "Enviar teste" manda um `webhook.ping` na hora e mostra o resultado; "Visualizar" abre as 50 entregas mais recentes, com a resposta e "Reenviar". Entregas encerradas saem depois de 30 dias.
+
+## 19. Tempo real
+
+Telas abertas se atualizam sozinhas quando alguém muda algo — sem recarregar a página.
+
+- **O que atualiza:** Kanban, Planejamento (backlog e sprints), Timeline, o quadro da Gestão de projetos (todas as visões, painel do elemento, diário e problemas), a página do projeto e a página da tarefa (detalhes, comentários, anexos, relações e histórico); o sino de notificações de cada pessoa.
+- **Quem recebe:** só quem pode ver o projeto (membro, dono ou quem vê todos os projetos), e cada pessoa só as próprias notificações. O aviso leva apenas o tipo do que mudou e os identificadores; a tela busca os dados de novo pela API, com as permissões de sempre — nada que a pessoa não poderia ver chega por esse caminho.
+- **Quando:** logo depois que a mudança é gravada (de qualquer origem: tela, API com token, importação, rotinas). Vários avisos juntos (ex.: mover um grupo inteiro) viram uma única atualização. Se a própria pessoa estiver salvando algo naquele momento (ex.: soltando um cartão), a atualização espera o salvamento terminar — assim nada "volta" para o estado de antes.
+- **Conexão:** uma por aba, aberta quando alguma tela precisa e fechada pouco depois de não precisar. Se cair, a tela continua funcionando e o cabeçalho mostra "Reconectando…" até voltar; ao voltar, as assinaturas são refeitas.

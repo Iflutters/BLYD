@@ -3,6 +3,8 @@ import { env } from '@/core/config/env'
 import { isAppError } from '@/core/errors/app-error'
 import i18n from '@/core/i18n'
 import { createApiClient } from '@/core/networking/api-client'
+import { createRealtimeClient } from '@/core/realtime/realtime-client'
+import { createSubscriptionSender, realtimeUrl } from '@/core/realtime/subscriptions'
 import { createHttpRepositories } from '@/data/http-repositories'
 import { SESSION_QUERY_KEY } from '@/features/auth/session'
 import { useSessionStore } from '@/features/auth/session-store'
@@ -39,6 +41,10 @@ function handleUnauthorized(code: string) {
 
 export const apiClient = createApiClient({ baseUrl: env.apiBaseUrl, onUnauthorized: handleUnauthorized, getLanguage: () => i18n.language })
 export const repositories = createHttpRepositories(apiClient)
+
+/** Tempo real: uma conexão SSE por aba, aberta quando alguma tela assina um tópico. */
+const REALTIME_URL = realtimeUrl(env.apiBaseUrl)
+export const realtimeClient = createRealtimeClient({ url: REALTIME_URL, postSubscriptions: createSubscriptionSender(REALTIME_URL) })
 
 // trocar o idioma rebusca os dados: cadastros traduzidos (ex.: tipos de tarefa) vêm no novo idioma
 i18n.on('languageChanged', () => void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'auth' }))

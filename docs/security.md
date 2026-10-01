@@ -95,3 +95,8 @@ Regras do PocketBase (seed): login 10/min por IP; `/api/v1/` 600/min; `/api/` 30
 - **SSRF:** endereço https obrigatório em produção; metadados da nuvem (`169.254.0.0/16`, `metadata.google.internal`), link-local e `0.0.0.0` sempre recusados; a própria máquina (`localhost`, `127.*`, `::1`) e http só fora de produção ou com `KAMBAN_WEBHOOKS_ALLOW_INSECURE=true`. Credenciais no endereço são recusadas. Limitação conhecida: um nome de domínio que resolva para um IP interno não é bloqueado (o JSVM não resolve DNS) — por isso o recurso é restrito a administradores. Tempo limite de 10 s por envio.
 - **Autenticidade:** cada envio é assinado com HMAC-SHA256 (`X-Kamban-Signature`) sobre `timestamp.corpo`; o receptor deve conferir a assinatura e recusar timestamps antigos (proteção contra repetição). O segredo aparece uma vez e pode ser trocado a qualquer momento.
 - **Conteúdo:** a carga é o que o histórico já guarda (sem senhas nem tokens).
+
+## Tempo real
+- Assinar tópicos (`POST /api/realtime`) exige a sessão do cookie e o header de CSRF; a conexão fica presa à pessoa (outra sessão não reaproveita o `clientId`). Tópicos só de projetos visíveis e do próprio usuário; o resto é descartado.
+- Os avisos carregam só identificadores; o conteúdo sempre vem da API, com as permissões. Limitação conhecida: quem perde o acesso a um projeto com a tela aberta ainda pode receber os identificadores das mudanças até a conexão ser refeita — nunca o conteúdo.
+- O painel do PocketBase (superusuário com o token dele) segue as regras nativas; as coleções continuam sem regras de API, então assinaturas nativas de coleção não entregam nada a usuários comuns.

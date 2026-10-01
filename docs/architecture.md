@@ -95,6 +95,10 @@ web/src/
 
 Estratégia de cache: `staleTime` 30s; listas usam `keepPreviousData` na paginação; erros 4xx não são repetidos; mutações invalidam as chaves afetadas; logout e sessão expirada limpam todo o cache.
 
+## Tempo real
+- **Servidor:** `onRealtimeSubscribeRequest` (`http/realtime.js`) confere a sessão do cookie e o CSRF e deixa só os tópicos autorizados (`application/realtime.js`); `onRecordAfter{Create,Update,Delete}Success` das coleções de `domain/realtime.js#WATCHED` monta o aviso (`infrastructure/realtime.js`, projeto descoberto pela tarefa quando preciso) e envia pelo broker do PocketBase a quem assina o tópico — depois da transação confirmada.
+- **Web:** `core/realtime/realtime-client.ts` (uma conexão `EventSource` por aba, assinaturas com contagem, reconexão), injetado por `RealtimeContext`; `useLiveProject(id)` / `useLiveNotifications(id)` (`presentation/common/use-live.ts`) traduzem cada aviso nas chaves do cache a invalidar (`domain/realtime.ts`), agrupadas em 250 ms.
+
 ## Fluxo de uma requisição
 
 1. `ApiClient` envia `X-Correlation-Id`, `X-Requested-With: kamban` (mutações) e o cookie de sessão.

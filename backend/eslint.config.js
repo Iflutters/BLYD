@@ -5,8 +5,8 @@ const globals = require('globals')
 const pocketbaseGlobals = Object.fromEntries(
   [
     '$app', '$apis', '$os', '$security', '$dbx', '$http', '$filesystem', '$mails', '$template',
-    '__hooks', 'routerAdd', 'routerUse', 'migrate', 'cronAdd', 'onBootstrap',
-    'Record', 'Collection', 'Cookie', 'Command', 'Middleware', 'DynamicModel', 'MailerMessage',
+    '__hooks', 'routerAdd', 'routerUse', 'migrate', 'cronAdd', 'onBootstrap', 'onRealtimeSubscribeRequest', 'onRecordAfterCreateSuccess', 'onRecordAfterUpdateSuccess', 'onRecordAfterDeleteSuccess',
+    'Record', 'Collection', 'Cookie', 'Command', 'Middleware', 'DynamicModel', 'MailerMessage', 'SubscriptionMessage', 'ForbiddenError', 'UnauthorizedError', 'BadRequestError',
     'SelectField', 'RelationField', 'DateField', 'TextField', 'BoolField', 'NumberField', 'JSONField',
     'arrayOf', 'unmarshal', 'toString', 'toBytes', 'sleep',
   ].map((name) => [name, 'readonly']),

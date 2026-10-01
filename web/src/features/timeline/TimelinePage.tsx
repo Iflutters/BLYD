@@ -6,6 +6,7 @@ import { isAppError } from '@/core/errors/app-error'
 import { safeStorage } from '@/core/storage/safe-storage'
 import { AppEmptyState } from '@/presentation/components'
 import { PageHeader } from '@/presentation/layouts/PageHeader'
+import { useLiveProject } from '@/presentation/common/use-live'
 import { useDocumentTitle } from '@/presentation/common/use-document-title'
 import { ProjectSwitcher } from '@/features/projects/ProjectSwitcher'
 import { useTimeline } from './queries'
@@ -24,6 +25,7 @@ export function TimelinePage() {
 }
 
 function TimelineShell({ projectId }: { projectId?: string }) {
+  useLiveProject(projectId)
   const { t } = useTranslation()
   useDocumentTitle(t('timeline.title'))
   if (!projectId) {

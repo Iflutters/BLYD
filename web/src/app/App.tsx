@@ -5,7 +5,8 @@ import { RepositoriesContext } from '@/presentation/common/repositories-context'
 import { AppToaster, AppTooltipProvider } from '@/presentation/components'
 import { useThemeSync } from '@/presentation/common/use-theme'
 import { PlatformHead } from '@/presentation/common/use-platform'
-import { queryClient, repositories } from './container'
+import { queryClient, realtimeClient, repositories } from './container'
+import { RealtimeContext } from '@/presentation/common/realtime-context'
 import { createAppRouter } from './router'
 
 export function App() {
@@ -15,11 +16,13 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RepositoriesContext.Provider value={repositories}>
-        <AppTooltipProvider>
-          <PlatformHead />
-          <RouterProvider router={router} />
-          <AppToaster />
-        </AppTooltipProvider>
+        <RealtimeContext.Provider value={realtimeClient}>
+          <AppTooltipProvider>
+            <PlatformHead />
+            <RouterProvider router={router} />
+            <AppToaster />
+          </AppTooltipProvider>
+        </RealtimeContext.Provider>
       </RepositoriesContext.Provider>
     </QueryClientProvider>
   )

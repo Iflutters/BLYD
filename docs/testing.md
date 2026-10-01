@@ -142,3 +142,8 @@ Pacote de publicação: `tests/api/demo.test.js` roda os **dados de demonstraç�
 - Casos de uso (`application-webhooks.test.js`): permissão, segredo só na criação/troca, só eventos do catálogo e webhooks ativos, envio assinado com os cabeçalhos, novas tentativas e desistência, desligamento após 20 falhas, teste, reenvio, limpeza de 30 dias.
 - API real com a migration 1790000030 e um **receptor HTTP local** (`api/webhooks.test.js`): a tarefa criada vira entrega, o POST chega e o HMAC confere com o `crypto` do Node, teste com o destino em erro, novo segredo, exclusão em cascata.
 - Interface (`features/settings/webhooks.test.tsx`) e E2E (`e2e/webhooks.e2e.test.mjs`: cadastrar na tela, segredo, teste, entrega assinada e axe no formulário e no painel de entregas).
+
+## Tempo real
+- Domínio (`domain-realtime.test.js`): tópicos aceitos, limite de 50, coleções acompanhadas e o aviso só com identificadores. Casos de uso (`application-realtime.test.js`): assinaturas pela visibilidade do projeto e o próprio tópico, projeto descoberto pela tarefa.
+- API real (`api/realtime.test.js`, com o cliente SSE `tests/support/sse-client.js`): sessão e CSRF exigidos, conexão presa à pessoa, tarefa/comentário/elemento do quadro chegam no tópico do projeto, notificação no tópico da pessoa, projeto não visível e conteúdo nunca chegam.
+- Web: cliente com `EventSource` falso (conexão, reenvio dos tópicos, reconexão, fechamento ocioso), mapa de invalidação (`domain/realtime.test.ts`) e `useLiveProject` (agrupa avisos). E2E (`e2e/realtime.e2e.test.mjs`): cartão no Kanban, comentário na tarefa aberta e o sino atualizam sem recarregar.

@@ -48,6 +48,7 @@ Both live in the same **project** (same members and permissions) but stay separa
 - **Documented REST API** (`/api/v1`, OpenAPI) — the same one the interface uses — with personal **API tokens** (`Authorization: Bearer`) for scripts and integrations.
 - **General settings:** platform name, logo and icon, password policy, login lockout and history retention.
 - **Email:** "Forgot my password", user invitations and email notifications (SMTP with a queue and retries).
+- **Realtime:** boards, tasks and notifications update on their own when someone changes something.
 - Signed **webhooks** (HMAC) to notify other systems on each event, with retries and delivery history.
 - Light and dark themes, mobile and desktop, accessibility checked (axe) on every screen, command palette (Ctrl/⌘+K).
 
@@ -103,8 +104,7 @@ The code, commits and technical docs are written in Portuguese; issues and pull 
 
 ## Roadmap
 
-1. **Realtime:** boards and comments updated without reloading.
-2. **Corporate login:** OAuth/OIDC (Google, Microsoft), then LDAP.
+1. **Corporate login:** OAuth/OIDC (Google, Microsoft), then LDAP.
 
 ## License
 

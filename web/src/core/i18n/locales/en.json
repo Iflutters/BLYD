@@ -3163,5 +3163,9 @@
       "doc_page": "Documentation pages",
       "user": "Users"
     }
+  },
+  "realtime": {
+    "reconnecting": "Reconnecting…",
+    "reconnectingHint": "Realtime updates dropped and are coming back. The screen keeps working."
   }
 }

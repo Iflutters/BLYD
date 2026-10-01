@@ -329,6 +329,12 @@ routerAdd('POST', '/api/v1/settings/webhooks/{id}/rotate-secret', (e) => require
 routerAdd('POST', '/api/v1/settings/webhooks/{id}/test', (e) => require(`${__hooks}/src/http/routes.js`).testWebhook(e))
 routerAdd('GET', '/api/v1/settings/webhooks/{id}/deliveries', (e) => require(`${__hooks}/src/http/routes.js`).webhookDeliveries(e))
 routerAdd('POST', '/api/v1/settings/webhook-deliveries/{id}/redeliver', (e) => require(`${__hooks}/src/http/routes.js`).redeliverWebhook(e))
+// tempo real: assinaturas da conexão SSE (/api/realtime) passam pela sessão; avisos depois de gravar
+onRealtimeSubscribeRequest((e) => require(`${__hooks}/src/http/realtime.js`).authorizeSubscriptions(e))
+onRecordAfterCreateSuccess((e) => require(`${__hooks}/src/http/realtime.js`).recordChanged(e, 'create'), ...require(`${__hooks}/src/domain/realtime.js`).WATCHED)
+onRecordAfterUpdateSuccess((e) => require(`${__hooks}/src/http/realtime.js`).recordChanged(e, 'update'), ...require(`${__hooks}/src/domain/realtime.js`).WATCHED)
+onRecordAfterDeleteSuccess((e) => require(`${__hooks}/src/http/realtime.js`).recordChanged(e, 'delete'), ...require(`${__hooks}/src/domain/realtime.js`).WATCHED)
+
 routerAdd('GET', '/api/v1/auth/password-policy', (e) => require(`${__hooks}/src/http/routes.js`).passwordPolicy(e))
 
 // tags

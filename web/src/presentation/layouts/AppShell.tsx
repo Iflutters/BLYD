@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { Dialog } from 'radix-ui'
-import { Check, KeyRound, Languages, LogOut, Menu, Monitor, Moon, Search, Sun, UserRound } from 'lucide-react'
+import { Check, KeyRound, Languages, LogOut, Menu, Monitor, Moon, Search, Sun, UserRound, WifiOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/core/utils/cn'
 import { SUPPORTED_LANGUAGES } from '@/core/i18n'
@@ -21,6 +21,7 @@ import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { Sidebar } from '@/presentation/navigation/Sidebar'
 import { CommandPalette } from '@/presentation/navigation/CommandPalette'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
+import { useLiveNotifications, useRealtimeStatus } from '@/presentation/common/use-live'
 import { findNavTrail, visibleNavItems } from '@/presentation/navigation/nav-items'
 
 /** Layout autenticado: sidebar, topbar, conteúdo e command palette. */
@@ -31,6 +32,7 @@ export function AppShell() {
   const mobileNavOpen = useUiStore((s) => s.mobileNavOpen)
   const setMobileNavOpen = useUiStore((s) => s.setMobileNavOpen)
   const items = visibleNavItems(current?.permissions ?? [])
+  useLiveNotifications(current?.user.id)
 
   return (
     <div className="flex h-dvh overflow-hidden bg-bg">
@@ -97,6 +99,7 @@ function Topbar() {
         <AppKbd>K</AppKbd>
       </button>
       <AppIconButton className="sm:hidden" label={t('commandPalette.trigger')} icon={<Search />} onClick={() => setCommandPaletteOpen(true)} />
+      <RealtimeStatusBadge />
       <NotificationBell />
       <ThemeMenu />
       <UserMenu />
@@ -187,5 +190,18 @@ function UserMenu() {
         </button>
       }
     />
+  )
+}
+
+/** Só aparece quando a conexão do tempo real caiu (as telas seguem funcionando; atualizam ao recarregar). */
+function RealtimeStatusBadge() {
+  const { t } = useTranslation()
+  const status = useRealtimeStatus()
+  if (status !== 'reconnecting') return null
+  return (
+    <span role="status" className="hidden items-center gap-1.5 rounded-md bg-warning-soft px-2 py-1 text-xs text-warning-soft-fg sm:inline-flex" title={t('realtime.reconnectingHint')}>
+      <WifiOff className="size-3.5" aria-hidden />
+      {t('realtime.reconnecting')}
+    </span>
   )
 }
