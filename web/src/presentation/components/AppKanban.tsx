@@ -90,11 +90,13 @@ export const AppKanbanCard = forwardRef<HTMLDivElement, AppKanbanCardProps>(func
     <div
       ref={ref}
       className={cn(
-        'group flex select-none flex-col gap-2 rounded-xl border border-border bg-surface p-3 text-left shadow-card outline-none transition-[box-shadow,opacity]',
-        'hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring',
+        'group flex select-none flex-col gap-2 rounded-xl border border-border bg-surface p-3 text-left shadow-card outline-none',
+        'transition-[border-color,box-shadow,opacity] duration-200 ease-out',
+        // passar o mouse: a borda acende na cor da marca, com um halo suave (destaca o cartão que vai mexer)
+        'hover:border-primary hover:ring-4 hover:ring-primary/25 focus-visible:ring-2 focus-visible:ring-ring',
         locked ? 'cursor-pointer' : 'cursor-grab touch-manipulation',
-        dragging && 'opacity-40',
-        overlay && 'rotate-2 cursor-grabbing shadow-float',
+        dragging && 'opacity-40 hover:border-border hover:ring-0',
+        overlay && 'rotate-2 cursor-grabbing border-primary shadow-float ring-4 ring-primary/25',
         className,
       )}
       {...props}
