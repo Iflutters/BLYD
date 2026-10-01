@@ -13,7 +13,8 @@
     "coverage": "node --test --experimental-test-coverage \"tests/unit/**/*.test.js\"",
     "lint": "eslint .",
     "create-admin": "node scripts/create-admin.js",
-    "demo": "node scripts/demo.js"
+    "demo": "node scripts/demo.js",
+    "load": "node scripts/load-test.js"
   },
   "engines": {
     "node": ">=22"

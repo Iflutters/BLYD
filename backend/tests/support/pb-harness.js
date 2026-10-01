@@ -79,6 +79,8 @@ async function startPocketBase(extraEnv, options) {
   const baseUrl = `http://127.0.0.1:${port}`
   const serveArgs = ['serve', `--http=127.0.0.1:${port}`].concat(args())
   if (options && options.publicDir) serveArgs.push(`--publicDir=${options.publicDir}`)
+  // teste de carga: tamanho do pool de VMs do JS (padrão do PocketBase: 15)
+  if (process.env.KAMBAN_HOOKS_POOL) serveArgs.push(`--hooksPool=${process.env.KAMBAN_HOOKS_POOL}`)
   const child = spawn(BIN, serveArgs, { env, stdio: 'pipe' })
   let output = ''
   child.stdout.on('data', (d) => (output += d))
