@@ -425,12 +425,15 @@ export function OwnerCell({
   itemName,
   readOnly,
   onChange,
+  labels,
 }: {
   owner: { id: string; name: string; avatarUrl?: string | null } | null
   members: ProjectMember[]
   itemName: string
   readOnly: boolean
   onChange: (ownerId: string | null) => void
+  /** Rótulos acessíveis (padrão: os do responsável do subelemento). */
+  labels?: { popover: string; button: (value: string) => string; empty: string }
 }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
@@ -447,13 +450,17 @@ export function OwnerCell({
   if (readOnly) return <span className="flex justify-center">{face}</span>
   return (
     <AppPopover
-      label={t('plan.ownerOf', { name: itemName })}
+      label={labels?.popover ?? t('plan.ownerOf', { name: itemName })}
       className="w-60"
       onOpenChange={(open) => {
         if (!open) setQuery('')
       }}
       trigger={
-        <button type="button" aria-label={t('plan.ownerOfValue', { name: itemName, value: owner?.name ?? t('plan.noOwner') })} className={cn(cellButton, 'group/cell min-h-8')}>
+        <button
+          type="button"
+          aria-label={labels ? labels.button(owner?.name ?? labels.empty) : t('plan.ownerOfValue', { name: itemName, value: owner?.name ?? t('plan.noOwner') })}
+          className={cn(cellButton, 'group/cell min-h-8')}
+        >
           {face ?? <Plus aria-hidden className="size-4 text-subtle opacity-0 group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100" />}
         </button>
       }
@@ -477,7 +484,7 @@ export function OwnerCell({
                 }}
                 className="rounded-md px-2 py-1.5 text-left text-sm text-muted hover:bg-surface-2"
               >
-                {t('plan.noOwner')}
+                {labels?.empty ?? t('plan.noOwner')}
               </button>
             )}
             {people.map((m) => (
@@ -504,16 +511,33 @@ export function OwnerCell({
   )
 }
 
-export function DateCell({ value, itemName, readOnly, onChange }: { value: string | null; itemName: string; readOnly: boolean; onChange: (value: string | null) => void }) {
+export function DateCell({
+  value,
+  itemName,
+  readOnly,
+  onChange,
+  labels,
+}: {
+  value: string | null
+  itemName: string
+  readOnly: boolean
+  onChange: (value: string | null) => void
+  /** Rótulos acessíveis (padrão: os da data do subelemento). */
+  labels?: { popover: string; button: (value: string) => string; empty: string }
+}) {
   const { t, i18n } = useTranslation()
   const text = formatSchedule(value, value, i18n.language)
   const shown = text ? <span className="text-xs tabular-nums">{text}</span> : null
   if (readOnly) return <span className="flex justify-center">{shown}</span>
   return (
     <AppPopover
-      label={t('plan.dueOf', { name: itemName })}
+      label={labels?.popover ?? t('plan.dueOf', { name: itemName })}
       trigger={
-        <button type="button" aria-label={t('plan.dueOfValue', { name: itemName, value: text ?? t('plan.noDate') })} className={cn(cellButton, 'group/cell min-h-8')}>
+        <button
+          type="button"
+          aria-label={labels ? labels.button(text ?? labels.empty) : t('plan.dueOfValue', { name: itemName, value: text ?? t('plan.noDate') })}
+          className={cn(cellButton, 'group/cell min-h-8')}
+        >
           {shown ?? <Plus aria-hidden className="size-4 text-subtle opacity-0 group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100" />}
         </button>
       }

@@ -60,6 +60,14 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
     await app.admin.post(`/projects/${seed.project.id}/plan/journal`, { entry_date: '2020-01-06', content: 'Reunião de abertura do projeto.' })
     await app.admin.post(`/projects/${seed.project.id}/plan/issues`, { opened_on: '2020-01-07', description: 'Cliente sem acesso à VPN', owner_id: seed.member.id })
     await app.admin.put(`/projects/${seed.project.id}/plan/baseline`, {})
+    // colunas personalizadas (GP-5) com valores: número, lista, caixa, pessoa e link
+    const col = async (body) => (await app.admin.post(`/projects/${seed.project.id}/plan/columns`, body)).body.data
+    const custo = await col({ name: 'Custo', type: 'number', settings: { unit: 'R$' } })
+    const etapa = await col({ name: 'Etapa', type: 'dropdown', settings: { options: [{ name: 'Piloto', color: 'violet' }] } })
+    const ok = await col({ name: 'Aprovado', type: 'checkbox' })
+    const quem = await col({ name: 'Aprovador', type: 'people' })
+    const site = await col({ name: 'Ata', type: 'link' })
+    await app.admin.patch(`/plan/items/${kickoff.id}`, { custom: { [custo.id]: 1200, [etapa.id]: etapa.settings.options[0].id, [ok.id]: true, [quem.id]: seed.member.id, [site.id]: 'https://example.com/ata' } })
     // documentação: espaço com uma página rica publicada e uma subpágina em rascunho
     const space = (await app.admin.post('/docs/spaces', { key: 'MANUAL', name: 'Manuais', description: 'Guias de uso.', visibility: 'company' })).body.data
     const docPage = (await app.admin.post(`/docs/spaces/${space.id}/pages`, { title: 'Cadastro de clientes' })).body.data

@@ -191,7 +191,8 @@
     "PLAN_UPDATE_NOT_FOUND": "Actualización no encontrada.",
     "PLAN_FILE_NOT_FOUND": "Archivo no encontrado.",
     "PLAN_JOURNAL_NOT_FOUND": "Registro del diario no encontrado.",
-    "PLAN_ISSUE_NOT_FOUND": "Problema no encontrado."
+    "PLAN_ISSUE_NOT_FOUND": "Problema no encontrado.",
+    "PLAN_COLUMN_NOT_FOUND": "Columna no encontrada."
   },
   "nav": {
     "main": "Navegación principal",
@@ -612,7 +613,12 @@
       "opened_on": "Fecha",
       "issue_state": "Situación",
       "issue_owner": "Responsable",
-      "baseline_items": "Elementos en la línea base"
+      "baseline_items": "Elementos en la línea base",
+      "column": "Columna",
+      "column_type": "Tipo de columna",
+      "lost_values": "Valores perdidos",
+      "cleared_values": "Valores borrados",
+      "filled_values": "Valores completados"
     },
     "actions": {
       "auth.login": "Inició sesión",
@@ -720,7 +726,12 @@
       "plan_issue.updated": "Problema actualizado",
       "plan_issue.deleted": "Problema eliminado",
       "plan_settings.baseline_saved": "Línea base guardada",
-      "plan_settings.baseline_cleared": "Línea base borrada"
+      "plan_settings.baseline_cleared": "Línea base borrada",
+      "plan_column.created": "Columna agregada",
+      "plan_column.updated": "Columna editada",
+      "plan_column.type_changed": "Tipo de columna cambiado",
+      "plan_column.duplicated": "Columna duplicada",
+      "plan_column.deleted": "Columna eliminada"
     }
   },
   "projects": {
@@ -2682,6 +2693,77 @@
         "group": "Grupo",
         "items": "Listos/total",
         "empty": "Todavía no hay grupos."
+      }
+    },
+    "customColumns": {
+      "add": "Agregar columna",
+      "addRight": "Agregar columna a la derecha",
+      "create": "Agregar columna",
+      "createTitle": "Nueva columna",
+      "editTitle": "Editar columna \"{{name}}\"",
+      "hint": "Las columnas valen para todos los elementos del tablero. Quien edita el tablero completa las celdas.",
+      "name": "Nombre de la columna",
+      "type": "Tipo",
+      "options": "Opciones",
+      "optionColor": "Color de {{name}}",
+      "optionName": "Nombre de la opción {{index}}",
+      "removeOption": "Quitar la opción {{name}}",
+      "addOption": "Agregar opción",
+      "optionsInUse_one": "{{count}} opción quitada está en uso: los elementos que la usan quedan vacíos.",
+      "optionsInUse_other": "{{count}} opciones quitadas están en uso: los elementos que las usan quedan vacíos.",
+      "unit": "Unidad",
+      "unitHint": "Ej.: $, kg, h (aparece junto al número y en el total).",
+      "rename": "Renombrar columna",
+      "editColumn": "Editar columna y opciones",
+      "editOptions": "Editar opciones",
+      "changeType": "Cambiar tipo",
+      "changeTypeTitle": "Cambiar el tipo de \"{{name}}\"",
+      "changeTypeHint": "Hoy es {{type}}. Los valores se convierten cuando se puede; lo que no se convierte queda vacío.",
+      "previewOk_one": "El valor completado se convierte.",
+      "previewOk_other": "Los {{count}} valores completados se convierten.",
+      "previewLost_one": "{{converted}} convertido(s) · {{count}} valor no se convierte y queda vacío.",
+      "previewLost_other": "{{converted}} convertido(s) · {{count}} valores no se convierten y quedan vacíos.",
+      "typeChanged": "La columna \"{{name}}\" ahora es {{type}}.",
+      "duplicate": "Duplicar columna",
+      "duplicated": "Columna \"{{name}}\" creada.",
+      "delete": "Eliminar columna",
+      "deleteTitle": "¿Eliminar la columna \"{{name}}\"?",
+      "deleteDescription_zero": "La columna está vacía. El registro queda en el historial del proyecto.",
+      "deleteDescription_one": "Se borrará el valor de {{count}} elemento. El registro queda en el historial del proyecto.",
+      "deleteDescription_other": "Se borrarán los valores de {{count}} elementos. El registro queda en el historial del proyecto.",
+      "deleted": "Columna \"{{name}}\" eliminada.",
+      "created": "Columna \"{{name}}\" agregada.",
+      "updated": "Columna \"{{name}}\" actualizada.",
+      "tooMany": "El tablero ya tiene el máximo de {{max}} columnas personalizadas.",
+      "cellOf": "{{column}} de {{name}}",
+      "cellOfValue": "{{column}} de {{name}}: {{value}}",
+      "empty": "Vacío",
+      "fill": "Completar {{label}}",
+      "editLink": "Editar {{label}}",
+      "issues": {
+        "required": "Campo obligatorio",
+        "too_long": "Texto demasiado largo",
+        "invalid_option": "Toda opción necesita nombre (hasta 40 caracteres) y color",
+        "duplicate_option": "Hay opciones con el mismo nombre",
+        "too_many": "Hasta 30 opciones"
+      },
+      "types": {
+        "text": "Texto",
+        "number": "Número",
+        "date": "Fecha",
+        "checkbox": "Casilla",
+        "dropdown": "Lista de opciones",
+        "people": "Persona",
+        "link": "Enlace"
+      },
+      "typeHints": {
+        "text": "Notas cortas",
+        "number": "Valores y cantidades, con suma",
+        "date": "Un día en el calendario",
+        "checkbox": "Sí o no",
+        "dropdown": "Etiquetas de colores",
+        "people": "Alguien del proyecto",
+        "link": "Dirección web"
       }
     }
   },

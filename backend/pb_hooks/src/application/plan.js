@@ -15,7 +15,7 @@
 const { appError } = require('../core/errors')
 const planDomain = require('../domain/plan')
 const { iso } = require('./presenters')
-const { createPlanSupport, invalid, idOf, presentStatus, presentResource, presentLink, presentSummary, indexBy, MAX_ITEMS, DEFAULT_RESOURCE_COLOR } = require('./plan-support')
+const { createPlanSupport, invalid, idOf, presentStatus, presentResource, presentLink, presentColumn, presentSummary, indexBy, MAX_ITEMS, DEFAULT_RESOURCE_COLOR } = require('./plan-support')
 
 function createPlanService(deps) {
   const groups = deps.projectGroupRepository
@@ -24,7 +24,7 @@ function createPlanService(deps) {
   const items = deps.planItemRepository
 
   const support = createPlanSupport(deps)
-  const { loadProject, loadOwned, assertCan, audit, ensureStatuses, settingsOf, pendingMap, assertDependencies, usersOf, presentItem, presentGroup, progressOf, loadGroup, loadItem, snapshot, changes, assertRefs, fieldsFrom } = support
+  const { loadProject, loadOwned, assertCan, audit, ensureStatuses, settingsOf, pendingMap, assertDependencies, usersOf, presentItem, presentGroup, progressOf, loadGroup, loadItem, snapshot, changes, assertRefs, fieldsFrom, listColumns, readCustom } = support
 
   /* ------------------------------------------------------------------ leitura */
 
@@ -53,6 +53,9 @@ function createPlanService(deps) {
     const baseline = settings.baseline ? settings.baseline.items || {} : {}
     const baseOf = (id) => baseline[id] || { start: null, end: null }
     const statusOf = (i) => i.statusId || null
+    // colunas personalizadas (GP-5): valores nos elementos e soma das numéricas no rodapé
+    const columnList = listColumns(project.id)
+    const numberColumns = columnList.filter((c) => c.type === 'number').map((c) => c.id)
     return {
       project: { id: project.id, key: project.key, name: project.name, archived: !!project.archivedAt },
       capabilities: { edit: can.edit, manage: can.manage },
@@ -67,16 +70,18 @@ function createPlanService(deps) {
             progress,
             statusOf,
             categoryOf,
+            numberColumns,
           ),
         ),
       ),
       // resumo de todo o quadro (Bateria e Esforço do Cronograma)
-      summary: presentSummary(planDomain.groupSummary(list, progress, statusOf, categoryOf)),
+      summary: presentSummary(planDomain.groupSummary(list, progress, statusOf, categoryOf, numberColumns)),
+      columns: columnList.map(presentColumn),
       settings: { dependency_rule: settings.dependencyRule, baseline_at: settings.baseline ? iso(settings.baseline.savedAt) : null },
       links: links.map(presentLink),
       // bloqueado = depende de elemento ainda aberto (a regra do quadro decide se só sinaliza ou impede)
       items: list.map((i) =>
-        Object.assign(presentItem(i, progress, users, childCount[i.id]), {
+        Object.assign(presentItem(i, progress, users, childCount[i.id], columnList), {
           blocked: !!pending[i.id],
           updates: updateCounts[i.id] || 0,
           files: fileCounts[i.id] || 0,
@@ -248,6 +253,7 @@ function createPlanService(deps) {
             ownerId: item.ownerId || null,
             resourceIds: item.resourceIds || [],
             metrics: Object.assign({}, item.metrics || {}),
+            custom: Object.assign({}, item.custom || {}),
             progress: item.progress || 0,
             progressSet: !!item.progressSet,
             position: item.position,
@@ -268,7 +274,7 @@ function createPlanService(deps) {
     const root = item.parentId ? items.findById(item.parentId) || item : item
     const family = [root].concat(items.listChildren(root.id))
     const progress = progressOf(family, indexBy(statuses.listByProject(project.id)))
-    return presentItem(item, progress, usersOf([item]), item.parentId ? 0 : family.length - 1)
+    return presentItem(item, progress, usersOf([item]), item.parentId ? 0 : family.length - 1, listColumns(item.projectId))
   }
 
   function createItem(ctx, projectId, raw) {
@@ -291,6 +297,8 @@ function createPlanService(deps) {
     const dates = planDomain.datesIssue(data.start_date || null, data.end_date || null)
     if (dates) throw invalid({ end_date: dates })
     assertRefs(project, data)
+    const columnList = listColumns(project.id)
+    const custom = readCustom(project, parentId ? { parentId } : null, (raw || {}).custom, columnList)
     const created = deps.unitOfWork.run((repos) => {
       const item = repos.planItemRepository.create(
         Object.assign(
@@ -304,12 +312,13 @@ function createPlanService(deps) {
             progress: 0,
             progressSet: false,
             position: (repos.planItemRepository.maxPosition(groupId, parentId) || 0) + planDomain.POSITION_STEP,
+            custom: custom || {},
             createdBy: ctx.principal.userId,
           },
           fieldsFrom(data, null),
         ),
       )
-      const after = snapshot(item)
+      const after = snapshot(item, columnList)
       const filled = {}
       Object.keys(after).forEach((key) => {
         if (after[key] !== null) filled[key] = after[key]
@@ -344,7 +353,10 @@ function createPlanService(deps) {
       patch.groupId = moveGroupTo
       patch.position = (items.maxPosition(moveGroupTo, null) || 0) + planDomain.POSITION_STEP
     }
-    const change = changes(snapshot(item), snapshot(Object.assign({}, item, patch)))
+    const columnList = listColumns(project.id)
+    const custom = readCustom(project, item, (raw || {}).custom, columnList)
+    if (custom !== undefined) patch.custom = custom
+    const change = changes(snapshot(item, columnList), snapshot(Object.assign({}, item, patch), columnList))
     if (!change) return getItem(ctx, item.id)
     deps.unitOfWork.run((repos) => {
       repos.planItemRepository.update(item.id, patch)

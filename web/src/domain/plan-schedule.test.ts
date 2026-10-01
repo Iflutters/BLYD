@@ -28,6 +28,7 @@ const item = (id: string, extra: Partial<PlanItem> = {}): PlanItem => ({
   files: 0,
   baselineStart: null,
   baselineEnd: null,
+  custom: {},
   ...extra,
 })
 
@@ -77,7 +78,8 @@ describe('domain/plan-schedule', () => {
       groups: [{ id: 'g1', parentId: null, name: 'Iniciação', color: 'blue', position: 1, number: '1.0', summary: null }],
       items: [item('Kickoff', { statusId: 'done', startDate: '2024-01-26', endDate: '2024-01-27', durationDays: 2, estimatedHours: 1.5, progress: { value: 100, source: 'done' }, baselineStart: '2024-01-26', baselineEnd: '2024-01-26' }), item('Sub', { parentId: 'Kickoff' })],
       links: [],
-      settings: { dependencyRule: 'warn', baselineAt: null },
+      columns: [],
+    settings: { dependencyRule: 'warn', baselineAt: null },
       summary: null,
       truncated: false,
     } satisfies Plan

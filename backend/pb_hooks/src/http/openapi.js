@@ -693,6 +693,20 @@ function build() {
         patch: op('Atualiza o problema (quem edita o quadro); resolved guarda resolved_on', ['plan'], { 200: ok('Problema', ref('PlanIssue')), 404: errorResponse('PLAN_ISSUE_NOT_FOUND') }, { parameters: [idParam, csrfHeader] }),
         delete: op('Exclui o problema (quem abriu ou o gestor)', ['plan'], { 200: ok('Excluído', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
       },
+      // quadro — GP-5 (colunas personalizadas)
+      '/projects/{id}/plan/columns': {
+        post: op('Adiciona coluna (gestor): { name* (≤ 60), type* (text | number | date | checkbox | dropdown | people | link), settings (dropdown: { options: [{ name, color }] }; number: { unit }) } — até 30 por quadro', ['plan'], { 201: ok('Coluna', ref('PlanColumn')) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/plan/columns/{id}': {
+        patch: op('Renomeia/edita as opções (gestor): { name, settings } — opção removida limpa os valores que a usavam', ['plan'], { 200: ok('Coluna', ref('PlanColumn')), 404: errorResponse('PLAN_COLUMN_NOT_FOUND') }, { parameters: [idParam, csrfHeader] }),
+        delete: op('Exclui a coluna e os valores dela (gestor) → { deleted, values }', ['plan'], { 200: ok('Excluída', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/plan/columns/{id}/type': {
+        post: op('Altera o tipo (gestor): { type*, settings, dry_run } — converte os valores quando dá; com dry_run devolve { converted, lost } sem gravar', ['plan'], { 200: ok('Coluna ou prévia', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/plan/columns/{id}/duplicate': {
+        post: op('Duplica a coluna com os valores (gestor)', ['plan'], { 201: ok('Coluna', ref('PlanColumn')) }, { parameters: [idParam, csrfHeader] }),
+      },
       '/projects/{id}/plan/report': {
         get: op('Relatório do quadro (quem vê o quadro): resumo, cronograma, esforço, recursos, grupos e saúde do projeto (pior fator, com os fatores); tz_offset em minutos (−840..840)', ['plan'], { 200: ok('Relatório', { type: 'object' }), 400: errorResponse('VALIDATION_ERROR') }, { parameters: [idParam, { name: 'tz_offset', in: 'query', schema: { type: 'integer' } }] }),
       },
@@ -1039,6 +1053,7 @@ function build() {
             updates: { type: 'integer', description: 'atualizações (não excluídas) — contador da linha' },
             files: { type: 'integer' },
             baseline_start: { type: ['string', 'null'], description: 'linha de base do Cronograma (AAAA-MM-DD)' },
+            custom: { type: 'object', description: 'valores das colunas personalizadas { coluna: valor } (só elementos); no PATCH, null limpa' },
             baseline_end: { type: ['string', 'null'] },
           },
         },
@@ -1058,6 +1073,10 @@ function build() {
             files: { type: 'array', items: ref('PlanFile'), description: 'imagens/arquivos colados ou anexados (vazio quando excluída)' },
             replies: { type: 'array', items: { type: 'object' } },
           },
+        },
+        PlanColumn: {
+          type: 'object',
+          properties: { id: { type: 'string' }, name: { type: 'string' }, type: { type: 'string', enum: ['text', 'number', 'date', 'checkbox', 'dropdown', 'people', 'link'] }, settings: { type: 'object' }, position: { type: 'number' } },
         },
         JournalEntry: {
           type: 'object',

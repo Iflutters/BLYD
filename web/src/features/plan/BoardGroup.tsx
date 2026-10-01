@@ -115,6 +115,7 @@ export function BoardGroup({
   isRowSelected,
   sortable,
   dragHandle,
+  headerTrail,
 }: {
   section: BoardSection
   collapsed: boolean
@@ -131,6 +132,8 @@ export function BoardGroup({
   isRowSelected?: (item: PlanItem) => boolean
   sortable?: { containerId: string; disabled: boolean }
   dragHandle?: ReactNode
+  /** Fim do cabeçalho da tabela (ex.: "+" para adicionar coluna). */
+  headerTrail?: ReactNode
 }) {
   const { t } = useTranslation()
   const { group, parent } = section
@@ -161,6 +164,7 @@ export function BoardGroup({
         collapsed={collapsed}
         collapsedSummary={title}
         isRowSelected={isRowSelected}
+        headerTrail={headerTrail}
         headerLead={
           selection && (
             // alinhado à caixa das linhas (depois da alça de arrastar)

@@ -5,6 +5,7 @@ import i18n from '@/core/i18n'
 import type { Plan, PlanGroup, PlanItem } from '@/domain/plan'
 import type { PlanFile, PlanUpdate } from '@/domain/plan-updates'
 import type { JournalEntry, PlanIssue, PlanReport } from '@/domain/plan-management'
+import type { PlanColumn } from '@/domain/plan-columns'
 import type { Project, ProjectMember } from '@/domain/projects'
 import type { PlanRepository } from '@/domain/repositories'
 import { AppError } from '@/core/errors/app-error'
@@ -57,6 +58,7 @@ const item = (id: string, groupId: string, name: string, extra: Partial<PlanItem
   files: 0,
   baselineStart: null,
   baselineEnd: null,
+  custom: {},
   ...extra,
 })
 
@@ -103,6 +105,7 @@ function makePlan(extra: Partial<Plan> = {}): Plan {
       item('i3', 'g-pp', 'Elaborar plano v6'),
     ],
     links: [],
+    columns: [],
     settings: { dependencyRule: 'warn', baselineAt: null },
     summary: null,
     truncated: false,
@@ -627,5 +630,86 @@ describe('Quadro do projeto — GP-4 (visões e gestão)', () => {
     expect(report).toHaveBeenCalledWith('p1', new Date().getTimezoneOffset())
     expect(screen.getByRole('region', { name: 'Esforço' })).toHaveTextContent('+25%')
     expect(screen.getByRole('table', { name: 'Grupos' })).toHaveTextContent('1.0 Iniciação')
+  })
+})
+
+describe('Quadro do projeto — GP-5 (colunas personalizadas)', () => {
+  const custo: PlanColumn = { id: 'c-custo', name: 'Custo', type: 'number', settings: { unit: 'R$' }, position: 1 }
+  const fase: PlanColumn = { id: 'c-fase', name: 'Fase', type: 'dropdown', settings: { options: [{ id: 'o-pil', name: 'Piloto', color: 'blue' }, { id: 'o-pro', name: 'Produção', color: 'green' }] }, position: 2 }
+  const withColumns = () => {
+    const data = makePlan({ columns: [custo, fase] })
+    data.items = data.items.map((i) => (i.id === 'i1' ? { ...i, custom: { 'c-custo': 1200, 'c-fase': 'o-pil' } } : i))
+    data.groups = data.groups.map((g) => (g.id === 'g-ini' && g.summary ? { ...g, summary: { ...g.summary, customSums: { 'c-custo': 1200 } } } : g))
+    return data
+  }
+
+  it('gestor: "+" no fim do cabeçalho adiciona coluna (nome, tipo e opções da lista)', async () => {
+    const createColumn = vi.fn<PlanRepository['createColumn']>((_p, input) => Promise.resolve({ id: 'c-new', name: input.name ?? '', type: input.type ?? 'text', settings: input.settings ?? {}, position: 3 }))
+    setup({ createColumn })
+    const ini = await screen.findByRole('table', { name: '1.0 Iniciação' })
+    await userEvent.click(within(ini).getByRole('button', { name: 'Adicionar coluna' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Nova coluna' })
+    await userEvent.type(within(dialog).getByRole('textbox', { name: /^Nome da coluna/ }), 'Etapa')
+    await userEvent.click(within(dialog).getByRole('radio', { name: /Lista de opções/ }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Adicionar opção' }))
+    await userEvent.type(within(dialog).getByRole('textbox', { name: 'Nome da opção 1' }), 'Piloto')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Adicionar coluna' }))
+    await waitFor(() => expect(createColumn).toHaveBeenCalledWith('p1', { name: 'Etapa', type: 'dropdown', settings: { options: [{ name: 'Piloto', color: expect.any(String) }] } }))
+  })
+
+  it('células por tipo: número com unidade e soma no rodapé; lista colorida; editar grava só a coluna', async () => {
+    const updateItem = vi.fn<PlanRepository['updateItem']>((id) => Promise.resolve(withColumns().items.find((i) => i.id === id) as PlanItem))
+    setup({ updateItem }, withColumns())
+    const ini = await screen.findByRole('table', { name: '1.0 Iniciação' })
+    expect(within(ini).getByRole('columnheader', { name: /Custo/ })).toBeInTheDocument()
+    expect(within(ini).getByRole('button', { name: 'Custo de Elaborar pré-cronograma' })).toHaveTextContent('1.200 R$')
+    expect(within(ini).getByRole('button', { name: 'Fase de Elaborar pré-cronograma: Piloto' })).toBeInTheDocument()
+    // a célula e o total do rodapé
+    expect(within(ini).getAllByText('1.200 R$')).toHaveLength(2)
+
+    await userEvent.click(within(ini).getByRole('button', { name: 'Fase de Elaborar pré-cronograma: Piloto' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Produção', pressed: false }))
+    await waitFor(() => expect(updateItem).toHaveBeenCalledWith('i1', { custom: { 'c-fase': 'o-pro' } }))
+
+    await userEvent.click(within(ini).getByRole('button', { name: 'Custo de Apresentar pré-cronograma' }))
+    const input = within(ini).getByRole('textbox', { name: 'Custo de Apresentar pré-cronograma' })
+    await userEvent.type(input, '350,5{Enter}')
+    await waitFor(() => expect(updateItem).toHaveBeenCalledWith('i2', { custom: { 'c-custo': 350.5 } }))
+  })
+
+  it('menu da coluna: alterar o tipo mostra a prévia do que se perde; excluir pede confirmação', async () => {
+    const previewColumnType = vi.fn<PlanRepository['previewColumnType']>(() => Promise.resolve({ converted: 0, lost: 1 }))
+    const changeColumnType = vi.fn<PlanRepository['changeColumnType']>(() => Promise.resolve({ ...fase, type: 'text' }))
+    const deleteColumn = vi.fn<PlanRepository['deleteColumn']>(() => Promise.resolve({ values: 1 }))
+    setup({ previewColumnType, changeColumnType, deleteColumn }, withColumns())
+    const ini = await screen.findByRole('table', { name: '1.0 Iniciação' })
+
+    await userEvent.click(within(ini).getByRole('button', { name: 'Opções da coluna Fase' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Alterar tipo' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Alterar o tipo de "Fase"' })
+    await userEvent.click(within(dialog).getByRole('radio', { name: /Número/ }))
+    expect(await within(dialog).findByText('0 convertido(s) · 1 valor não converte e fica vazio.')).toBeInTheDocument()
+    expect(previewColumnType).toHaveBeenCalledWith('c-fase', { type: 'number' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Alterar tipo' }))
+    await waitFor(() => expect(changeColumnType).toHaveBeenCalledWith('c-fase', { type: 'number' }))
+
+    await userEvent.click(within(ini).getByRole('button', { name: 'Opções da coluna Custo' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir coluna' }))
+    const confirm = await screen.findByRole('alertdialog')
+    expect(confirm).toHaveTextContent('O valor de 1 elemento será apagado.')
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Excluir' }))
+    await waitFor(() => expect(deleteColumn).toHaveBeenCalledWith('c-custo'))
+  })
+
+  it('quem não é gestor: sem "+" nem opções de coluna; leitor vê os valores sem editar', async () => {
+    const data = withColumns()
+    data.capabilities = { edit: false, manage: false }
+    setup({}, data)
+    const ini = await screen.findByRole('table', { name: '1.0 Iniciação' })
+    expect(within(ini).queryByRole('button', { name: 'Adicionar coluna' })).not.toBeInTheDocument()
+    expect(within(ini).getByText('Piloto')).toBeInTheDocument()
+    expect(within(ini).queryByRole('button', { name: /^Fase de/ })).not.toBeInTheDocument()
+    await userEvent.click(within(ini).getByRole('button', { name: 'Opções da coluna Fase' }))
+    expect(screen.queryByRole('menuitem', { name: 'Excluir coluna' })).not.toBeInTheDocument()
   })
 })

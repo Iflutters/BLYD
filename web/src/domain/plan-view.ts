@@ -8,6 +8,7 @@
  */
 import type { OptionColor } from './task-config'
 import type { Plan, PlanGroup, PlanGroupSummary, PlanItem, PlanLink, PlanStatus, PlanStatusCategory } from './plan'
+import { columnIdOf, customSortKey, isCustomColumnId, sumCustom } from './plan-columns'
 
 /* ------------------------------------------------------------------ tipos */
 
@@ -29,7 +30,7 @@ export interface BoardSection {
   synthetic: boolean
 }
 
-export type PlanSortColumn = 'name' | 'status' | 'schedule' | 'resources' | 'estimated' | 'duration' | 'progress'
+export type PlanSortColumn = 'name' | 'status' | 'schedule' | 'resources' | 'estimated' | 'duration' | 'progress' | `custom:${string}`
 export interface PlanSort {
   column: PlanSortColumn
   direction: 'asc' | 'desc'
@@ -135,7 +136,9 @@ function matchesElement(item: PlanItem, f: PlanFilters, ctx: { today: string; ca
 function comparator(plan: Plan, sort: PlanSort) {
   const statusPos = new Map(plan.statuses.map((s) => [s.id, s.position]))
   const resourceName = new Map(plan.resources.map((r) => [r.id, r.name]))
+  const custom = isCustomColumnId(sort.column) ? plan.columns.find((c) => c.id === columnIdOf(sort.column)) : undefined
   const key = (item: PlanItem): string | number | null => {
+    if (custom) return customSortKey(custom, item.custom[custom.id])
     switch (sort.column) {
       case 'name':
         return fold(item.name)
@@ -151,6 +154,8 @@ function comparator(plan: Plan, sort: PlanSort) {
         return item.durationDays
       case 'progress':
         return item.progress.value
+      default:
+        return null
     }
   }
   const sign = sort.direction === 'asc' ? 1 : -1
@@ -193,6 +198,7 @@ export function summarize(items: PlanItem[], plan: Plan): PlanGroupSummary {
     estimatedHours: sum2(top.map((i) => i.estimatedHours).filter((v): v is number => v !== null)),
     durationDays: sum2(top.map((i) => i.durationDays).filter((v): v is number => v !== null)),
     progress,
+    customSums: sumCustom(top, plan.columns),
   }
 }
 

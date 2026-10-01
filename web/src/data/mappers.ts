@@ -1,6 +1,7 @@
 import { DEPENDENCY_RULES, PLAN_STATUS_CATEGORIES, PROGRESS_SOURCES, type Plan, type PlanLink, type PlanGroup, type PlanGroupSummary, type PlanItem, type PlanResource, type PlanStatus } from '@/domain/plan'
 import type { PlanFile, PlanUpdate } from '@/domain/plan-updates'
-import type { JournalEntryDto, PlanFileDto, PlanIssueDto, PlanReportDto, PlanUpdateDto } from './dtos'
+import type { JournalEntryDto, PlanColumnDto, PlanFileDto, PlanIssueDto, PlanReportDto, PlanUpdateDto } from './dtos'
+import { COLUMN_TYPES, type PlanColumn } from '@/domain/plan-columns'
 import { HEALTH_FACTORS, ISSUE_STATES, type HealthFactorKey, type HealthLevel, type JournalEntry, type PlanIssue, type PlanReport } from '@/domain/plan-management'
 import type { PlanDto, PlanGroupDto, PlanGroupSummaryDto, PlanItemDto, PlanLinkDto, PlanResourceDto, PlanStatusDto } from './dtos'
 import type { AuditEntry, CurrentUser, Permission, Role, RoleSummary, Session, User } from '@/domain/entities'
@@ -594,6 +595,7 @@ function toPlanGroupSummary(dto: PlanGroupSummaryDto): PlanGroupSummary {
     estimatedHours: dto.estimated_hours ?? null,
     durationDays: dto.duration_days ?? null,
     progress: dto.progress ?? 0,
+    customSums: dto.custom_sums ?? {},
   }
 }
 
@@ -634,6 +636,7 @@ export function toPlanItem(dto: PlanItemDto): PlanItem {
     files: dto.files ?? 0,
     baselineStart: dto.baseline_start ?? null,
     baselineEnd: dto.baseline_end ?? null,
+    custom: dto.custom ?? {},
   }
 }
 
@@ -649,6 +652,7 @@ export function toPlan(dto: PlanDto): Plan {
     resources: (dto.resources ?? []).map(toPlanResource),
     groups: (dto.groups ?? []).map(toPlanGroup),
     items: (dto.items ?? []).map(toPlanItem),
+    columns: (dto.columns ?? []).map(toPlanColumn),
     links: (dto.links ?? []).map(toPlanLink),
     settings: { dependencyRule: oneOf(DEPENDENCY_RULES, dto.settings?.dependency_rule ?? '', 'warn'), baselineAt: toDate(dto.settings?.baseline_at ?? null) },
     summary: dto.summary ? toPlanGroupSummary(dto.summary) : null,
@@ -737,5 +741,22 @@ export function toPlanReport(dto: PlanReportDto): PlanReport {
         .filter((f): f is typeof f & { key: HealthFactorKey } => (HEALTH_FACTORS as readonly string[]).includes(f.key))
         .map((f) => ({ ...f, level: oneOf(HEALTH_LEVELS, f.level, 'none') })),
     },
+  }
+}
+
+/* ------------------------------------------------------------------ quadro — GP-5 (colunas personalizadas) */
+
+export function toPlanColumn(dto: PlanColumnDto): PlanColumn {
+  const type = oneOf(COLUMN_TYPES, dto.type, 'text')
+  const settings = dto.settings ?? {}
+  return {
+    id: dto.id,
+    name: dto.name,
+    type,
+    settings: {
+      ...(type === 'dropdown' ? { options: (settings.options ?? []).map((o) => ({ id: o.id, name: o.name, color: oneOf(OPTION_COLORS, o.color, 'gray') })) } : {}),
+      ...(type === 'number' && settings.unit ? { unit: settings.unit } : {}),
+    },
+    position: dto.position ?? 0,
   }
 }

@@ -8,6 +8,7 @@
  */
 import type { OptionColor } from './task-config'
 import type { UserSummary } from './projects'
+import type { CustomValue, PlanColumn } from './plan-columns'
 
 export const PLAN_STATUS_CATEGORIES = ['todo', 'in_progress', 'review', 'blocked', 'done', 'canceled'] as const
 export type PlanStatusCategory = (typeof PLAN_STATUS_CATEGORIES)[number]
@@ -51,6 +52,8 @@ export interface PlanGroupSummary {
   estimatedHours: number | null
   durationDays: number | null
   progress: number
+  /** Soma das colunas personalizadas numéricas (GP-5). */
+  customSums?: Record<string, number | null>
 }
 
 export interface PlanGroup {
@@ -96,6 +99,8 @@ export interface PlanItem {
   /** Linha de base do Cronograma (GP-4), salva pelo gestor; AAAA-MM-DD. */
   baselineStart: string | null
   baselineEnd: string | null
+  /** Valores das colunas personalizadas (GP-5; só elementos): { coluna: valor }. */
+  custom: Record<string, CustomValue>
 }
 
 /** Dependência gravada: `blocks` = from bloqueia to (to depende de from); `relates` = relacionados. */
@@ -122,6 +127,8 @@ export interface Plan {
   resources: PlanResource[]
   groups: PlanGroup[]
   items: PlanItem[]
+  /** Colunas personalizadas do quadro (GP-5), na ordem do quadro. */
+  columns: PlanColumn[]
   links: PlanLink[]
   /** baselineAt: quando o gestor salvou a linha de base do Cronograma (null = sem linha de base). */
   settings: { dependencyRule: DependencyRule; baselineAt: Date | null }
@@ -156,6 +163,8 @@ export interface PlanItemInput {
   actualHours?: number | null
   durationDays?: number | null
   progress?: number | null
+  /** Colunas personalizadas: só as que mudaram (null limpa). */
+  custom?: Record<string, CustomValue | null>
 }
 
 /** Arrastar/mover: grupo (elemento) e vizinho (sem vizinho = fim). */

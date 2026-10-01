@@ -4,7 +4,7 @@
  * células (status, cronograma, recursos, esforço), subelementos com progresso calculado, totais do
  * rodapé, colunas (ocultar, arrastar) e recolher lembrados, mover, duplicar e excluir grupo; a aba
  * Tarefas continua sendo a lista de tarefas; o leitor só vê. GP-2 (interação), GP-3 (painel do elemento) e
- * GP-4 (Cronograma, Kanban, Gestão e Relatórios) em testes próprios.
+ * GP-4 (Cronograma, Kanban, Gestão e Relatórios) e GP-5 (colunas personalizadas) em testes próprios.
  */
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
@@ -489,6 +489,59 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     const health = mario.page.getByRole('region', { name: 'Saúde do projeto' })
     await health.getByText('1 problema em aberto na Gestão.').waitFor()
     await health.getByText('Problemas em aberto').waitFor()
+    assert.deepEqual(mario.errors, [])
+    assert.deepEqual(admin.errors, [])
+  })
+
+  it('GP-5: colunas personalizadas — gestor adiciona pelo "+", membro preenche, soma no rodapé, alterar tipo com prévia e excluir', async () => {
+    const admin = await signIn(ADMIN.email, ADMIN.password, { viewport: { width: 1600, height: 900 } })
+    const project = (await api(admin.page, 'POST', '/projects', { name: 'Colunas GP5', key: 'CGP' })).json.data
+    const p = project.id
+    await api(admin.page, 'POST', `/projects/${p}/members`, { user_id: seed.member.id, role: 'member' })
+    const group = (await api(admin.page, 'POST', `/projects/${p}/groups`, { name: 'Execução' })).json.data
+    await api(admin.page, 'POST', `/projects/${p}/plan/items`, { group_id: group.id, name: 'Compra de servidores' })
+    await api(admin.page, 'POST', `/projects/${p}/plan/items`, { group_id: group.id, name: 'Licenças' })
+
+    // gestor: "+" no fim do cabeçalho → coluna Número com unidade
+    await admin.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    const table = admin.page.getByRole('table', { name: '1.0 Execução', exact: true })
+    await table.getByRole('button', { name: 'Adicionar coluna' }).click()
+    const dialog = admin.page.getByRole('dialog', { name: 'Nova coluna' })
+    await dialog.getByRole('textbox', { name: /^Nome da coluna/ }).fill('Custo')
+    await dialog.getByRole('radio', { name: /Número/ }).click()
+    await dialog.getByRole('textbox', { name: /^Unidade/ }).fill('R$')
+    await dialog.getByRole('button', { name: 'Adicionar coluna' }).click()
+    await table.getByRole('columnheader', { name: /Custo/ }).waitFor()
+
+    // membro: preenche as células; o rodapé soma
+    const mario = await signIn('mario@kamban.test', PASSWORD, { viewport: { width: 1600, height: 900 } })
+    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    const board = mario.page.getByRole('table', { name: '1.0 Execução', exact: true })
+    assert.equal(await board.getByRole('button', { name: 'Adicionar coluna' }).count(), 0)
+    for (const [name, value] of [
+      ['Compra de servidores', '1200'],
+      ['Licenças', '300,5'],
+    ]) {
+      await board.getByRole('button', { name: `Custo de ${name}` }).click()
+      await board.getByRole('textbox', { name: `Custo de ${name}` }).fill(value)
+      await mario.page.keyboard.press('Enter')
+    }
+    await board.getByText('1.500,5 R$').waitFor()
+
+    // gestor: alterar o tipo para Texto (tudo converte) e excluir
+    await admin.page.reload()
+    await table.getByRole('button', { name: 'Opções da coluna Custo' }).click()
+    await admin.page.getByRole('menuitem', { name: 'Alterar tipo' }).click()
+    const typeDialog = admin.page.getByRole('dialog', { name: 'Alterar o tipo de "Custo"' })
+    await typeDialog.getByRole('radio', { name: /^Texto/ }).click()
+    await typeDialog.getByText('Todos os 2 valores preenchidos são convertidos.').waitFor()
+    await typeDialog.getByRole('button', { name: 'Alterar tipo' }).click()
+    await admin.page.getByText('Coluna "Custo" agora é Texto.').first().waitFor()
+    await table.getByRole('button', { name: 'Opções da coluna Custo' }).click()
+    await admin.page.getByRole('menuitem', { name: 'Excluir coluna' }).click()
+    await admin.page.getByRole('alertdialog').getByRole('button', { name: 'Excluir' }).click()
+    await admin.page.getByText('Coluna "Custo" excluída.').first().waitFor()
+    assert.equal(await table.getByRole('columnheader', { name: /Custo/ }).count(), 0)
     assert.deepEqual(mario.errors, [])
     assert.deepEqual(admin.errors, [])
   })

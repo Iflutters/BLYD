@@ -1,7 +1,8 @@
 /**
  * Base compartilhada do quadro do projeto (Gerenciamento de Projetos): acesso e permissões,
- * apresentação, histórico legível e validação das referências do elemento. Usada pelos casos de
- * uso do quadro (application/plan.js) e das interações da GP-2 (application/plan-interaction.js).
+ * apresentação, histórico legível e validação das referências do elemento (inclusive os valores das
+ * colunas personalizadas da GP-5). Usada pelos casos de uso do quadro (plan.js, plan-interaction.js,
+ * plan-collaboration.js, plan-management.js e plan-columns.js).
  */
 
 const { appError } = require('../core/errors')
@@ -9,6 +10,7 @@ const rbac = require('../domain/rbac')
 const projectDomain = require('../domain/project')
 const planDomain = require('../domain/plan')
 const linkDomain = require('../domain/plan-links')
+const columnsDomain = require('../domain/plan-columns')
 const { buildAuditEntry } = require('./audit')
 const { iso, toUserSummary } = require('./presenters')
 
@@ -44,6 +46,11 @@ function indexBy(list) {
 }
 
 const metric = (item, key) => (item.metrics && typeof item.metrics[key] === 'number' ? item.metrics[key] : null)
+
+/** Coluna personalizada do quadro (GP-5). */
+function presentColumn(c) {
+  return { id: c.id, name: c.name, type: c.type, settings: c.settings || {}, position: c.position }
+}
 
 /** Totais (do grupo ou do quadro inteiro) com as datas em ISO. */
 function presentSummary(summary) {
@@ -158,7 +165,8 @@ function createPlanSupport(deps) {
     return indexBy(ids.length ? deps.userRepository.findManyByIds(ids) : [])
   }
 
-  function presentItem(item, progress, users, childCount) {
+  /** `columns`: colunas personalizadas do quadro (os valores só valem para elementos). */
+  function presentItem(item, progress, users, childCount, columns) {
     const owner = item.ownerId && users[item.ownerId] ? toUserSummary(users[item.ownerId]) : null
     return {
       id: item.id,
@@ -179,6 +187,7 @@ function createPlanSupport(deps) {
       progress: progress[item.id] || { value: 0, source: 'none' },
       progress_manual: item.progressSet ? item.progress || 0 : null,
       subitems: childCount || 0,
+      custom: item.parentId ? {} : columnsDomain.presentValues(item.custom, columns || []),
       position: item.position,
       created_at: iso(item.createdAt),
       updated_at: iso(item.updatedAt),
@@ -212,8 +221,8 @@ function createPlanSupport(deps) {
     return { item: found.record, project: found.project, can: found.can }
   }
 
-  /** Histórico legível do elemento (nomes no lugar de ids). */
-  function snapshot(item) {
+  /** Histórico legível do elemento (nomes no lugar de ids; colunas personalizadas como "cf:<nome>"). */
+  function snapshot(item, columns) {
     const status = item.statusId ? statuses.findById(item.statusId) : null
     const group = item.groupId ? groups.findById(item.groupId) : null
     const parent = item.parentId ? items.findById(item.parentId) : null
@@ -222,7 +231,7 @@ function createPlanSupport(deps) {
       .map((rid) => resources.findById(rid))
       .filter(Boolean)
       .map((r) => r.name)
-    return {
+    const out = {
       name: item.name,
       plan_group: group ? group.name : null,
       parent_item: parent ? parent.name : null,
@@ -237,6 +246,53 @@ function createPlanSupport(deps) {
       duration_days: metric(item, 'duration_days'),
       progress: item.progressSet ? `${item.progress || 0}%` : null,
     }
+    ;(columns || []).forEach((c) => {
+      out[`cf:${c.name}`] = readableValue(c, (item.custom || {})[c.id])
+    })
+    return out
+  }
+
+  /** Valor legível da coluna personalizada (opção pelo nome, pessoa pelo nome). */
+  function readableValue(column, value) {
+    if (value === null || value === undefined || value === '') return null
+    if (column.type === 'dropdown') {
+      const option = ((column.settings && column.settings.options) || []).find((o) => o.id === value)
+      return option ? option.name : null
+    }
+    if (column.type === 'people') {
+      const user = deps.userRepository.findById(value)
+      return user ? user.name : null
+    }
+    return value
+  }
+
+  const listColumns = (projectId) => deps.planColumnRepository.listByProject(projectId)
+
+  /**
+   * Valores das colunas personalizadas no corpo (`custom: { coluna: valor|null }`): só em elemento,
+   * só colunas do quadro, valor válido para o tipo; pessoa = quem participa do projeto. Devolve o
+   * objeto completo já mesclado (null tira o valor).
+   */
+  function readCustom(project, item, raw, columns) {
+    if (raw === undefined) return undefined
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw invalid({ custom: 'invalid_type' })
+    if (item && item.parentId) throw invalid({ custom: 'subitems_not_supported' })
+    const byId = indexBy(columns)
+    const next = Object.assign({}, (item && item.custom) || {})
+    Object.keys(raw).forEach((id) => {
+      const column = byId[id]
+      if (!column) throw invalid({ custom: 'invalid_option' })
+      const result = columnsDomain.normalizeValue(column, raw[id])
+      if (result.issue) throw invalid({ custom: result.issue })
+      if (column.type === 'people' && result.value) {
+        const user = deps.userRepository.findById(result.value)
+        const member = user ? deps.projectMemberRepository.find(project.id, user.id) : null
+        if (!user || user.status !== 'active' || (project.ownerId !== user.id && !member)) throw invalid({ custom: 'not_member' })
+      }
+      if (result.value === null) delete next[id]
+      else next[id] = result.value
+    })
+    return next
   }
 
   function changes(before, after) {
@@ -314,10 +370,13 @@ function createPlanSupport(deps) {
     loadGroup,
     loadItem,
     snapshot,
+    readableValue,
+    listColumns,
+    readCustom,
     changes,
     assertRefs,
     fieldsFrom,
   }
 }
 
-module.exports = { createPlanSupport, invalid, idOf, presentStatus, presentResource, presentLink, presentSummary, indexBy, metric, MAX_ITEMS, DEFAULT_RESOURCE_COLOR }
+module.exports = { createPlanSupport, invalid, idOf, presentStatus, presentResource, presentLink, presentColumn, presentSummary, indexBy, metric, MAX_ITEMS, DEFAULT_RESOURCE_COLOR }

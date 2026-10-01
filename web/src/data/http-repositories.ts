@@ -17,8 +17,9 @@ import type { Permission } from '@/domain/entities'
 import type { BacklogDto, BoardDto, MilestoneDto, ReportDto, ReportTaskDto, SprintDto, NotificationDto, TaskRelationDto, TaskRelationsDto, TimelineDto } from './dtos'
 import type { MilestoneInput } from '@/domain/timeline'
 import { toDocPage, toDocSpace, toDocTreePage, toMilestone, toPlan, toPlanFile, toPlanGroup, toPlanItem, toPlanLink, toPlanResource, toPlanStatus, toPlanUpdate, toTimeline } from './mappers'
-import type { JournalEntryDto, PlanDto, PlanFileDto, PlanGroupDto, PlanIssueDto, PlanItemDto, PlanLinkDto, PlanReportDto, PlanResourceDto, PlanStatusDto, PlanUpdateDto } from './dtos'
-import { toJournalEntry, toPlanIssue, toPlanReport } from './mappers'
+import type { JournalEntryDto, PlanColumnDto, PlanDto, PlanFileDto, PlanGroupDto, PlanIssueDto, PlanItemDto, PlanLinkDto, PlanReportDto, PlanResourceDto, PlanStatusDto, PlanUpdateDto } from './dtos'
+import { toJournalEntry, toPlanColumn, toPlanIssue, toPlanReport } from './mappers'
+import type { ColumnTypePreview } from '@/domain/plan-columns'
 import type { IssueInput, JournalInput } from '@/domain/plan-management'
 import type { PlanBulkInput, PlanBulkResult, PlanGroupInput, PlanImportResult, PlanImportRow, PlanItemInput } from '@/domain/plan'
 import type { DocPageDto, DocSpaceDto, DocTreePageDto } from './dtos'
@@ -589,6 +590,7 @@ function planItemBody(input: PlanItemInput) {
     actualHours: 'actual_hours',
     durationDays: 'duration_days',
     progress: 'progress',
+    custom: 'custom',
   }
   const body: Record<string, unknown> = {}
   ;(Object.keys(map) as Array<keyof PlanItemInput>).forEach((key) => {
@@ -737,6 +739,25 @@ export function createHttpPlanRepository(api: ApiClient): PlanRepository {
     },
     async deleteIssue(id) {
       await api.del(`/plan/issues/${encodeURIComponent(id)}`)
+    },
+    async createColumn(projectId, input) {
+      return toPlanColumn((await api.post<PlanColumnDto>(`${project(projectId)}/plan/columns`, input)).data)
+    },
+    async updateColumn(id, input) {
+      return toPlanColumn((await api.patch<PlanColumnDto>(`/plan/columns/${encodeURIComponent(id)}`, input)).data)
+    },
+    async previewColumnType(id, input) {
+      return (await api.post<ColumnTypePreview>(`/plan/columns/${encodeURIComponent(id)}/type`, { ...input, dry_run: true })).data
+    },
+    async changeColumnType(id, input) {
+      return toPlanColumn((await api.post<PlanColumnDto>(`/plan/columns/${encodeURIComponent(id)}/type`, input)).data)
+    },
+    async duplicateColumn(id) {
+      return toPlanColumn((await api.post<PlanColumnDto>(`/plan/columns/${encodeURIComponent(id)}/duplicate`, {})).data)
+    },
+    async deleteColumn(id) {
+      const { data } = await api.del<{ values?: number }>(`/plan/columns/${encodeURIComponent(id)}`)
+      return { values: data?.values ?? 0 }
     },
     async report(projectId, tzOffset) {
       return toPlanReport((await api.get<PlanReportDto>(`${project(projectId)}/plan/report`, { query: { tz_offset: String(tzOffset) } })).data)

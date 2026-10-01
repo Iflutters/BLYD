@@ -25,6 +25,8 @@ export interface AppBoardColumn<Row> extends BoardColumnDef {
   /** Célula sem espaçamento interno (ex.: status em bloco cheio). */
   flush?: boolean
   align?: 'start' | 'center'
+  /** Itens a mais no fim do menu da coluna (ex.: renomear, duplicar, excluir coluna personalizada). */
+  menuExtra?: AppDropdownItem[]
 }
 
 export interface AppBoardTableProps<Row> {
@@ -49,6 +51,8 @@ export interface AppBoardTableProps<Row> {
   nested?: boolean
   /** Conteúdo antes do rótulo da 1ª coluna (ex.: marcar todos). */
   headerLead?: ReactNode
+  /** Conteúdo no fim do cabeçalho, depois da última coluna (ex.: "+" para adicionar coluna). */
+  headerTrail?: ReactNode
   /** Linha destacada (ex.: selecionada). */
   isRowSelected?: (row: Row) => boolean
   /**
@@ -84,6 +88,7 @@ export function AppBoardTable<Row>({
   collapsedSummary,
   nested = false,
   headerLead,
+  headerTrail,
   isRowSelected,
   sortable,
   className,
@@ -150,6 +155,7 @@ export function AppBoardTable<Row>({
         { key: 'right', label: t('board.moveRight'), icon: <ArrowRight />, disabled: !api.canShift(column.id, 1), onSelect: () => api.shift(column.id, 1) },
       )
     }
+    if (column.menuExtra?.length) items.push({ type: 'separator', key: 'sep-extra' }, ...column.menuExtra)
     return items
   }
 
@@ -313,7 +319,13 @@ export function AppBoardTable<Row>({
               </th>
             )
           })}
-          <td aria-hidden className="rounded-tr-lg border-b border-r border-t border-border bg-surface" />
+          {headerTrail ? (
+            <td className="rounded-tr-lg border-b border-r border-t border-border bg-surface px-1">
+              <div className="flex items-center">{headerTrail}</div>
+            </td>
+          ) : (
+            <td aria-hidden className="rounded-tr-lg border-b border-r border-t border-border bg-surface" />
+          )}
         </tr>
       </thead>
       <BoardBody containerId={sortable?.containerId} ids={rows.map(rowKey)}>

@@ -191,7 +191,8 @@
     "PLAN_UPDATE_NOT_FOUND": "Update not found.",
     "PLAN_FILE_NOT_FOUND": "File not found.",
     "PLAN_JOURNAL_NOT_FOUND": "Journal entry not found.",
-    "PLAN_ISSUE_NOT_FOUND": "Issue not found."
+    "PLAN_ISSUE_NOT_FOUND": "Issue not found.",
+    "PLAN_COLUMN_NOT_FOUND": "Column not found."
   },
   "nav": {
     "main": "Main navigation",
@@ -612,7 +613,12 @@
       "opened_on": "Date",
       "issue_state": "Status",
       "issue_owner": "Owner",
-      "baseline_items": "Items in the baseline"
+      "baseline_items": "Items in the baseline",
+      "column": "Column",
+      "column_type": "Column type",
+      "lost_values": "Lost values",
+      "cleared_values": "Cleared values",
+      "filled_values": "Filled values"
     },
     "actions": {
       "auth.login": "Signed in",
@@ -720,7 +726,12 @@
       "plan_issue.updated": "Issue updated",
       "plan_issue.deleted": "Issue deleted",
       "plan_settings.baseline_saved": "Baseline saved",
-      "plan_settings.baseline_cleared": "Baseline cleared"
+      "plan_settings.baseline_cleared": "Baseline cleared",
+      "plan_column.created": "Column added",
+      "plan_column.updated": "Column edited",
+      "plan_column.type_changed": "Column type changed",
+      "plan_column.duplicated": "Column duplicated",
+      "plan_column.deleted": "Column deleted"
     }
   },
   "projects": {
@@ -2682,6 +2693,77 @@
         "group": "Group",
         "items": "Done/total",
         "empty": "No groups yet."
+      }
+    },
+    "customColumns": {
+      "add": "Add column",
+      "addRight": "Add column to the right",
+      "create": "Add column",
+      "createTitle": "New column",
+      "editTitle": "Edit column \"{{name}}\"",
+      "hint": "Columns apply to every item on the board. Whoever edits the board fills in the cells.",
+      "name": "Column name",
+      "type": "Type",
+      "options": "Options",
+      "optionColor": "{{name}} color",
+      "optionName": "Option {{index}} name",
+      "removeOption": "Remove option {{name}}",
+      "addOption": "Add option",
+      "optionsInUse_one": "{{count}} removed option is in use: the items using it become empty.",
+      "optionsInUse_other": "{{count}} removed options are in use: the items using them become empty.",
+      "unit": "Unit",
+      "unitHint": "E.g.: $, kg, h (shown next to the number and in the total).",
+      "rename": "Rename column",
+      "editColumn": "Edit column and options",
+      "editOptions": "Edit options",
+      "changeType": "Change type",
+      "changeTypeTitle": "Change the type of \"{{name}}\"",
+      "changeTypeHint": "It is {{type}} today. Values are converted when possible; what does not convert becomes empty.",
+      "previewOk_one": "The filled value is converted.",
+      "previewOk_other": "All {{count}} filled values are converted.",
+      "previewLost_one": "{{converted}} converted · {{count}} value does not convert and becomes empty.",
+      "previewLost_other": "{{converted}} converted · {{count}} values do not convert and become empty.",
+      "typeChanged": "Column \"{{name}}\" is now {{type}}.",
+      "duplicate": "Duplicate column",
+      "duplicated": "Column \"{{name}}\" created.",
+      "delete": "Delete column",
+      "deleteTitle": "Delete the column \"{{name}}\"?",
+      "deleteDescription_zero": "The column is empty. The record stays in the project history.",
+      "deleteDescription_one": "The value of {{count}} item will be erased. The record stays in the project history.",
+      "deleteDescription_other": "The values of {{count}} items will be erased. The record stays in the project history.",
+      "deleted": "Column \"{{name}}\" deleted.",
+      "created": "Column \"{{name}}\" added.",
+      "updated": "Column \"{{name}}\" updated.",
+      "tooMany": "The board already has the maximum of {{max}} custom columns.",
+      "cellOf": "{{column}} of {{name}}",
+      "cellOfValue": "{{column}} of {{name}}: {{value}}",
+      "empty": "Empty",
+      "fill": "Fill in {{label}}",
+      "editLink": "Edit {{label}}",
+      "issues": {
+        "required": "Required field",
+        "too_long": "Text too long",
+        "invalid_option": "Every option needs a name (up to 40 characters) and a color",
+        "duplicate_option": "There are options with the same name",
+        "too_many": "Up to 30 options"
+      },
+      "types": {
+        "text": "Text",
+        "number": "Number",
+        "date": "Date",
+        "checkbox": "Checkbox",
+        "dropdown": "Dropdown",
+        "people": "Person",
+        "link": "Link"
+      },
+      "typeHints": {
+        "text": "Short notes",
+        "number": "Values and amounts, with totals",
+        "date": "A day on the calendar",
+        "checkbox": "Yes or no",
+        "dropdown": "Colored labels",
+        "people": "Someone in the project",
+        "link": "Web address"
       }
     }
   },

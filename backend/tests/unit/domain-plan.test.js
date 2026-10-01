@@ -137,7 +137,10 @@ describe('domain/plan — progresso e totais', () => {
     assert.equal(summary.duration_days, 7)
     // c tem subelemento feito → 100; (1,5×100 + 0,1×100 + 0,2×100 + 0×0) / 1,8 = 100
     assert.equal(summary.progress, 100)
-    assert.deepEqual(plan.groupSummary([], {}, () => null), { items: 0, status_counts: [], start_date: null, end_date: null, estimated_hours: null, duration_days: null, progress: 0 })
+    assert.deepEqual(plan.groupSummary([], {}, () => null), { items: 0, status_counts: [], start_date: null, end_date: null, estimated_hours: null, duration_days: null, progress: 0, custom_sums: {} })
+    // colunas numéricas personalizadas (GP-5): soma por coluna; sem valor nenhum, null
+    const sums = plan.groupSummary([{ id: 'a', custom: { c1: 2.5 } }, { id: 'b', custom: { c1: 1 } }, { id: 's', parentId: 'a', custom: { c1: 100 } }], {}, () => null, null, ['c1', 'c2']).custom_sums
+    assert.deepEqual(sums, { c1: 3.5, c2: null })
   })
 })
 

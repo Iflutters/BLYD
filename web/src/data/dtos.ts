@@ -187,6 +187,7 @@ export interface PlanGroupSummaryDto {
   estimated_hours: number | null
   duration_days: number | null
   progress: number
+  custom_sums?: Record<string, number | null>
 }
 
 export interface PlanGroupDto {
@@ -223,6 +224,15 @@ export interface PlanItemDto {
   files?: number
   baseline_start?: string | null
   baseline_end?: string | null
+  custom?: Record<string, string | number | boolean>
+}
+
+export interface PlanColumnDto {
+  id: string
+  name: string
+  type: string
+  settings?: { options?: Array<{ id: string; name: string; color: string }>; unit?: string } | null
+  position?: number
 }
 
 export interface PlanLinkDto {
@@ -240,6 +250,7 @@ export interface PlanDto {
   groups?: PlanGroupDto[]
   items?: PlanItemDto[]
   links?: PlanLinkDto[]
+  columns?: PlanColumnDto[]
   settings?: { dependency_rule?: string; baseline_at?: string | null }
   summary?: PlanGroupSummaryDto | null
   truncated?: boolean

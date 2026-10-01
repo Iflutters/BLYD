@@ -196,6 +196,8 @@ necessário; busca com debounce; atualizações e histórico sob demanda.
 
 Cada fase fica funcional, testada (unitário, API, interface, E2E e acessibilidade) e documentada antes da seguinte.
 
+> Situação (2026-10-01): GP-1 a GP-5 concluídas — regras em regras-de-negocio.md §14; decisões ADR-027 a ADR-031.
+
 ## 23. Critérios de aceite (GP-1)
 - [ ] aba Gerenciamento no projeto; aba Tarefas intacta
 - [ ] grupos e subgrupos numerados, com cor, recolher (linha compacta com totais) e expandir/recolher tudo

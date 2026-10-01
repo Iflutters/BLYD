@@ -127,6 +127,8 @@ Módulo **Gerenciamento de projetos** no catálogo: `plan.view`, `plan.edit`, `p
 | Editar/excluir registro do diário | o autor (com `plan.edit`) ou o gestor (`plan.manage`) |
 | Excluir problema | quem abriu (com `plan.edit`) ou o gestor (`plan.manage`) |
 | Salvar/limpar a linha de base do Cronograma | `plan.manage` **e** gestor/dono |
+| Colunas personalizadas: adicionar, renomear/editar opções, alterar tipo, duplicar, excluir | `plan.manage` **e** gestor/dono, projeto não arquivado |
+| Colunas personalizadas: preencher as células | `plan.edit` **e** colaborador (como as demais células) |
 | Grupos (criar, renomear, subgrupo, mover/arrastar, duplicar, excluir); etiquetas de status; excluir etiqueta de recurso; regra de dependências; criar grupos e status na importação | `plan.manage` **e** gestor/dono do projeto (ou `projects.view_all`), projeto não arquivado |
 
 Registro de projeto invisível responde 404 (`PROJECT_NOT_FOUND`, `GROUP_NOT_FOUND`, `PLAN_*_NOT_FOUND`). Detalhes funcionais em [regras-de-negocio.md](regras-de-negocio.md#14-quadro-de-gerenciamento-do-projeto-gerenciamento-de-projetos--fase-gp-1).

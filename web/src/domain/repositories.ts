@@ -34,6 +34,7 @@ import type {
 } from './plan'
 import type { PlanFile, PlanUpdate, PlanUpdateInput, PlanUpdates } from './plan-updates'
 import type { IssueInput, JournalEntry, JournalInput, PlanIssue, PlanIssues, PlanJournal, PlanReport } from './plan-management'
+import type { ColumnTypePreview, PlanColumn, PlanColumnInput } from './plan-columns'
 import type { Tag, TaskComment, TaskDetail, TaskInput, TaskSummary } from './tasks'
 import type {
   MemberRole,
@@ -359,6 +360,14 @@ export interface PlanRepository {
   deleteIssue(id: string): Promise<void>
   /** `tzOffset`: minutos (Date#getTimezoneOffset) — "hoje" no fuso de quem consulta. */
   report(projectId: string, tzOffset: number): Promise<PlanReport>
+  // colunas personalizadas (GP-5; o valor da célula vai no updateItem, `custom`)
+  createColumn(projectId: string, input: PlanColumnInput): Promise<PlanColumn>
+  updateColumn(id: string, input: PlanColumnInput): Promise<PlanColumn>
+  /** Quantos valores convertem e quantos se perdem (nada é gravado). */
+  previewColumnType(id: string, input: PlanColumnInput): Promise<ColumnTypePreview>
+  changeColumnType(id: string, input: PlanColumnInput): Promise<PlanColumn>
+  duplicateColumn(id: string): Promise<PlanColumn>
+  deleteColumn(id: string): Promise<{ values: number }>
 }
 
 /** Documentação: espaços, páginas (rascunho/publicação/versões), árvore, busca e arquivos. */

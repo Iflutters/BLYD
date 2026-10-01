@@ -107,6 +107,11 @@ export const AUDIT_ACTIONS = [
   'plan_issue.created',
   'plan_issue.updated',
   'plan_issue.deleted',
+  'plan_column.created',
+  'plan_column.updated',
+  'plan_column.type_changed',
+  'plan_column.duplicated',
+  'plan_column.deleted',
   'plan_status.created',
   'plan_status.updated',
   'plan_status.deleted',
@@ -143,6 +148,7 @@ function formatValue(t: TFunction, field: string, value: unknown, resolve?: (fie
   if (field === 'link_type') return t(`plan.linkTypes.${text}`, { defaultValue: text })
   if (field === 'dependency_rule') return t(`plan.dependencyRule.${text}`, { defaultValue: text })
   if (field === 'issue_state') return t(`plan.management.issues.states.${text}`, { defaultValue: text })
+  if (field === 'column_type') return t(`plan.customColumns.types.${text}`, { defaultValue: text })
   if (field === 'category') return t(`workflow.categories.${text}`, { defaultValue: t(`plan.categories.${text}`, { defaultValue: text }) })
   if (field === 'visibility') return t(`docs.visibility.${text}`, { defaultValue: text })
   if ((field === 'start_date' || field === 'due_date' || field === 'end_date' || field === 'entry_date' || field === 'opened_on') && /^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10).split('-').reverse().join('/')

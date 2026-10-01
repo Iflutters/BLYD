@@ -36,6 +36,7 @@ const item = (id: string, groupId: string, position: number, extra: Partial<Plan
   files: 0,
   baselineStart: null,
   baselineEnd: null,
+  custom: {},
   ...extra,
 })
 
@@ -54,6 +55,7 @@ const plan = (groups: PlanGroup[], items: PlanItem[], extra: Partial<Plan> = {})
   groups,
   items,
   links: [],
+  columns: [],
   settings: { dependencyRule: 'warn', baselineAt: null },
   summary: null,
   truncated: false,

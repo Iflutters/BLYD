@@ -41,6 +41,7 @@ const item = (id: string, groupId: string, extra: Partial<PlanItem> = {}): PlanI
   files: 0,
   baselineStart: null,
   baselineEnd: null,
+  custom: {},
   ...extra,
 })
 
@@ -63,6 +64,7 @@ function plan(items: PlanItem[], extra: Partial<Plan> = {}): Plan {
     groups: [group('ini', '1.0'), group('pl', '2.0'), group('pp', '2.1', { parentId: 'pl' })],
     items,
     links: [],
+    columns: [],
     settings: { dependencyRule: 'warn', baselineAt: null },
     summary: null,
     truncated: false,
@@ -197,6 +199,7 @@ describe('plan-view — totais e dependências', () => {
       estimatedHours: 14,
       durationDays: 3,
       progress: 75,
+      customSums: {},
     })
   })
 

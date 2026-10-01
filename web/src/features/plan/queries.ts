@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { DependencyRule, Plan, PlanBulkInput, PlanGroupInput, PlanGroupMove, PlanImportRow, PlanItem, PlanItemInput, PlanItemMove, PlanLinkKind, PlanResourceInput, PlanStatusInput } from '@/domain/plan'
 import type { PlanUpdateInput } from '@/domain/plan-updates'
 import type { IssueInput, JournalInput } from '@/domain/plan-management'
+import type { PlanColumnInput } from '@/domain/plan-columns'
 import { useRepositories } from '@/presentation/common/repositories-context'
 
 /** Quadro do projeto: chave própria (módulo à parte das tarefas). */
@@ -27,6 +28,14 @@ function patchItem(item: PlanItem, input: PlanItemInput): PlanItem {
   if (input.estimatedHours !== undefined) next.estimatedHours = input.estimatedHours
   if (input.actualHours !== undefined) next.actualHours = input.actualHours
   if (input.durationDays !== undefined) next.durationManual = input.durationDays
+  if (input.custom !== undefined) {
+    const custom = { ...next.custom }
+    Object.entries(input.custom).forEach(([id, value]) => {
+      if (value === null) delete custom[id]
+      else custom[id] = value
+    })
+    next.custom = custom
+  }
   if (input.progress !== undefined) {
     next.progressManual = input.progress
     if (input.progress !== null) next.progress = { value: input.progress, source: 'manual' }
@@ -82,6 +91,12 @@ export function usePlanMutations(projectId: string) {
     // GP-4 — linha de base do Cronograma (gestor)
     saveBaseline: useMutation({ mutationFn: () => plan.saveBaseline(projectId), onSettled: invalidate }),
     clearBaseline: useMutation({ mutationFn: () => plan.clearBaseline(projectId), onSettled: invalidate }),
+    // GP-5 — colunas personalizadas (gestor)
+    createColumn: useMutation({ mutationFn: (input: PlanColumnInput) => plan.createColumn(projectId, input), onSettled: invalidate }),
+    updateColumn: useMutation({ mutationFn: ({ id, input }: { id: string; input: PlanColumnInput }) => plan.updateColumn(id, input), onSettled: invalidate }),
+    changeColumnType: useMutation({ mutationFn: ({ id, input }: { id: string; input: PlanColumnInput }) => plan.changeColumnType(id, input), onSettled: invalidate }),
+    duplicateColumn: useMutation({ mutationFn: (id: string) => plan.duplicateColumn(id), onSettled: invalidate }),
+    deleteColumn: useMutation({ mutationFn: (id: string) => plan.deleteColumn(id), onSettled: invalidate }),
   }
 }
 

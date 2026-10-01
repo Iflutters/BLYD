@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COLLAPSED_WIDTH, canShift, moveColumn, normalizeColumns, setCollapsed, setHidden, shiftColumn, visibleColumns, type BoardColumnDef } from './board-columns'
+import { COLLAPSED_WIDTH, canShift, moveColumn, normalizeColumns, placeAfter, setCollapsed, setHidden, shiftColumn, visibleColumns, type BoardColumnDef } from './board-columns'
 
 const defs: BoardColumnDef[] = [
   { id: 'name', width: 320, pinned: true },
@@ -24,6 +24,16 @@ describe('estado das colunas do quadro', () => {
     expect(moveColumn(state, defs, 'status', 'schedule', true).order).toEqual(['name', 'schedule', 'status', 'effort'])
     expect(moveColumn(state, defs, 'effort', 'name').order).toEqual(['name', 'effort', 'status', 'schedule'])
     expect(moveColumn(state, defs, 'name', 'effort')).toBe(state)
+  })
+
+  it('coloca depois de outra coluna mesmo antes de ela existir (entra na posição quando aparece)', () => {
+    const state = normalizeColumns(defs, null)
+    const saved = placeAfter(state, 'nova', 'status')
+    expect(normalizeColumns(defs, saved).order).toEqual(state.order)
+    const withNew = [...defs, { id: 'nova', width: 120 }]
+    const order = normalizeColumns(withNew, saved).order
+    expect(order.indexOf('nova')).toBe(order.indexOf('status') + 1)
+    expect(placeAfter(state, 'nova', 'inexistente')).toBe(state)
   })
 
   it('desloca pulando ocultas; nos extremos não muda', () => {

@@ -245,6 +245,12 @@ routerAdd('DELETE', '/api/v1/plan/issues/{id}', (e) => require(`${__hooks}/src/h
 routerAdd('PUT', '/api/v1/projects/{id}/plan/baseline', (e) => require(`${__hooks}/src/http/routes.js`).savePlanBaseline(e))
 routerAdd('DELETE', '/api/v1/projects/{id}/plan/baseline', (e) => require(`${__hooks}/src/http/routes.js`).clearPlanBaseline(e))
 routerAdd('GET', '/api/v1/projects/{id}/plan/report', (e) => require(`${__hooks}/src/http/routes.js`).planReport(e))
+// quadro — GP-5 (colunas personalizadas: o gestor define; os valores vão no PATCH do elemento, `custom`)
+routerAdd('POST', '/api/v1/projects/{id}/plan/columns', (e) => require(`${__hooks}/src/http/routes.js`).createPlanColumn(e), JSON_BODY_LIMIT)
+routerAdd('PATCH', '/api/v1/plan/columns/{id}', (e) => require(`${__hooks}/src/http/routes.js`).updatePlanColumn(e), JSON_BODY_LIMIT)
+routerAdd('POST', '/api/v1/plan/columns/{id}/type', (e) => require(`${__hooks}/src/http/routes.js`).changePlanColumnType(e), JSON_BODY_LIMIT)
+routerAdd('POST', '/api/v1/plan/columns/{id}/duplicate', (e) => require(`${__hooks}/src/http/routes.js`).duplicatePlanColumn(e))
+routerAdd('DELETE', '/api/v1/plan/columns/{id}', (e) => require(`${__hooks}/src/http/routes.js`).deletePlanColumn(e))
 
 // documentação (expansão, Onda 2) — rotas fixas antes das com {id}
 const DOC_BODY_LIMIT = $apis.bodyLimit(4 * 1024 * 1024) // conteúdo do editor (JSON) até ~3 MB

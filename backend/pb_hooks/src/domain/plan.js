@@ -309,8 +309,9 @@ function computeProgress(items, categoryOf) {
  * Totais do grupo (linha do rodapé, como no Monday), sobre os elementos de primeiro nível:
  * distribuição de status (statusOf = id da etiqueta), período (menor início → maior fim), soma do
  * esforço e da duração e progresso ponderado pelo esforço (sem esforço, a média; cancelados fora).
+ * `numberColumns`: ids das colunas personalizadas numéricas (GP-5) — soma em `custom_sums`.
  */
-function groupSummary(items, progress, statusOf, categoryOf) {
+function groupSummary(items, progress, statusOf, categoryOf, numberColumns) {
   const category = categoryOf || (() => null)
   const top = items.filter((i) => !i.parentId)
   const counts = {}
@@ -341,7 +342,18 @@ function groupSummary(items, progress, statusOf, categoryOf) {
     estimated_hours: sum(efforts),
     duration_days: sum(durations),
     progress: weighted(top.filter((i) => category(i) !== 'canceled').map((i) => ({ value: (progress[i.id] || { value: 0 }).value, weight: metric(i, 'estimated_hours') }))),
+    custom_sums: customSums(top, numberColumns || []),
   }
+}
+
+/** Soma de cada coluna numérica (null quando nenhum elemento tem valor). */
+function customSums(items, columnIds) {
+  const out = {}
+  columnIds.forEach((id) => {
+    const values = items.map((i) => (i.custom && typeof i.custom[id] === 'number' ? i.custom[id] : null)).filter((v) => v !== null)
+    out[id] = values.length ? Math.round(values.reduce((a, b) => a + b, 0) * 100) / 100 : null
+  })
+  return out
 }
 
 /* ------------------------------------------------------------------ arrastar e soltar (GP-2) */

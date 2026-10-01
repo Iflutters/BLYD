@@ -471,6 +471,12 @@ const deletePlanIssue = configAction('planManagement', (s, ctx, r) => s.deleteIs
 const savePlanBaseline = configAction('planManagement', (s, ctx, r) => s.saveBaseline(ctx, r.id))
 const clearPlanBaseline = configAction('planManagement', (s, ctx, r) => s.clearBaseline(ctx, r.id))
 const planReport = configAction('planManagement', (s, ctx, r) => s.getReport(ctx, r.id, r.query()))
+// quadro — GP-5 (colunas personalizadas)
+const createPlanColumn = configAction('planColumns', (s, ctx, r) => s.createColumn(ctx, r.id, r.body()), 201)
+const updatePlanColumn = configAction('planColumns', (s, ctx, r) => s.updateColumn(ctx, r.id, r.body()))
+const changePlanColumnType = configAction('planColumns', (s, ctx, r) => s.changeType(ctx, r.id, r.body()))
+const duplicatePlanColumn = configAction('planColumns', (s, ctx, r) => s.duplicateColumn(ctx, r.id), 201)
+const deletePlanColumn = configAction('planColumns', (s, ctx, r) => s.deleteColumn(ctx, r.id))
 
 /** Download/visualização: confere acesso; imagens aparecem, o resto baixa como anexo. */
 function planFile(e) {
@@ -680,6 +686,11 @@ module.exports = {
   savePlanBaseline,
   clearPlanBaseline,
   planReport,
+  createPlanColumn,
+  updatePlanColumn,
+  changePlanColumnType,
+  duplicatePlanColumn,
+  deletePlanColumn,
   planFile,
   deletePlanFile,
   planItemHistory,

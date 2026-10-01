@@ -1878,6 +1878,7 @@ function createPlanItemRepository(app) {
     ownerId: record.getString('owner_id') || null,
     resourceIds: record.getStringSlice('resource_ids'),
     metrics: parseJsonField(record, 'metrics') || {},
+    custom: parseJsonField(record, 'custom') || {},
     progress: record.getInt('progress'),
     progressSet: record.getBool('progress_set'),
     position: record.getFloat('position'),
@@ -1894,6 +1895,7 @@ function createPlanItemRepository(app) {
       else if (DAYS[key]) record.set(DAYS[key], value ? value + ' 00:00:00.000Z' : '')
       else if (key === 'resourceIds') record.set('resource_ids', value || [])
       else if (key === 'metrics') record.set('metrics', value || {})
+      else if (key === 'custom') record.set('custom', value || {})
       else if (key === 'progress') record.set('progress', value || 0)
       else if (key === 'progressSet') record.set('progress_set', !!value)
       else if (key === 'position') record.set('position', value)

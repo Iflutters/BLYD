@@ -1,6 +1,7 @@
 /**
- * Repositórios PocketBase da Gestão do quadro (Gerenciamento de Projetos, GP-4): Diário do projeto e
- * Gestão dos problemas. Datas são "dia puro" (AAAA-MM-DD, meia-noite UTC).
+ * Repositórios PocketBase da Gestão do quadro (Gerenciamento de Projetos, GP-4: Diário do projeto e
+ * Gestão dos problemas) e das colunas personalizadas (GP-5). Datas são "dia puro" (AAAA-MM-DD,
+ * meia-noite UTC).
  */
 
 const { toDate, findOrNull } = require('./pb-helpers')
@@ -111,10 +112,72 @@ function createPlanIssueRepository(app) {
   }
 }
 
+function createPlanColumnRepository(app) {
+  const COLLECTION = 'plan_columns'
+  const toEntity = (record) => {
+    let settings = {}
+    try {
+      settings = JSON.parse(record.getString('settings') || '{}') || {}
+    } catch (_) {
+      settings = {}
+    }
+    return {
+      id: record.id,
+      projectId: record.getString('project_id'),
+      name: record.getString('name'),
+      type: record.getString('type'),
+      settings,
+      position: record.getFloat('position'),
+      createdBy: record.getString('created_by') || null,
+      createdAt: toDate(record.getDateTime('created')),
+      updatedAt: toDate(record.getDateTime('updated')),
+    }
+  }
+  const apply = (record, data) => {
+    if (data.projectId !== undefined) record.set('project_id', data.projectId)
+    if (data.name !== undefined) record.set('name', data.name)
+    if (data.type !== undefined) record.set('type', data.type)
+    if (data.settings !== undefined) record.set('settings', data.settings || {})
+    if (data.position !== undefined) record.set('position', data.position)
+    if (data.createdBy !== undefined) record.set('created_by', data.createdBy || '')
+  }
+  return {
+    findById(id) {
+      const record = findOrNull(() => app.findRecordById(COLLECTION, id))
+      return record ? toEntity(record) : null
+    },
+    listByProject(projectId) {
+      return app.findRecordsByFilter(COLLECTION, 'project_id = {:p}', 'position,created', 0, 0, { p: projectId }).map(toEntity)
+    },
+    /** Maior posição do quadro (0 se não houver). */
+    maxPosition(projectId) {
+      const row = new DynamicModel({ n: 0 })
+      app.db().select('COALESCE(MAX(position), 0) AS n').from(COLLECTION).where($dbx.hashExp({ project_id: projectId })).one(row)
+      return row.n
+    },
+    create(data) {
+      const record = new Record(app.findCollectionByNameOrId(COLLECTION))
+      apply(record, data)
+      app.save(record)
+      return toEntity(record)
+    },
+    update(id, patch) {
+      const record = app.findRecordById(COLLECTION, id)
+      apply(record, patch)
+      app.save(record)
+      return toEntity(record)
+    },
+    delete(id) {
+      app.delete(app.findRecordById(COLLECTION, id))
+    },
+  }
+}
+
 function createPlanManagementRepositories(app) {
   return {
     planJournalRepository: createPlanJournalRepository(app),
     planIssueRepository: createPlanIssueRepository(app),
+    planColumnRepository: createPlanColumnRepository(app),
   }
 }
 

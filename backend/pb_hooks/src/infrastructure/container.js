@@ -28,6 +28,7 @@ const { createPlanService } = require('../application/plan')
 const { createPlanInteractionService } = require('../application/plan-interaction')
 const { createPlanCollaborationService } = require('../application/plan-collaboration')
 const { createPlanManagementService } = require('../application/plan-management')
+const { createPlanColumnsService } = require('../application/plan-columns')
 const { createDocSpaceService } = require('../application/doc-spaces')
 const { createDocPageService } = require('../application/doc-pages')
 const contentLocale = require('../domain/content-locale')
@@ -98,6 +99,7 @@ function createContainer(app, options) {
     planInteraction: createPlanInteractionService(deps),
     planCollaboration: createPlanCollaborationService(deps),
     planManagement: createPlanManagementService(deps),
+    planColumns: createPlanColumnsService(deps),
     docSpaces: createDocSpaceService(deps),
     docPages: createDocPageService(deps),
   }

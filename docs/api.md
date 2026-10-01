@@ -231,6 +231,19 @@ Cada elemento do quadro traz `updates` (atualizações não excluídas — conta
 
 Notificações (`GET /notifications`) passam a trazer `task` **ou** `plan_item` (`{ id, project_id, name, project_name }`); tipos novos `plan_mention` e `plan_reply`. Auditoria: `plan_item.update_added/update_edited/update_deleted` e `plan_item.file_added/file_deleted` no elemento.
 
+### GP-5 — colunas personalizadas
+`GET /projects/{id}/plan` traz `columns: [{ id, name, type, settings, position }]`, em cada elemento `custom: { coluna: valor }` e, nos totais, `custom_sums: { coluna: soma }` das numéricas. O valor da célula vai no `PATCH /plan/items/{id}` (ou no `POST` de criação): `{ custom: { coluna: valor | null } }` — só em elemento (`custom: subitems_not_supported`), só colunas do quadro (`custom: invalid_option`), validado pelo tipo (`invalid_type`, `invalid_date`, `invalid_option`, `invalid_url`, `too_long`, `too_large`; pessoa de fora → `not_member`).
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/projects/{id}/plan/columns` | adiciona (gestor): `{ name* (≤ 60), type* (text \| number \| date \| checkbox \| dropdown \| people \| link), settings }` — `settings` da lista `{ options: [{ id?, name, color }] }` (até 30, sem nome repetido → `settings: duplicate_option`), do número `{ unit }` (≤ 8); acima de 30 colunas → `columns: too_many` |
+| PATCH | `/plan/columns/{id}` | renomeia/edita as opções (gestor); opção removida limpa os valores que a usavam; 404 `PLAN_COLUMN_NOT_FOUND` |
+| POST | `/plan/columns/{id}/type` | altera o tipo (gestor): `{ type*, settings, dry_run }` — com `dry_run` devolve `{ converted, lost }` sem gravar; sem, converte e devolve a coluna |
+| POST | `/plan/columns/{id}/duplicate` | duplica com os valores (gestor) |
+| DELETE | `/plan/columns/{id}` | exclui a coluna e os valores (gestor) → `{ deleted, values }` |
+
+Auditoria no projeto: `plan_column.created/updated/type_changed/duplicated/deleted`; no elemento, `plan_item.updated` com `cf:<nome da coluna>` (opção e pessoa pelo nome).
+
 ### GP-4 — visões e gestão
 `GET /projects/{id}/plan` passa a trazer `summary` (totais do quadro inteiro: Bateria e Esforço do Cronograma), `settings.baseline_at` e, em cada elemento, `baseline_start`/`baseline_end`.
 

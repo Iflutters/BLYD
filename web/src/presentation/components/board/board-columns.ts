@@ -69,6 +69,18 @@ export function moveColumn(state: BoardColumnsState, defs: BoardColumnDef[], id:
   return order.every((x, i) => x === state.order[i]) ? state : { ...state, order }
 }
 
+/**
+ * Guarda `id` logo depois de `afterId` na ordem — mesmo antes de a coluna existir (ex.: recém-criada,
+ * ainda chegando do servidor): a ordem salva só vale para colunas conhecidas, então ela entra na
+ * posição assim que aparece.
+ */
+export function placeAfter(state: BoardColumnsState, id: string, afterId: string): BoardColumnsState {
+  const order = state.order.filter((x) => x !== id)
+  const index = order.indexOf(afterId)
+  if (index < 0) return state
+  return { ...state, order: [...order.slice(0, index + 1), id, ...order.slice(index + 1)] }
+}
+
 /** Uma posição para a esquerda (-1) ou direita (+1), pulando as ocultas. */
 export function shiftColumn(state: BoardColumnsState, defs: BoardColumnDef[], id: string, step: -1 | 1): BoardColumnsState {
   const visible = state.order.filter((x) => !state.hidden.includes(x))

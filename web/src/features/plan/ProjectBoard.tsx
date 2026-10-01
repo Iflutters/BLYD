@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { FileUp, FolderPlus, GitBranch, LayoutList, Tags, Users, X } from 'lucide-react'
+import { FileUp, FolderPlus, GitBranch, LayoutList, Plus, Tags, Users, X } from 'lucide-react'
 import { readJson, safeStorage, writeJson } from '@/core/storage/safe-storage'
 import type { Project } from '@/domain/projects'
 import { statusSegments, type Plan, type PlanBulkInput, type PlanGroup, type PlanItem, type PlanItemInput } from '@/domain/plan'
@@ -21,7 +21,7 @@ import {
   type PlanView,
   PLAN_VIEWS,
 } from '@/domain/plan-view'
-import { AppBoardColumnsMenu, AppBoardTable, AppButton, AppConfirmDialog, AppEmptyState, AppErrorState, AppSkeleton, notify, useBoardColumns, type AppDropdownItem } from '@/presentation/components'
+import { AppBoardColumnsMenu, AppBoardTable, AppButton, AppConfirmDialog, AppEmptyState, AppErrorState, AppIconButton, AppSkeleton, notify, useBoardColumns, type AppDropdownItem } from '@/presentation/components'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { useProjectMembers } from '@/features/projects/queries'
 import { optionColor } from '@/features/task-config/config-theme'
@@ -43,7 +43,9 @@ import { PlanKanban } from './PlanKanban'
 import { PlanManagement } from './PlanManagement'
 import { PlanReports } from './PlanReports'
 import { usePlanError } from './use-plan-error'
-import { MAIN_COLUMNS, SORTABLE_COLUMNS, SUB_COLUMNS, usePlanColumns, type BoardCtx, type FilterFocus } from './use-plan-columns'
+import { MAIN_COLUMNS, SUB_COLUMNS, customColumnDefs, sortableColumnIds, usePlanColumns, type BoardCtx, type FilterFocus } from './use-plan-columns'
+import { ColumnDialog, ColumnTypeDialog, DeleteColumnConfirm, type ColumnDialogState } from './column-dialogs'
+import { customColumnId, type PlanColumn } from '@/domain/plan-columns'
 
 /** Hoje no fuso de quem usa (AAAA-MM-DD). */
 function localToday(): string {
@@ -114,7 +116,10 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
   const canEdit = plan.capabilities.edit
   const canManage = plan.capabilities.manage
 
-  const main = useBoardColumns('kb.plan.columns', MAIN_COLUMNS)
+  // colunas fixas + personalizadas (GP-5); a ordem/largura de cada uma é preferência de quem usa
+  const mainDefs = useMemo(() => [...MAIN_COLUMNS, ...customColumnDefs(plan.columns)], [plan.columns])
+  const main = useBoardColumns('kb.plan.columns', mainDefs)
+  const sortable = useMemo(() => sortableColumnIds(plan.columns), [plan.columns])
   const sub = useBoardColumns('kb.plan.subcolumns', SUB_COLUMNS)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<PlanFilters>(EMPTY_FILTERS)
@@ -137,8 +142,11 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
   const [removingItem, setRemovingItem] = useState<PlanItem | null>(null)
   const [ruleOpen, setRuleOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [columnDialog, setColumnDialog] = useState<ColumnDialogState>(null)
+  const [typing, setTyping] = useState<PlanColumn | null>(null)
+  const [removingColumn, setRemovingColumn] = useState<PlanColumn | null>(null)
 
-  const sort = main.sort && SORTABLE_COLUMNS.has(main.sort.column) ? (main.sort as PlanSort) : null
+  const sort = main.sort && sortable.has(main.sort.column) ? (main.sort as PlanSort) : null
   const view = useMemo(() => ({ query: search, sort, filters, today: localToday() }), [search, sort, filters])
   const narrowed = isNarrowed(view)
   const locale = i18n.language
@@ -274,6 +282,13 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
     canShift: (item, step) => !!shiftTarget(item, step),
     link: (item, kind, otherId) => mutations.createLink.mutateAsync({ itemId: item.id, kind, otherId }).catch(rethrow),
     unlink: (linkId) => mutations.deleteLink.mutate(linkId, { onError }),
+    columnActions: {
+      add: (after) => setColumnDialog({ mode: 'create', after }),
+      edit: (column) => setColumnDialog({ mode: 'edit', column }),
+      changeType: setTyping,
+      duplicate: (column) => mutations.duplicateColumn.mutate(column.id, { onSuccess: (copy) => notify.success(t('plan.customColumns.duplicated', { name: copy.name })), onError }),
+      remove: setRemovingColumn,
+    },
   }
   const columns = usePlanColumns(ctx)
 
@@ -322,6 +337,9 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
       estimated: <FooterSum value={summary.estimatedHours} />,
       duration: <FooterSum value={summary.durationDays} />,
       progress: <ProgressBar value={summary.progress} label={t('plan.groupProgress', { name: groupTitle(section.group) })} />,
+      ...Object.fromEntries(
+        plan.columns.filter((c) => c.type === 'number').map((c) => [customColumnId(c.id), <FooterSum key={c.id} value={summary.customSums?.[c.id] ?? null} suffix={c.settings.unit} />]),
+      ),
     }
   }
 
@@ -368,7 +386,7 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
             focus={filterFocus}
           />
         }
-        sortColumns={[...SORTABLE_COLUMNS].map((id) => ({ id, label: columnLabel(id) }))}
+        sortColumns={[...sortable].map((id) => ({ id, label: columnLabel(id) }))}
         sortApi={main}
         groupBy={groupBy}
         onGroupBy={changeGroupBy}
@@ -465,6 +483,11 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
                         : undefined
                     }
                     isRowSelected={(item) => selected.has(item.id)}
+                    headerTrail={
+                      canManage ? (
+                        <AppIconButton size="sm" variant="ghost" icon={<Plus />} label={t('plan.customColumns.add')} onClick={() => setColumnDialog({ mode: 'create', after: null })} />
+                      ) : undefined
+                    }
                     sortable={section.synthetic ? undefined : { containerId: itemContainer(section.group.id), disabled: !dragItems }}
                     addRow={
                       canEdit && !section.synthetic ? (
@@ -495,6 +518,16 @@ function Board({ plan, onOpenPanel }: { plan: Plan; onOpenPanel: (itemId: string
       <MoveItemDialog item={moving} plan={plan} mutations={mutations} onClose={() => setMoving(null)} />
       <DependencyRuleDialog open={ruleOpen} plan={plan} mutations={mutations} onClose={() => setRuleOpen(false)} />
       <ImportDialog open={importOpen} mutations={mutations} onClose={() => setImportOpen(false)} />
+      {/* coluna criada pelo "à direita": a posição vai para a preferência (vale quando a coluna chegar) */}
+      <ColumnDialog
+        state={columnDialog}
+        plan={plan}
+        mutations={mutations}
+        onClose={() => setColumnDialog(null)}
+        onCreated={(column, after) => after && main.placeAfter(customColumnId(column.id), after)}
+      />
+      <ColumnTypeDialog column={typing} mutations={mutations} onClose={() => setTyping(null)} />
+      <DeleteColumnConfirm column={removingColumn} plan={plan} mutations={mutations} onClose={() => setRemovingColumn(null)} />
       <DeleteGroupConfirm group={removingGroup} counts={removingGroup ? removingCounts(removingGroup) : null} mutations={mutations} onClose={() => setRemovingGroup(null)} />
       <DeleteItemConfirm item={removingItem} mutations={mutations} onClose={() => setRemovingItem(null)} />
     </div>

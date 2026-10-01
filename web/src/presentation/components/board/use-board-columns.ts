@@ -4,6 +4,7 @@ import {
   clampWidth,
   moveColumn,
   normalizeColumns,
+  placeAfter as place,
   setCollapsed as collapse,
   setHidden as hide,
   shiftColumn,
@@ -22,6 +23,8 @@ export interface BoardColumnsApi {
   state: BoardColumnsState
   sort: BoardSortState | null
   move: (id: string, targetId: string, after?: boolean) => void
+  /** Põe `id` depois de `afterId` (vale também para coluna que ainda vai aparecer). */
+  placeAfter: (id: string, afterId: string) => void
   shift: (id: string, step: -1 | 1) => void
   canShift: (id: string, step: -1 | 1) => boolean
   resize: (id: string, width: number | null) => void
@@ -58,6 +61,7 @@ export function useBoardColumns(storageKey: string, defs: BoardColumnDef[]): Boa
     state,
     sort,
     move: (id, targetId, after) => apply(moveColumn(state, defs, id, targetId, after)),
+    placeAfter: (id, afterId) => apply(place(state, id, afterId)),
     shift: (id, step) => apply(shiftColumn(state, defs, id, step)),
     canShift: (id, step) => canShiftColumn(state, defs, id, step),
     resize: (id, width) => {

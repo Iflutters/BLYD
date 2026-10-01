@@ -72,6 +72,7 @@ function createFakeStore() {
     planFiles: [],
     planSettings: [],
     planJournal: [],
+    planColumns: [],
     planIssues: [],
     docSpaces: [],
     docPages: [],
@@ -563,7 +564,7 @@ function createFakeRepositories(store) {
       }),
     create: (data) => {
       planSeq += 1
-      const item = Object.assign({ id: planId('it_'), parentId: null, resourceIds: [], metrics: {}, createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, planSeq)), updatedAt: new Date() }, data)
+      const item = Object.assign({ id: planId('it_'), parentId: null, resourceIds: [], metrics: {}, custom: {}, createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, planSeq)), updatedAt: new Date() }, data)
       store.planItems.push(item)
       return item
     },
@@ -639,6 +640,21 @@ function createFakeRepositories(store) {
   const planStamp = () => {
     planSeq += 1
     return new Date(Date.UTC(2026, 0, 1, 0, 0, planSeq))
+  }
+  const planColumnRepository = {
+    findById: (id) => store.planColumns.find((x) => x.id === id) || null,
+    listByProject: (projectId) => store.planColumns.filter((x) => x.projectId === projectId).sort((a, b) => a.position - b.position),
+    maxPosition: (projectId) => store.planColumns.filter((x) => x.projectId === projectId).reduce((max, x) => Math.max(max, x.position), 0),
+    create: (data) => {
+      const at = planStamp()
+      const column = Object.assign({ id: planId('cl_'), settings: {}, createdAt: at, updatedAt: at }, data)
+      store.planColumns.push(column)
+      return column
+    },
+    update: (id, patch) => Object.assign(planColumnRepository.findById(id), patch, { updatedAt: planStamp() }),
+    delete: (id) => {
+      store.planColumns = store.planColumns.filter((x) => x.id !== id)
+    },
   }
   const planJournalRepository = {
     findById: (id) => store.planJournal.find((x) => x.id === id) || null,
@@ -1084,6 +1100,7 @@ function createFakeRepositories(store) {
     planUpdateRepository,
     planFileRepository,
     planJournalRepository,
+    planColumnRepository,
     planIssueRepository,
     planSettingsRepository,
     docSpaceRepository,

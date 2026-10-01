@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowDown, ArrowUp, ChevronRight, Copy, FolderInput, MessageSquare, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronRight, Copy, FolderInput, MessageSquare, MoreHorizontal, Pencil, Plus, Shapes, Trash2 } from 'lucide-react'
 import { cn } from '@/core/utils/cn'
 import type { ProjectMember } from '@/domain/projects'
 import { PLAN_LIMITS, isDurationEditable, isProgressEditable, type Plan, type PlanGroup, type PlanItem, type PlanItemInput, type PlanLinkKind, type PlanResource } from '@/domain/plan'
 import { AppCheckbox, AppDropdown, AppInlineEdit, type AppBoardColumn, type AppDropdownItem, type BoardColumnDef } from '@/presentation/components'
+import { customColumnId, isSortableType, type ColumnType, type PlanColumn } from '@/domain/plan-columns'
 import { DateCell, NumberCell, OwnerCell, ProgressCell, ResourcesCell, ScheduleCell, StatusCell } from './cells'
+import { CustomCell } from './custom-cells'
 import { DependencyCell } from './DependencyCell'
 
 /* ------------------------------------------------------------------ colunas (preferência por pessoa) */
@@ -35,6 +37,15 @@ export const SUB = {
 export const SUB_COLUMNS: BoardColumnDef[] = Object.values(SUB)
 
 export const SORTABLE_COLUMNS = new Set(['name', 'status', 'schedule', 'resources', 'estimated', 'duration', 'progress'])
+
+/** Largura inicial das colunas personalizadas por tipo. */
+const CUSTOM_WIDTH: Record<ColumnType, number> = { text: 180, number: 130, date: 130, checkbox: 110, dropdown: 150, people: 160, link: 170 }
+
+/** Definições das colunas personalizadas (GP-5) para as preferências de colunas. */
+export const customColumnDefs = (columns: PlanColumn[]): BoardColumnDef[] => columns.map((c) => ({ id: customColumnId(c.id), width: CUSTOM_WIDTH[c.type], minWidth: 90 }))
+
+/** Colunas que podem ordenar o quadro (fixas e personalizadas). */
+export const sortableColumnIds = (columns: PlanColumn[]) => new Set([...SORTABLE_COLUMNS, ...columns.filter((c) => isSortableType(c.type)).map((c) => customColumnId(c.id))])
 
 export type FilterFocus = 'status' | 'resources' | 'groups' | 'period' | 'progress' | 'dependency'
 
@@ -68,6 +79,14 @@ export interface BoardCtx {
   canShift: (item: PlanItem, step: -1 | 1) => boolean
   link: (item: PlanItem, kind: PlanLinkKind, otherId: string) => Promise<unknown>
   unlink: (linkId: string) => void
+  /** Gestor: colunas personalizadas (GP-5). `add(after)`: depois da coluna do quadro (null = no fim). */
+  columnActions: {
+    add: (after: string | null) => void
+    edit: (column: PlanColumn) => void
+    changeType: (column: PlanColumn) => void
+    duplicate: (column: PlanColumn) => void
+    remove: (column: PlanColumn) => void
+  }
 }
 
 /** Colunas do quadro (elementos) e da subtabela (subelementos). */
@@ -254,6 +273,41 @@ export function usePlanColumns(ctx: BoardCtx): { main: AppBoardColumn<PlanItem>[
     },
   ]
 
+  // colunas personalizadas (GP-5): valores nos elementos; o gestor define pelo menu da coluna
+  const custom: AppBoardColumn<PlanItem>[] = plan.columns.map((column) => ({
+    id: customColumnId(column.id),
+    width: CUSTOM_WIDTH[column.type],
+    minWidth: 90,
+    label: column.name,
+    sortable: isSortableType(column.type),
+    flush: column.type !== 'text' && column.type !== 'number',
+    menuExtra: canManage
+      ? [
+          { key: 'add-right', label: t('plan.customColumns.addRight'), icon: <Plus />, onSelect: () => ctx.columnActions.add(customColumnId(column.id)) },
+          { key: 'edit', label: column.type === 'dropdown' ? t('plan.customColumns.editColumn') : t('plan.customColumns.rename'), icon: <Pencil />, onSelect: () => ctx.columnActions.edit(column) },
+          { key: 'type', label: t('plan.customColumns.changeType'), icon: <Shapes />, onSelect: () => ctx.columnActions.changeType(column) },
+          { key: 'duplicate', label: t('plan.customColumns.duplicate'), icon: <Copy />, onSelect: () => ctx.columnActions.duplicate(column) },
+          { type: 'separator' as const, key: 'sep-delete' },
+          { key: 'delete', label: t('plan.customColumns.delete'), icon: <Trash2 />, tone: 'danger' as const, onSelect: () => ctx.columnActions.remove(column) },
+        ]
+      : undefined,
+    cell: (item: PlanItem) => (
+      <CustomCell
+        column={column}
+        value={item.custom[column.id]}
+        itemName={item.name}
+        readOnly={!canEdit}
+        members={ctx.members}
+        canManage={canManage}
+        onChange={(value) => save(item, { custom: { [column.id]: value } })}
+        onEditColumn={() => ctx.columnActions.edit(column)}
+      />
+    ),
+  }))
+  // "Adicionar coluna à direita" também nas colunas fixas
+  const withAdd = (column: AppBoardColumn<PlanItem>): AppBoardColumn<PlanItem> =>
+    canManage ? { ...column, menuExtra: [{ key: 'add-right', label: t('plan.customColumns.addRight'), icon: <Plus />, onSelect: () => ctx.columnActions.add(column.id) }] } : column
+
   const sub: AppBoardColumn<PlanItem>[] = [
     { ...SUB.name, label: t('plan.columns.subitem'), flush: true, align: 'start', cell: (item, extra) => nameCell(item, true, extra.dragHandle) },
     {
@@ -283,5 +337,5 @@ export function usePlanColumns(ctx: BoardCtx): { main: AppBoardColumn<PlanItem>[
     { ...SUB.progress, label: t('plan.columns.progress'), cell: progressCell },
   ]
 
-  return { main, sub }
+  return { main: [...main.map(withAdd), ...custom], sub }
 }

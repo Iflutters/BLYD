@@ -221,3 +221,7 @@ A migration `1790000021` também concede `plan.view/edit/manage` aos perfis padr
 - `plan_settings`: `baseline` (JSON `{ saved_at, items: { id: { start, end } } }`, linha de base do Cronograma) e `issue_seq` (sequência dos problemas: o número não se repete).
 - `plan_journal`: `project_id` (cascade), `entry_date` (dia), `content` (≤ 5.000), `author_id`. Índice `(project_id, entry_date)`.
 - `plan_issues`: `project_id` (cascade), `number` (único por projeto), `opened_on`, `description` (≤ 2.000), `state` (`in_progress` | `pending` | `resolved`), `owner_id`, `resolved_on`, `created_by`. Índice único `(project_id, number)`.
+
+### GP-5 — migration `1790000026_plan_columns.js`
+- `plan_columns`: `project_id` (cascade), `name` (≤ 60), `type` (`text` | `number` | `date` | `checkbox` | `dropdown` | `people` | `link`), `settings` (JSON: opções da lista com id/nome/cor; unidade do número), `position`, `created_by`. Índice `(project_id, position)`.
+- `plan_items.custom` (JSON `{ coluna: valor }`): valores das colunas personalizadas no elemento (excluir/alterar a coluna reescreve os valores na mesma transação).

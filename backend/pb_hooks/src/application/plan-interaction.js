@@ -89,6 +89,7 @@ function createPlanInteractionService(deps) {
       ownerId: source.ownerId || null,
       resourceIds: source.resourceIds || [],
       metrics: Object.assign({}, source.metrics || {}),
+      custom: Object.assign({}, source.custom || {}),
       progress: source.progress || 0,
       progressSet: !!source.progressSet,
       createdBy: ctx.principal.userId,

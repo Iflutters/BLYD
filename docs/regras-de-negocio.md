@@ -389,6 +389,8 @@ Sobre os elementos do grupo (sem subelementos): **barra de distribuição dos st
 | Ver Cronograma, Kanban, Gestão e Relatórios | quem vê o quadro (inclusive leitor) |
 | Mudar datas no Cronograma e status no Kanban; registrar no diário; abrir e atualizar problemas | dono, gestor ou membro do projeto + `plan.edit` |
 | Editar/excluir registro do diário de outra pessoa; excluir problema aberto por outra pessoa; salvar ou limpar a linha de base | gestor ou dono + `plan.manage` (o seu registro/problema: quem criou) |
+| Adicionar, renomear, duplicar, alterar o tipo e excluir colunas personalizadas | gestor ou dono + `plan.manage` |
+| Preencher as colunas personalizadas | dono, gestor ou membro do projeto + `plan.edit` |
 | Projeto arquivado | somente leitura |
 
 ### Histórico
@@ -475,5 +477,12 @@ A aba Gerenciamento tem as visões **Quadro principal · Cronograma · Kanban ·
 
 Fator sem dados (ex.: nenhum elemento com cronograma) aparece como "Sem dados" e não pesa.
 
+### Colunas personalizadas (GP-5)
+- O **gestor** do projeto adiciona colunas ao quadro principal — pelo **"+"** no fim do cabeçalho ou por **"Adicionar coluna à direita"** no menu de qualquer coluna — com nome (até 60) e tipo: **Texto** (até 500), **Número** (com unidade opcional, ex.: "R$"; soma no rodapé do grupo), **Data**, **Caixa de seleção**, **Lista de opções** (até 30 opções com nome e cor, como etiquetas), **Pessoa** (quem participa do projeto) e **Link** (só http/https; abre em outra aba). Até **30 colunas** por quadro.
+- As colunas valem para todos os **elementos** do quadro (os subelementos têm as colunas próprias, fixas). Ordem, largura, ocultar e recolher continuam sendo preferência de cada pessoa, como nas colunas fixas; dá para ordenar o quadro pelas colunas personalizadas (menos Pessoa).
+- **Quem edita o quadro** preenche as células (na própria célula, como as demais); o valor é conferido pelo tipo (número, data válida, opção que existe, pessoa do projeto, link http/https). Leitor só vê.
+- No menu da coluna, o gestor: **renomeia** e edita as **opções** da lista (tirar uma opção limpa os elementos que a usavam — a tela avisa quantos); **duplica** (cópia logo depois, com os mesmos valores); **altera o tipo** — antes de confirmar, mostra quantos valores **convertem** e quantos **se perdem** (texto ↔ número, data e link quando o conteúdo permite; qualquer um → texto; para lista, os textos viram opções; pessoa → nome; caixa → só para caixa); **exclui** (pede confirmação com quantos elementos têm valor).
+- Duplicar o elemento ou o grupo leva os valores; o histórico do elemento mostra as mudanças com o nome da coluna ("Custo: 1.200"), e o do projeto, as mudanças nas colunas.
+
 ### Próximas fases
-GP-5 colunas personalizadas.
+As fases GP-1 a GP-5 da diretriz estão concluídas.

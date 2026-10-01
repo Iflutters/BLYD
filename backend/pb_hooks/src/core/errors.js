@@ -45,6 +45,7 @@ const ERROR_DEFINITIONS = Object.freeze({
   PLAN_FILE_NOT_FOUND: { status: 404, message: 'Board item file not found' },
   PLAN_JOURNAL_NOT_FOUND: { status: 404, message: 'Project journal entry not found' },
   PLAN_ISSUE_NOT_FOUND: { status: 404, message: 'Project issue not found' },
+  PLAN_COLUMN_NOT_FOUND: { status: 404, message: 'Board column not found' },
   DOC_SPACE_NOT_FOUND: { status: 404, message: 'Documentation space not found' },
   DOC_PAGE_NOT_FOUND: { status: 404, message: 'Documentation page not found' },
   DOC_VERSION_NOT_FOUND: { status: 404, message: 'Page version not found' },

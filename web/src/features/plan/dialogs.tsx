@@ -107,7 +107,7 @@ function GroupForm({ state, mutations, onClose }: { state: Exclude<GroupDialogSt
 
 /* ------------------------------------------------------------------ etiquetas (status e recursos) */
 
-function ColorButton({ color, label, onChange }: { color: OptionColor; label: string; onChange: (color: OptionColor) => void }) {
+export function ColorButton({ color, label, onChange }: { color: OptionColor; label: string; onChange: (color: OptionColor) => void }) {
   return (
     <AppPopover
       label={label}

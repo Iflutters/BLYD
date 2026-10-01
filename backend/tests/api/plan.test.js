@@ -271,4 +271,54 @@ describe('API Quadro do projeto', { timeout: 180000 }, () => {
     const audit = (await admin.get(`/projects/${p}/history`)).body.data.map((h) => h.action)
     ;['plan_journal.created', 'plan_journal.updated', 'plan_issue.created', 'plan_issue.updated', 'plan_settings.baseline_saved', 'plan_settings.baseline_cleared'].forEach((action) => assert.ok(audit.includes(action), action))
   })
+
+  it('GP-5: colunas personalizadas — o gestor define, quem edita preenche (validado), soma no rodapé, troca de tipo com prévia, duplicar e excluir', async () => {
+    const other = (await admin.post('/projects', { name: 'Colunas GP5', key: 'COL' })).body.data
+    await admin.post(`/projects/${other.id}/members`, { user_id: users.mario.id, role: 'member' })
+    await admin.post(`/projects/${other.id}/members`, { user_id: users.lia.id, role: 'viewer' })
+    const p = other.id
+    const g = (await admin.post(`/projects/${p}/groups`, { name: 'Execução' })).body.data
+    const a = (await mario.post(`/projects/${p}/plan/items`, { group_id: g.id, name: 'Compra de servidores' })).body.data
+    const b = (await mario.post(`/projects/${p}/plan/items`, { group_id: g.id, name: 'Licenças' })).body.data
+
+    assert.equal((await mario.post(`/projects/${p}/plan/columns`, { name: 'Custo', type: 'number' })).status, 403)
+    const custo = await admin.post(`/projects/${p}/plan/columns`, { name: 'Custo', type: 'number', settings: { unit: 'R$' } })
+    assert.equal(custo.status, 201, JSON.stringify(custo.body))
+    const fase = (await admin.post(`/projects/${p}/plan/columns`, { name: 'Fase', type: 'dropdown', settings: { options: [{ name: 'Piloto', color: 'blue' }] } })).body.data
+    const nota = (await admin.post(`/projects/${p}/plan/columns`, { name: 'Nota', type: 'text' })).body.data
+    const c = custo.body.data.id
+    const piloto = fase.settings.options[0].id
+
+    const set = await mario.patch(`/plan/items/${a.id}`, { custom: { [c]: 1200.5, [fase.id]: piloto, [nota.id]: '12,5' } })
+    assert.equal(set.status, 200, JSON.stringify(set.body))
+    assert.equal(set.body.data.custom[c], 1200.5)
+    await mario.patch(`/plan/items/${b.id}`, { custom: { [c]: 300, [nota.id]: 'sem valor' } })
+    assert.equal((await mario.patch(`/plan/items/${a.id}`, { custom: { [c]: 'mil' } })).body.error.code, 'VALIDATION_ERROR')
+    assert.equal((await lia.patch(`/plan/items/${a.id}`, { custom: { [c]: 1 } })).status, 403)
+
+    const board = (await lia.get(`/projects/${p}/plan`)).body.data
+    assert.deepEqual(board.columns.map((x) => x.name), ['Custo', 'Fase', 'Nota'])
+    assert.equal(board.groups[0].summary.custom_sums[c], 1500.5)
+    assert.deepEqual(board.items.find((i) => i.id === a.id).custom, { [c]: 1200.5, [fase.id]: piloto, [nota.id]: '12,5' })
+
+    const preview = (await admin.post(`/plan/columns/${nota.id}/type`, { type: 'number', dry_run: true })).body.data
+    assert.deepEqual(preview, { converted: 1, lost: 1 })
+    const changed = await admin.post(`/plan/columns/${nota.id}/type`, { type: 'number' })
+    assert.equal(changed.status, 200, JSON.stringify(changed.body))
+    const afterType = (await lia.get(`/projects/${p}/plan`)).body.data
+    assert.equal(afterType.items.find((i) => i.id === a.id).custom[nota.id], 12.5)
+    assert.equal(afterType.items.find((i) => i.id === b.id).custom[nota.id], undefined)
+
+    const copy = await admin.post(`/plan/columns/${fase.id}/duplicate`)
+    assert.equal(copy.status, 201, JSON.stringify(copy.body))
+    assert.equal(copy.body.data.name, 'Fase (cópia)')
+    assert.equal((await admin.patch(`/plan/columns/${fase.id}`, { name: 'Etapa' })).body.data.name, 'Etapa')
+    const removed = await admin.del(`/plan/columns/${c}`)
+    assert.deepEqual(removed.body.data, { deleted: true, values: 2 })
+    const final = (await lia.get(`/projects/${p}/plan`)).body.data
+    assert.deepEqual(final.columns.map((x) => x.name), ['Etapa', 'Fase (cópia)', 'Nota'])
+    assert.equal(final.items.find((i) => i.id === a.id).custom[c], undefined)
+    const history = (await admin.get(`/projects/${p}/history`)).body.data.map((h) => h.action)
+    ;['plan_column.created', 'plan_column.type_changed', 'plan_column.duplicated', 'plan_column.updated', 'plan_column.deleted'].forEach((action) => assert.ok(history.includes(action), action))
+  })
 })

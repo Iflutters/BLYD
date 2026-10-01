@@ -191,7 +191,8 @@
     "PLAN_UPDATE_NOT_FOUND": "Atualização não encontrada.",
     "PLAN_FILE_NOT_FOUND": "Arquivo não encontrado.",
     "PLAN_JOURNAL_NOT_FOUND": "Registro do diário não encontrado.",
-    "PLAN_ISSUE_NOT_FOUND": "Problema não encontrado."
+    "PLAN_ISSUE_NOT_FOUND": "Problema não encontrado.",
+    "PLAN_COLUMN_NOT_FOUND": "Coluna não encontrada."
   },
   "nav": {
     "main": "Navegação principal",
@@ -612,7 +613,12 @@
       "opened_on": "Data",
       "issue_state": "Situação",
       "issue_owner": "Responsável",
-      "baseline_items": "Elementos na linha de base"
+      "baseline_items": "Elementos na linha de base",
+      "column": "Coluna",
+      "column_type": "Tipo da coluna",
+      "lost_values": "Valores perdidos",
+      "cleared_values": "Valores limpos",
+      "filled_values": "Valores preenchidos"
     },
     "actions": {
       "auth.login": "Entrou no sistema",
@@ -720,7 +726,12 @@
       "plan_issue.updated": "Problema atualizado",
       "plan_issue.deleted": "Problema excluído",
       "plan_settings.baseline_saved": "Linha de base salva",
-      "plan_settings.baseline_cleared": "Linha de base limpa"
+      "plan_settings.baseline_cleared": "Linha de base limpa",
+      "plan_column.created": "Coluna adicionada",
+      "plan_column.updated": "Coluna editada",
+      "plan_column.type_changed": "Tipo da coluna alterado",
+      "plan_column.duplicated": "Coluna duplicada",
+      "plan_column.deleted": "Coluna excluída"
     }
   },
   "projects": {
@@ -2682,6 +2693,77 @@
         "group": "Grupo",
         "items": "Feitos/total",
         "empty": "Nenhum grupo ainda."
+      }
+    },
+    "customColumns": {
+      "add": "Adicionar coluna",
+      "addRight": "Adicionar coluna à direita",
+      "create": "Adicionar coluna",
+      "createTitle": "Nova coluna",
+      "editTitle": "Editar coluna \"{{name}}\"",
+      "hint": "As colunas valem para todos os elementos do quadro. Quem edita o quadro preenche as células.",
+      "name": "Nome da coluna",
+      "type": "Tipo",
+      "options": "Opções",
+      "optionColor": "Cor de {{name}}",
+      "optionName": "Nome da opção {{index}}",
+      "removeOption": "Tirar a opção {{name}}",
+      "addOption": "Adicionar opção",
+      "optionsInUse_one": "{{count}} opção removida está em uso: os elementos que a usam ficam vazios.",
+      "optionsInUse_other": "{{count}} opções removidas estão em uso: os elementos que as usam ficam vazios.",
+      "unit": "Unidade",
+      "unitHint": "Ex.: R$, kg, h (aparece ao lado do número e no total).",
+      "rename": "Renomear coluna",
+      "editColumn": "Editar coluna e opções",
+      "editOptions": "Editar opções",
+      "changeType": "Alterar tipo",
+      "changeTypeTitle": "Alterar o tipo de \"{{name}}\"",
+      "changeTypeHint": "Hoje é {{type}}. Os valores são convertidos quando dá; o que não converte fica vazio.",
+      "previewOk_one": "O valor preenchido é convertido.",
+      "previewOk_other": "Todos os {{count}} valores preenchidos são convertidos.",
+      "previewLost_one": "{{converted}} convertido(s) · {{count}} valor não converte e fica vazio.",
+      "previewLost_other": "{{converted}} convertido(s) · {{count}} valores não convertem e ficam vazios.",
+      "typeChanged": "Coluna \"{{name}}\" agora é {{type}}.",
+      "duplicate": "Duplicar coluna",
+      "duplicated": "Coluna \"{{name}}\" criada.",
+      "delete": "Excluir coluna",
+      "deleteTitle": "Excluir a coluna \"{{name}}\"?",
+      "deleteDescription_zero": "A coluna está vazia. O registro fica no histórico do projeto.",
+      "deleteDescription_one": "O valor de {{count}} elemento será apagado. O registro fica no histórico do projeto.",
+      "deleteDescription_other": "Os valores de {{count}} elementos serão apagados. O registro fica no histórico do projeto.",
+      "deleted": "Coluna \"{{name}}\" excluída.",
+      "created": "Coluna \"{{name}}\" adicionada.",
+      "updated": "Coluna \"{{name}}\" atualizada.",
+      "tooMany": "O quadro já tem o máximo de {{max}} colunas personalizadas.",
+      "cellOf": "{{column}} de {{name}}",
+      "cellOfValue": "{{column}} de {{name}}: {{value}}",
+      "empty": "Vazio",
+      "fill": "Preencher {{label}}",
+      "editLink": "Editar {{label}}",
+      "issues": {
+        "required": "Campo obrigatório",
+        "too_long": "Texto longo demais",
+        "invalid_option": "Toda opção precisa de nome (até 40 caracteres) e cor",
+        "duplicate_option": "Há opções com o mesmo nome",
+        "too_many": "Até 30 opções"
+      },
+      "types": {
+        "text": "Texto",
+        "number": "Número",
+        "date": "Data",
+        "checkbox": "Caixa de seleção",
+        "dropdown": "Lista de opções",
+        "people": "Pessoa",
+        "link": "Link"
+      },
+      "typeHints": {
+        "text": "Anotações curtas",
+        "number": "Valores e quantidades, com soma",
+        "date": "Um dia no calendário",
+        "checkbox": "Sim ou não",
+        "dropdown": "Etiquetas coloridas",
+        "people": "Alguém do projeto",
+        "link": "Endereço da web"
       }
     }
   },

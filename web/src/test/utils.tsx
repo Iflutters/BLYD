@@ -255,6 +255,12 @@ export function fakeRepositories(overrides: {
       updateIssue: notImplemented,
       deleteIssue: notImplemented,
       report: notImplemented,
+      createColumn: notImplemented,
+      updateColumn: notImplemented,
+      previewColumnType: notImplemented,
+      changeColumnType: notImplemented,
+      duplicateColumn: notImplemented,
+      deleteColumn: notImplemented,
       ...overrides.plan,
     },
     docs: {
