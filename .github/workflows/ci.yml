@@ -1,0 +1,73 @@
+# Integração contínua: lint, tipos e testes (unitários, interface e API contra PocketBase real),
+# ponta a ponta no Chrome (fluxos, acessibilidade em 4 modos, responsividade) e build da imagem Docker.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, tipos e testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            web/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix web
+      - name: PocketBase (binário fixado do projeto)
+        run: npm --prefix backend run setup
+      - run: npm run check
+
+  e2e:
+    name: Ponta a ponta (Chrome)
+    runs-on: ubuntu-latest
+    needs: check
+    env:
+      KAMBAN_E2E_CHANNEL: chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            web/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix web
+      - run: npm --prefix backend run setup
+      - run: npm run e2e
+
+  docker:
+    name: Imagem Docker
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t kamban:ci .
+      - name: Sobe e confere a saúde
+        run: |
+          docker run -d --name kamban -p 8090:8090 -e KAMBAN_ADMIN_EMAIL=admin@ci.local -e KAMBAN_ADMIN_PASSWORD=CiSenha2026 kamban:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8090/api/v1/health; then exit 0; fi
+            sleep 2
+          done
+          docker logs kamban
+          exit 1

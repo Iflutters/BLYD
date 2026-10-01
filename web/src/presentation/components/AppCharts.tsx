@@ -76,6 +76,8 @@ export function AppStatCard({ label, value, hint, icon, tone = 'default', classN
 export interface AppBarListItem {
   key: string
   label: ReactNode
+  /** Linha secundária sob o rótulo (ex.: "2 pendentes · 28 h"). */
+  detail?: ReactNode
   value: number
 }
 
@@ -95,8 +97,15 @@ export function AppBarList({ items, label, formatValue = (v) => v, empty, classN
   return (
     <ul aria-label={label} className={cn('flex flex-col gap-2', className)}>
       {items.map((item) => (
-        <li key={item.key} className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-3 text-sm">
-          <span className="min-w-0 truncate text-fg">{item.label}</span>
+        <li key={item.key} className={cn('grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-3 text-sm', item.detail !== undefined && 'sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto]')}>
+          {item.detail !== undefined ? (
+            <span className="flex min-w-0 flex-col">
+              <span className="min-w-0 truncate text-fg">{item.label}</span>
+              <span className="min-w-0 truncate text-xs text-muted">{item.detail}</span>
+            </span>
+          ) : (
+            <span className="min-w-0 truncate text-fg">{item.label}</span>
+          )}
           <span className="h-2 overflow-hidden rounded-full bg-surface-3" aria-hidden>
             <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(2, (item.value / max) * 100)}%` }} />
           </span>

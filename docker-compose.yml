@@ -1,0 +1,23 @@
+# KAMBAN em um comando:
+#   cp .env.docker.example .env   (defina o administrador)
+#   docker compose up -d
+#   abra http://localhost:8090
+# Em produção, coloque um proxy com HTTPS na frente (o cookie de sessão é Secure).
+services:
+  kamban:
+    build: .
+    image: kamban:latest
+    ports:
+      - "8090:8090"
+    environment:
+      KAMBAN_ENV: production
+      KAMBAN_ADMIN_EMAIL: ${KAMBAN_ADMIN_EMAIL:?defina KAMBAN_ADMIN_EMAIL no .env}
+      KAMBAN_ADMIN_PASSWORD: ${KAMBAN_ADMIN_PASSWORD:?defina KAMBAN_ADMIN_PASSWORD no .env}
+      KAMBAN_ADMIN_NAME: ${KAMBAN_ADMIN_NAME:-Administrador}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - kamban_data:/pb_data
+    restart: unless-stopped
+
+volumes:
+  kamban_data:

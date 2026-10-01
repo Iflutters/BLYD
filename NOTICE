@@ -1,0 +1,9 @@
+KAMBAN
+Copyright 2026 The KAMBAN Authors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product bundles or depends on third-party software, each under its own license:
+- PocketBase (https://pocketbase.io), MIT License — downloaded at setup time, not redistributed in this repository.
+- npm packages listed in package-lock.json files (React, TanStack, Radix UI, Tailwind CSS, TipTap,
+  dnd-kit, i18next, lucide-react, react-toastify, zod and others), under their respective licenses.

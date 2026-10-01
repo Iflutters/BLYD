@@ -60,7 +60,7 @@ A ordem 1 → 2 pode ser invertida sem impacto (os módulos são independentes a
 **Funcionalidades**
 - Tarefa ganha **Início planejado** (além do **Prazo** que já existe). Regra: início ≤ prazo. Sem as duas datas, a tarefa fica na lista lateral "Sem datas"; arrastá-la para a timeline define as datas.
 - **Marcos do projeto** (entregas-chave): nome, data, descrição e situação (pendente/atingido); aparecem como losango.
-- Tela **Timeline** por projeto (menu próprio; a aba no projeto saiu em 2026-10-01 a pedido do usuário — o cronograma do projeto é o do Gerenciamento, `?tab=plan&view=timeline`):
+- Tela **Timeline** por projeto (menu próprio; a aba no projeto saiu em 2026-10-01 a pedido do usuário — o cronograma do projeto é o da Gestão de projetos, `/project-management/:projeto?view=timeline`):
   - barra por tarefa do início ao prazo, na cor do status; progresso (subtarefas/checklist) dentro da barra; atrasada destacada;
   - **arrastar** a barra move as duas datas; **puxar as pontas** muda início ou prazo; teclado acessível (setas);
   - **dependências** (depende de / bloqueia) desenhadas como setas; aviso quando a tarefa começa antes de terminar a que ela depende (sem reprogramar sozinho nesta onda);

@@ -16,6 +16,10 @@ A diretriz completa e obrigatória está em [docs/diretriz-desenvolvimento.md](d
 | `npm run check` | lint + tipos + todos os testes |
 | `npm run build` | build do web em `backend/pb_public` |
 | `npm run e2e` | build + testes de ponta a ponta no navegador (Edge) |
+| `npm run demo` | dados de demonstração (projeto DEMO) no servidor do `backend/.env` |
+| `npm run screenshots` | build + imagens do README (`docs/images`) num PocketBase isolado |
+
+Open source sob **Apache-2.0** (ADR-033): README pt-BR + `README.en.md`, CHANGELOG (atualizar a cada mudança visível), Docker (`Dockerfile`, `docker-compose.yml`) e CI em `.github/workflows/ci.yml`.
 
 Backend: `npm test` (unitários), `npm run test:api` (PocketBase real isolado), `npm run lint`, `npm run create-admin`.
 Web: `npm test`, `npm run typecheck`, `npm run lint`.

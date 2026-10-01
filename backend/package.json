@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Backend KAMBAN: PocketBase + hooks JS (API /api/v1)",
+  "license": "Apache-2.0",
   "scripts": {
     "setup": "node scripts/setup.js",
     "dev": "node scripts/dev.js",
@@ -11,7 +12,8 @@
     "test:all": "npm run test && npm run test:api",
     "coverage": "node --test --experimental-test-coverage \"tests/unit/**/*.test.js\"",
     "lint": "eslint .",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "demo": "node scripts/demo.js"
   },
   "engines": {
     "node": ">=22"

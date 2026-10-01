@@ -129,9 +129,9 @@ function ReportView({ data }: { data: PlanReport }) {
                 <span className="flex min-w-0 items-center gap-2">
                   <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-surface-3" style={r.color ? { backgroundColor: optionColor(r.color as OptionColor) } : undefined} />
                   <span className="truncate">{r.name ?? t('plan.filters.noResource')}</span>
-                  <span className="shrink-0 text-xs text-muted">{t('plan.report.resources.detail', { open: r.open, hours: hours(r.estimated) })}</span>
                 </span>
               ),
+              detail: t('plan.report.resources.detail', { open: r.open, hours: hours(r.estimated) }),
               value: r.items,
             }))}
             formatValue={(value) => t('plan.report.resources.items', { count: value })}

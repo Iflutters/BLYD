@@ -1,5 +1,16 @@
 # Execução e implantação
 
+## Jeito mais rápido: Docker
+```bash
+cp .env.docker.example .env      # defina KAMBAN_ADMIN_EMAIL e KAMBAN_ADMIN_PASSWORD
+docker compose up -d             # imagem com o PocketBase, os hooks, as migrations e o web compilado
+```
+Abra http://localhost:8090. A imagem cria/atualiza o super administrador ao subir (se as variáveis estiverem definidas), aplica as migrations e guarda os dados no volume `kamban_data` (`/pb_data`). Não precisa de Node no servidor. Health check embutido (`GET /api/v1/health`).
+
+- **HTTPS:** em produção, ponha um proxy com HTTPS na frente (Caddy, Nginx, Traefik) — o cookie de sessão é `Secure`. Em `http://localhost` os navegadores aceitam.
+- **Dados de demonstração:** com o servidor no ar, `npm --prefix backend run demo` (no repositório, com `backend/.env` apontando para ele) cria o projeto DEMO.
+- Sem Docker, siga os passos abaixo.
+
 ## Requisitos
 - Node.js ≥ 22 (desenvolvido com 24) e npm.
 - Binário do PocketBase 0.40.4 (`npm run setup` baixa para `backend/bin`).
@@ -43,9 +54,22 @@ KAMBAN_ENV=production ./bin/pocketbase serve \
 ```
 - Coloque um proxy reverso com **HTTPS** (Caddy/Nginx) na frente e configure *Trusted proxy* no painel.
 - Migrations rodam automaticamente no `serve`.
-- Backup: diretório `pb_data` (ou backups agendados no painel).
+- Backup e atualização: ver abaixo.
 - Variáveis: ver `backend/.env.example` e [security.md](security.md).
 - Health check: `GET /api/v1/health` (200 ok / 503 degradado).
+
+## Backup e restauração
+Todos os dados (banco SQLite, anexos, imagens e arquivos da documentação) ficam no diretório de dados do PocketBase (`pb_data`; no Docker, o volume `kamban_data`).
+- **Backup agendado:** no painel do PocketBase (`/_/` → Settings → Backups) — gera um `.zip` consistente, opcionalmente enviado para S3.
+- **Backup manual:** pare o serviço e copie o diretório `pb_data` inteiro (no Docker: `docker compose stop` e copie o volume). Com o serviço no ar, use o backup do painel (a cópia direta do SQLite em uso pode ficar inconsistente).
+- **Restaurar:** pare o serviço, troque o `pb_data` pelo do backup e suba de novo (ou "Restore" no painel).
+- Teste a restauração de vez em quando num ambiente separado.
+
+## Atualizar para uma versão nova
+1. Leia o [CHANGELOG](../CHANGELOG.md) (mudanças que pedem atenção ficam em destaque).
+2. **Faça um backup** (acima).
+3. Docker: `git pull && docker compose up -d --build`. Sem Docker: `git pull`, `npm ci` em `backend/` e `web/`, `npm --prefix backend run setup` (troca o binário se a versão do PocketBase mudou), `npm run build` e reinicie o `serve`.
+4. As migrations rodam sozinhas ao subir; acompanhe os logs e confira `GET /api/v1/health`.
 
 ## Observabilidade
 - Logs estruturados do PocketBase (painel → Logs), com `correlationId`, método, caminho e status nos erros da API.

@@ -1,0 +1,12 @@
+.git
+**/node_modules
+backend/bin
+backend/pb_data
+backend/pb_public
+backend/.env
+.env
+e2e
+docs
+**/*.log
+**/coverage
+web/dist

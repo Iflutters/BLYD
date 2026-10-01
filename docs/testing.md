@@ -14,6 +14,7 @@
 | `web/` | `npm run typecheck` / `npm run lint` | TypeScript estrito / ESLint (a11y, hooks) |
 | raiz | `npm run e2e` | build do front + testes de ponta a ponta no navegador (fluxos do MVP, acessibilidade e responsividade) |
 | raiz | `npm run e2e:run` | só os testes de ponta a ponta, usando o build já gerado |
+| raiz | `npm run screenshots` | build + imagens do README a partir dos dados de demonstração |
 
 ## Backend
 - **Unitários** (`tests/unit`): regras de domínio (RBAC, sessão, usuário), validação, paginação e casos de uso com os fakes de `tests/support/fakes.js`, que implementam as mesmas portas dos repositórios PocketBase.
@@ -36,6 +37,8 @@ Pasta `e2e/` (node:test + playwright-core, com o **Edge instalado** — nada é 
 - Regressões que a varredura já pegou e que ficaram corrigidas: contraste do cinza "sutil" e dos selos coloridos (status, prioridade, tags) nos dois temas; botão de perigo no tema escuro; tabela oculta do gráfico esticando a página (2ª barra de rolagem que fazia a tela "tremer" ao abrir filtros no Dashboard, nos Relatórios e no tipo de tarefa).
 
 Também na Fase 9: `tests/api/security-sweep.test.js` (ver [security.md](security.md#verificações-automatizadas-fase-9)), `tests/unit/audit-catalog.test.js` e `tests/api/performance.test.js` — 1.500 tarefas com relações e subtarefas; mede lista paginada, busca, ordenação, quadro, planejamento e relatórios (limite folgado de 2 s por chamada; na máquina de desenvolvimento: lista ~30 ms, quadro ~300 ms, planejamento ~130 ms, relatórios ~80 ms).
+
+Pacote de publicação: `tests/api/demo.test.js` roda os **dados de demonstração** (`backend/scripts/demo-data.js`, o mesmo de `npm run demo`) num PocketBase isolado — tudo pela API, quadro da Gestão completo (grupos numerados, colunas, linha de base, problemas, relatório) e a segunda execução não muda nada. `npm run screenshots` (`e2e/screenshots.mjs`) usa os mesmos dados e o harness do E2E para regerar as imagens do README (`docs/images/`, 1600 px, claro e escuro). A integração contínua (`.github/workflows/ci.yml`) roda `npm run check`, o E2E no Chrome e o build + health check da imagem Docker.
 
 ## Situação na entrega da Fase 9 (2026-09-30)
 - Backend: **257** unitários + **78** de API — todos passando.
