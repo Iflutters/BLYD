@@ -85,17 +85,36 @@ describe('Integrações — e-mail', () => {
 describe('Esqueci minha senha e nova senha', () => {
   const withEmail = { getInfo: () => Promise.resolve({ ...DEFAULT_PLATFORM_INFO, passwordReset: true }) }
 
-  it('login mostra "Esqueci minha senha" só com o envio de e-mail ligado', async () => {
+  it('login sem envio de e-mail: "Esqueci minha senha" pede para contatar o administrador', async () => {
     renderRoutes([{ path: '/login', element: <LoginPage /> }], { repositories: fakeRepositories(), initialPath: '/login' })
     await screen.findByRole('button', { name: 'Entrar' })
     expect(screen.queryByRole('link', { name: 'Esqueci minha senha' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Contate o administrador para trocar a senha')).not.toBeInTheDocument()
+    const forgot = screen.getByRole('button', { name: 'Esqueci minha senha' })
+    expect(forgot).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(forgot)
+    expect(screen.getByText('Contate o administrador para trocar a senha')).toBeInTheDocument()
+    expect(forgot).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('login com envio de e-mail: "Esqueci minha senha" leva ao pedido do link', async () => {
     renderRoutes([{ path: '/login', element: <LoginPage /> }], { repositories: fakeRepositories({ platform: withEmail }), initialPath: '/login' })
     expect(await screen.findByRole('link', { name: 'Esqueci minha senha' })).toHaveAttribute('href', '/forgot-password')
+    expect(screen.queryByRole('button', { name: 'Esqueci minha senha' })).not.toBeInTheDocument()
+  })
+
+  it('página do pedido aberta sem envio de e-mail: orienta a falar com o administrador, sem formulário', async () => {
+    const requestPasswordReset = vi.fn<AuthRepository['requestPasswordReset']>(() => Promise.resolve())
+    renderRoutes([{ path: '/forgot-password', element: <ForgotPasswordPage /> }], { repositories: fakeRepositories({ auth: { requestPasswordReset } }), initialPath: '/forgot-password' })
+    expect(await screen.findByText('Contate o administrador para trocar a senha')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Enviar link' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Voltar para o login' })).toHaveAttribute('href', '/login')
+    expect(requestPasswordReset).not.toHaveBeenCalled()
   })
 
   it('pedido mostra a mesma confirmação exista ou não a conta', async () => {
     const requestPasswordReset = vi.fn<AuthRepository['requestPasswordReset']>(() => Promise.resolve())
-    renderRoutes([{ path: '/forgot-password', element: <ForgotPasswordPage /> }], { repositories: fakeRepositories({ auth: { requestPasswordReset } }), initialPath: '/forgot-password' })
+    renderRoutes([{ path: '/forgot-password', element: <ForgotPasswordPage /> }], { repositories: fakeRepositories({ auth: { requestPasswordReset }, platform: withEmail }), initialPath: '/forgot-password' })
     await userEvent.type(await screen.findByLabelText(/^E-mail/), 'ana@empresa.com')
     await userEvent.click(screen.getByRole('button', { name: 'Enviar link' }))
     expect(await screen.findByText(/Se ana@empresa\.com tiver uma conta, o link chega em instantes/)).toBeInTheDocument()

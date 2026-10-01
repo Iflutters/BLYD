@@ -293,6 +293,37 @@
     "lockedFor_other": "Demasiados intentos de inicio de sesión para esta cuenta. Por seguridad, intente de nuevo en {{minutes}} minutos.",
     "forgotPassword": "Olvidé mi contraseña",
     "backToLogin": "Volver al inicio de sesión",
+    "noEmail": {
+      "title": "Contacte al administrador para cambiar la contraseña",
+      "description": "La recuperación de contraseña por correo no está configurada en esta plataforma. Un administrador puede restablecer su contraseña."
+    },
+    "hero": {
+      "board": "Tablero del equipo",
+      "live": "En vivo",
+      "columns": {
+        "todo": "Por hacer",
+        "doing": "En curso",
+        "done": "Hecho"
+      },
+      "health": "Salud del proyecto",
+      "onTrack": "En plazo",
+      "moved": "Tarjeta movida a Hecho",
+      "now": "ahora · todo el equipo ya lo ve",
+      "features": {
+        "kanban": {
+          "title": "Kanban y backlog",
+          "description": "Priorice, tome y siga cada tarea hasta la entrega."
+        },
+        "plan": {
+          "title": "Gestión de proyectos",
+          "description": "Cronograma, dependencias, línea base y salud del proyecto."
+        },
+        "live": {
+          "title": "Equipo en sincronía",
+          "description": "Los cambios aparecen al instante para todos, con historial y permisos."
+        }
+      }
+    },
     "forgot": {
       "title": "Olvidé mi contraseña",
       "subtitle": "Indica tu correo y te enviaremos un enlace para crear una contraseña nueva.",
@@ -2989,7 +3020,7 @@
       "smtpTitle": "Servidor de correo (SMTP)",
       "smtpDescription": "Se usa para \"Olvidé mi contraseña\", invitaciones y notificaciones por correo.",
       "enabled": "Enviar correos",
-      "enabledHint": "Desactivado, no se envía nada y el inicio de sesión no muestra \"Olvidé mi contraseña\".",
+      "enabledHint": "Desactivado, no se envía nada y \"Olvidé mi contraseña\" del inicio de sesión indica que se contacte al administrador.",
       "host": "Servidor",
       "port": "Puerto",
       "tls": "TLS directo (puerto 465)",

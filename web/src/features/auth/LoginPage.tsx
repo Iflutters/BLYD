@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate, useSearchParams } from 'react-router'
@@ -10,6 +10,7 @@ import { AppButton, AppCheckbox, AppTextField } from '@/presentation/components'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { usePlatformInfo } from '@/presentation/common/use-platform'
 import { AuthLayout } from './AuthLayout'
+import { ContactAdminNotice } from './ContactAdminNotice'
 import { safeRedirect, useLogin } from './session'
 import { useSessionStore } from './session-store'
 
@@ -21,6 +22,7 @@ export function LoginPage() {
   const errorMessage = useErrorMessage()
   const endReason = useSessionStore((s) => s.endReason)
   const platform = usePlatformInfo()
+  const [showContactAdmin, setShowContactAdmin] = useState(false)
 
   const {
     register,
@@ -92,19 +94,35 @@ export function LoginPage() {
           error={errors.password?.message ?? fieldErrors.password}
           {...register('password')}
         />
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Controller
-            control={control}
-            name="remember"
-            render={({ field }) => (
-              <AppCheckbox checked={field.value} onCheckedChange={field.onChange} label={t('auth.remember')} />
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Controller
+              control={control}
+              name="remember"
+              render={({ field }) => (
+                <AppCheckbox checked={field.value} onCheckedChange={field.onChange} label={t('auth.remember')} />
+              )}
+            />
+            {platform.passwordReset ? (
+              <AppButton asChild variant="link" className="h-auto px-0">
+                <Link to="/forgot-password">{t('auth.forgotPassword')}</Link>
+              </AppButton>
+            ) : (
+              // sem envio de e-mail não há link a pedir: o aviso orienta a falar com o administrador
+              <AppButton
+                variant="link"
+                className="h-auto px-0"
+                aria-expanded={showContactAdmin}
+                aria-controls="login-contact-admin"
+                onClick={() => setShowContactAdmin((open) => !open)}
+              >
+                {t('auth.forgotPassword')}
+              </AppButton>
             )}
-          />
-          {platform.passwordReset && (
-            <Link to="/forgot-password" className="rounded text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring">
-              {t('auth.forgotPassword')}
-            </Link>
-          )}
+          </div>
+          <div id="login-contact-admin" aria-live="polite">
+            {showContactAdmin && !platform.passwordReset && <ContactAdminNotice className="mt-3" />}
+          </div>
         </div>
         <AppButton type="submit" size="lg" block loading={login.isPending}>
           {t('auth.submit')}

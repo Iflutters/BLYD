@@ -293,6 +293,37 @@
     "lockedFor_other": "Muitas tentativas de login para esta conta. Por segurança, tente de novo em {{minutes}} minutos.",
     "forgotPassword": "Esqueci minha senha",
     "backToLogin": "Voltar para o login",
+    "noEmail": {
+      "title": "Contate o administrador para trocar a senha",
+      "description": "A recuperação de senha por e-mail não está configurada nesta plataforma. Um administrador pode redefinir a sua senha."
+    },
+    "hero": {
+      "board": "Quadro da equipe",
+      "live": "Ao vivo",
+      "columns": {
+        "todo": "A fazer",
+        "doing": "Em andamento",
+        "done": "Concluído"
+      },
+      "health": "Saúde do projeto",
+      "onTrack": "No prazo",
+      "moved": "Cartão movido para Concluído",
+      "now": "agora · toda a equipe já vê",
+      "features": {
+        "kanban": {
+          "title": "Kanban e backlog",
+          "description": "Priorize, puxe e acompanhe cada tarefa até a entrega."
+        },
+        "plan": {
+          "title": "Gestão de projetos",
+          "description": "Cronograma, dependências, linha de base e saúde do projeto."
+        },
+        "live": {
+          "title": "Equipe em sincronia",
+          "description": "Mudanças aparecem na hora para todos, com histórico e permissões."
+        }
+      }
+    },
     "forgot": {
       "title": "Esqueci minha senha",
       "subtitle": "Informe o seu e-mail e enviaremos um link para criar uma senha nova.",
@@ -2989,7 +3020,7 @@
       "smtpTitle": "Servidor de e-mail (SMTP)",
       "smtpDescription": "Usado para \"Esqueci minha senha\", convites e notificações por e-mail.",
       "enabled": "Enviar e-mails",
-      "enabledHint": "Desligado, nada é enviado e o login não mostra \"Esqueci minha senha\".",
+      "enabledHint": "Desligado, nada é enviado e o \"Esqueci minha senha\" do login orienta a pessoa a falar com o administrador.",
       "host": "Servidor",
       "port": "Porta",
       "tls": "TLS direto (porta 465)",

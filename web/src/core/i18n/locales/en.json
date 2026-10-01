@@ -293,6 +293,37 @@
     "lockedFor_other": "Too many sign-in attempts for this account. For security, try again in {{minutes}} minutes.",
     "forgotPassword": "Forgot my password",
     "backToLogin": "Back to sign in",
+    "noEmail": {
+      "title": "Contact your administrator to change your password",
+      "description": "Password recovery by email isn't set up on this platform. An administrator can reset your password."
+    },
+    "hero": {
+      "board": "Team board",
+      "live": "Live",
+      "columns": {
+        "todo": "To do",
+        "doing": "In progress",
+        "done": "Done"
+      },
+      "health": "Project health",
+      "onTrack": "On track",
+      "moved": "Card moved to Done",
+      "now": "just now · the whole team sees it",
+      "features": {
+        "kanban": {
+          "title": "Kanban and backlog",
+          "description": "Prioritize, pull and follow every task through delivery."
+        },
+        "plan": {
+          "title": "Project management",
+          "description": "Schedule, dependencies, baseline and project health."
+        },
+        "live": {
+          "title": "Team in sync",
+          "description": "Changes show up instantly for everyone, with history and permissions."
+        }
+      }
+    },
     "forgot": {
       "title": "Forgot my password",
       "subtitle": "Enter your email and we'll send a link to create a new password.",
@@ -2989,7 +3020,7 @@
       "smtpTitle": "Mail server (SMTP)",
       "smtpDescription": "Used for \"Forgot my password\", invitations and email notifications.",
       "enabled": "Send emails",
-      "enabledHint": "When off, nothing is sent and the sign-in page hides \"Forgot my password\".",
+      "enabledHint": "When off, nothing is sent and \"Forgot my password\" on the sign-in page tells people to contact the administrator.",
       "host": "Server",
       "port": "Port",
       "tls": "Direct TLS (port 465)",

@@ -5,11 +5,16 @@ import { useRepositories } from './repositories-context'
 
 export const PLATFORM_INFO_QUERY_KEY = ['platform', 'info'] as const
 
+/** Identidade da plataforma e se ela já chegou (até lá vale o padrão, com o e-mail desligado). */
+export function usePlatformInfoState(): { info: PlatformInfo; loaded: boolean } {
+  const { platform } = useRepositories()
+  const { data, isFetched } = useQuery({ queryKey: PLATFORM_INFO_QUERY_KEY, queryFn: () => platform.getInfo(), staleTime: 5 * 60_000, retry: false })
+  return { info: data ?? DEFAULT_PLATFORM_INFO, loaded: isFetched }
+}
+
 /** Identidade da plataforma (Configurador geral): nome, logo e ícone — pública, vale até no login. */
 export function usePlatformInfo(): PlatformInfo {
-  const { platform } = useRepositories()
-  const { data } = useQuery({ queryKey: PLATFORM_INFO_QUERY_KEY, queryFn: () => platform.getInfo(), staleTime: 5 * 60_000, retry: false })
-  return data ?? DEFAULT_PLATFORM_INFO
+  return usePlatformInfoState().info
 }
 
 /** Mantém o ícone da aba do navegador igual ao configurado (ou o padrão). */
