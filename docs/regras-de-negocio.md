@@ -1,0 +1,438 @@
+# Regras de negócio — fluxo de trabalho
+
+Como as tarefas andam no KAMBAN: status, datas de início e conclusão, transições, limite WIP e Kanban.
+Quem pode fazer cada ação está em [permissions.md](permissions.md); as decisões técnicas, em [decisions.md](decisions.md) (ADR-011 e ADR-015).
+
+## 1. Status e categorias
+
+Os status são **globais** (valem para todos os projetos) e configurados em **Configurações → Status**: nome, cor, ordem (a ordem das colunas do Kanban), padrão, ativo, limite WIP e transições permitidas.
+
+Cada status pertence a uma **categoria**, que diz ao sistema o que aquela etapa significa:
+
+| Categoria | Significado | Exemplos no fluxo padrão |
+|---|---|---|
+| Backlog | ideia ou pedido ainda não planejado | Backlog |
+| A fazer | planejada, aguardando início | Triagem, Análise, Priorizado |
+| Em andamento | em execução | Desenvolvimento, Homologação, Produção |
+| Concluída | encerrada com entrega | Concluído |
+| Cancelada | encerrada sem entrega | Cancelado |
+
+O **tipo** da tarefa (Bug, Melhoria…) não influencia o andamento: ele define apenas os campos da tarefa.
+
+## 2. Início e conclusão da tarefa
+
+Não existe botão "iniciar" ou "concluir": a tarefa é iniciada ou concluída **ao mudar de status**, arrastando o card no Kanban ou escolhendo o status na tarefa. O sistema preenche as datas sozinho, pela categoria do status de destino:
+
+| A tarefa entra num status da categoria… | Efeito |
+|---|---|
+| **Em andamento** | grava **Iniciada em** — só na primeira vez; não é apagada depois |
+| **Concluída** ou **Cancelada** | grava **Concluída em**; se ainda não havia início, grava **Iniciada em** também |
+| **Backlog**, **A fazer** ou **Em andamento**, vindo de uma encerrada (reabrir) | limpa **Concluída em** (Iniciada em permanece) |
+| Criada direto num status | mesmas regras (criada em "Concluído" já nasce iniciada e concluída) |
+
+As datas aparecem em **Propriedades** da tarefa e toda troca de status fica no **histórico** (quem, quando, de → para).
+
+Para mudar o que conta como "iniciada" ou "concluída", altere a **categoria** do status em Configurações → Status. Exemplo: se "Produção" já significa entrega, coloque-o na categoria Concluída. Atenção à ordem: mover de um status encerrado para um aberto (ex.: de "Concluído" para "Produção", que no padrão é Em andamento) **reabre** a tarefa.
+
+## 3. Transições permitidas
+
+Cada status pode restringir para onde a tarefa vai a partir dele (campo **Pode ir para**):
+
+- vazio = pode ir para **qualquer** status;
+- preenchido = só para os status listados (permanecer no mesmo status sempre é possível).
+
+A regra vale em **toda** troca de status — no Kanban, na página da tarefa, no painel lateral e pela API (erro `TRANSITION_NOT_ALLOWED`). No Kanban, durante o arraste, as colunas proibidas aparecem esmaecidas.
+
+Na tarefa (formulário **Editar**, troca rápida na página da tarefa e no painel do Kanban), a lista de status mostra **só o status atual e os destinos permitidos** (ex.: "Redesenvolver" que só vai para "Homologação" lista apenas os dois). Se o status atual não tem nenhum destino configurado, **todos** aparecem. Na criação, todos aparecem.
+
+## 4. Limite WIP
+
+Cada status pode ter um **limite WIP** (máximo de tarefas na coluna; vazio ou 0 = sem limite). O limite é um **alerta**, não um bloqueio:
+
+- a contagem aparece como `3/5` no cabeçalho da coluna: amarela no limite, vermelha acima dele;
+- ao mover uma tarefa para uma coluna que passa do limite, aparece um aviso — o time decide se segue.
+
+## 5. Kanban
+
+- Colunas = status **ativos**, na ordem configurada. A ordem dos cards dentro da coluna é manual (arrastar) e vale para todos.
+- Colunas das categorias Concluída/Cancelada mostram as 30 tarefas encerradas mais recentes; as demais mostram tudo.
+- Mover um card é uma troca de status: segue as seções 2 a 4, notifica o responsável e o criador e grava o histórico. Reordenar dentro da mesma coluna não gera histórico.
+- Criação rápida (+ na coluna): a tarefa nasce no status da coluna. Se o tipo tiver campo obrigatório sem valor padrão, a criação continua no formulário completo.
+- Filtros, busca e raias (por responsável, prioridade ou tipo) só mudam a visualização.
+- Leitor do projeto e projeto arquivado: veem o quadro e comentam, mas não arrastam nem criam.
+
+## 6. Planejamento (backlog e sprints)
+
+### O que aparece no Planejamento
+A tela **Planejamento** de cada projeto (menu **Planejamento** ou "Abrir planejamento" na página do projeto; antes chamada "Backlog") lista **tudo que ainda não foi encerrado**:
+
+| Categoria do status | Aparece no Planejamento? |
+|---|---|
+| Backlog (ideias, pedidos) | sim |
+| A fazer (já analisadas/priorizadas — ex.: Triagem, Análise, Priorizado) | sim |
+| Em andamento (ex.: Desenvolvimento, Redesenvolver, Homologação) | sim |
+| Concluída, Cancelada | não (acompanhe no Kanban) |
+
+O que decide é a **categoria** do status (Configurações → Status), não o nome: "Produção" marcado como Concluída fica fora; marcado como Em andamento, aparece. O filtro de status lista os mesmos status.
+
+Cada linha mostra o status atual, a prioridade, o prazo, a estimativa e o responsável. Filtros (responsável, tipo, prioridade, tag, status) e busca só mudam a visualização.
+
+### Priorização
+- A ordem da lista é a **prioridade do time**: arraste pela alça (⋮⋮) para cima ou para baixo. A ordem vale para todos e é a mesma ordem das colunas no Kanban.
+- Outras ordenações (prioridade, mais recentes, prazo, maior estimativa) servem para consulta; nelas o arraste fica desligado.
+- Reordenar não gera histórico; trocar de sprint gera.
+
+### Sprints
+- Uma **sprint** agrupa as tarefas planejadas para um período: nome, objetivo e datas de início/fim (opcionais; o fim não pode ser antes do início).
+- Situação: **Planejada → Ativa → Encerrada** (dá para voltar de Ativa para Planejada).
+- **Quem organiza:** o gestor do projeto (ou quem tem `projects.view_all`) cria, edita, inicia, encerra, exclui e **ordena** as sprints (Subir/Descer). A ordem vale para todo o time.
+- **Colocar tarefas na sprint:** arrastando a tarefa para o grupo da sprint, pelo menu da tarefa ("Planejar na sprint"), em lote (selecionando várias) ou no campo **Sprint** do formulário da tarefa. Qualquer pessoa que pode editar a tarefa pode planejá-la. A sprint precisa ser do mesmo projeto e não estar encerrada.
+- A tarefa pode ter sprint em qualquer status; no Planejamento aparecem só as que ainda não foram encerradas. No Kanban há filtro por sprint.
+- **Encerrar a sprint:** as tarefas dela que **não** foram concluídas nem canceladas voltam para o grupo **Sem sprint** (com registro no histórico de cada uma); as encerradas continuam registradas na sprint.
+- **Excluir a sprint:** as tarefas continuam existindo, apenas ficam sem sprint (com histórico).
+- Sprint aqui é **planejamento**: não há velocidade, burndown nem compromisso formal.
+
+### Mover para outro status
+- Pelo menu da tarefa (**Mover para**) ou em lote. Os destinos oferecidos são os status ativos, não encerrados, diferentes do atual e **permitidos pelo fluxo** (seção 3).
+- Ir para um status "Em andamento" ganha **Iniciada em** (seção 2); a tarefa continua no Planejamento até ser concluída ou cancelada.
+- Em lote, tarefas cujo fluxo não permite o destino escolhido são puladas e avisadas.
+
+### Criação
+- **Nova tarefa** no Planejamento nasce no status padrão (em geral, "Backlog"); o **+** de uma sprint cria a tarefa já planejada nela.
+- Tipos com campo obrigatório sem valor padrão continuam no formulário completo (como no Kanban).
+
+### Permissões no Planejamento
+| Ação | Quem |
+|---|---|
+| Ver | quem vê as tarefas do projeto (inclusive leitor) |
+| Priorizar, mover de status, planejar na sprint | quem edita tarefas no projeto (gestor, membro, dono) |
+| Criar tarefa | quem cria tarefas no projeto |
+| Criar/editar/ordenar/encerrar/excluir sprints | gestor do projeto, dono ou `projects.view_all` |
+| Projeto arquivado | somente leitura |
+
+## 7. Relacionamentos, subtarefas e fork
+
+Tudo fica na aba **Relações** da tarefa (com a contagem no título da aba).
+
+### Tipos de relação
+Uma relação liga duas tarefas e aparece **nas duas**, cada uma do seu ponto de vista:
+
+| Criada em A como… | Em A aparece | Em B aparece |
+|---|---|---|
+| A **bloqueia** B | Bloqueia B | Bloqueada por A |
+| A **depende de** B | Depende de B | Dependência de A |
+| A **relacionada a** B | Relacionada a B | Relacionada a A |
+| A **é duplicado de** B | Duplicado de B | Duplicado em A |
+
+- Não dá para relacionar a tarefa com ela mesma nem repetir a mesma relação (em "relacionada" e "duplicado" o sentido não importa).
+- **Sem ciclos de espera:** bloqueios e dependências formam uma fila de "vem antes". Se A bloqueia B e B bloqueia C, C não pode bloquear A (nem A depender de C) — a tarefa acabaria esperando por ela mesma.
+- **Bloqueada:** uma tarefa aparece com o selo **Bloqueada** (no cabeçalho, nas listas, no Kanban e no Planejamento) enquanto algo que a bloqueia — ou de que ela depende — **não estiver concluído ou cancelado**. É um aviso: não impede mover a tarefa.
+- Relações entre projetos diferentes são permitidas, mas só são vistas por quem enxerga os dois projetos.
+- Criar e desfazer ficam no histórico das **duas** tarefas.
+
+### Subtarefas (pai e filho)
+- Uma tarefa pode ter subtarefas: criadas na hora (título; mesmo projeto e tipo do pai) ou vinculando uma tarefa existente ("Vincular existente" / "tem como subtarefa…"). Também dá para tornar a tarefa aberta subtarefa de outra ("é subtarefa de…").
+- Pai e subtarefa são sempre do **mesmo projeto**; não há ciclo (a tarefa não pode ser "avó" de si mesma) e há um limite de **5 níveis**.
+- O pai mostra o progresso: **"X de Y subtarefas concluídas"** (concluídas = categoria Concluída ou Cancelada).
+- A subtarefa mostra "Subtarefa de …" no cabeçalho.
+- **Excluir o pai não exclui as subtarefas:** elas ficam soltas, com registro no histórico de cada uma. Concluir o pai com subtarefas abertas é permitido (o progresso mostra o que falta).
+
+### Fork
+- **Fork** cria uma nova tarefa a partir de outra, guardando a origem: a nova mostra "Fork de …" e a origem lista seus forks. O histórico registra nos dois lados.
+- No momento do fork a pessoa escolhe o título, o projeto de destino (onde ela trabalha) e **o que copiar**:
+
+| Item | Copiado por padrão? | Observação |
+|---|---|---|
+| Descrição | sim | |
+| Tags | sim | |
+| Campos do tipo | sim | campos de imagem/arquivo só junto com os anexos |
+| Checklist | sim | os itens voltam a ficar **pendentes** |
+| Anexos | não | os arquivos são copiados (a cópia é independente) |
+| Relações com outras tarefas | não | a relação passa a existir também com o fork |
+
+- Nunca são copiados: subtarefas, comentários, sprint, responsável e histórico. O fork nasce no status inicial (padrão) com a mesma prioridade e o mesmo tipo.
+- Se a origem for excluída, o fork continua existindo (só perde a referência "Fork de").
+
+### Permissões
+| Ação | Quem |
+|---|---|
+| Ver relações | quem vê a tarefa |
+| Relacionar / desfazer | `tasks.link` + trabalha no projeto (gestor, membro, dono) |
+| Criar subtarefa | quem cria tarefas no projeto |
+| Vincular/soltar subtarefa, definir pai | quem edita a tarefa |
+| Fork | `tasks.fork` + trabalha no projeto de origem e pode criar no projeto de destino |
+| Leitor / projeto arquivado | só consulta |
+
+## 8. Relatórios e indicadores
+
+Os números são calculados na hora a partir das tarefas reais (nada é digitado à mão) e a tela **sempre mostra o período considerado** e quando o cálculo foi feito.
+
+### Quais tarefas entram
+- As dos projetos que a pessoa **vê** (onde é membro/dono, ou todos com `projects.view_all`).
+- Projetos **arquivados ficam de fora** — a não ser que o projeto arquivado seja escolhido no filtro de projeto.
+- Filtros: projeto, responsável (inclusive "Minhas tarefas" e "Sem responsável"), tipo, prioridade e status. O estado dos filtros fica no endereço da página (dá para compartilhar o link).
+
+### Período
+- Atalhos: últimos 7, 30 (padrão) ou 90 dias, este mês, ou datas escolhidas (até 366 dias). Os dias são contados no **fuso de quem está vendo** (do início do primeiro dia ao fim do último).
+
+### Situação atual ("agora" — não depende do período)
+| Indicador | Definição |
+|---|---|
+| Abertas | status nas categorias Backlog, A fazer ou Em andamento (a dica separa backlog e a fazer) |
+| Em andamento / No backlog | status nessa categoria |
+| Bloqueadas | abertas com algo que as bloqueia (ou de que dependem) ainda aberto (seção 7) |
+| Atrasadas | abertas com prazo **antes de hoje** (vencer hoje ainda não é atraso) |
+| Bugs críticos | abertas do tipo com chave **BUG** na **prioridade mais alta** (a primeira da lista de prioridades); o nome da prioridade aparece na dica |
+
+### No período
+| Indicador | Definição |
+|---|---|
+| Criadas | data de criação dentro do período |
+| Concluídas / Canceladas | data de encerramento dentro do período e categoria atual Concluída / Cancelada (reabrir tira a tarefa da conta) |
+| Tempo até concluir (lead time) | média, das concluídas no período, do tempo entre a criação e a conclusão |
+| Tempo em execução (cycle time) | média, das concluídas no período que passaram por "em andamento", do tempo entre o início e a conclusão |
+| Resolução de bugs | tempo até concluir, só dos bugs concluídos no período |
+
+- Cada média mostra **de quantas tarefas** foi calculada; sem nenhuma, aparece "—". Até 48 h o tempo aparece em horas; acima disso, em dias.
+
+### Evolução e recortes
+- **Criadas × concluídas** por dia (ou por semana em períodos acima de 62 dias).
+- **Recorte** por status, prioridade, tipo, responsável ou projeto: total, abertas, atrasadas e bloqueadas (agora) e criadas, concluídas e tempo médio (no período). Ordenado pelas que têm mais abertas.
+- **Atrasadas:** lista das abertas vencidas (da mais antiga, até 50), com acesso ao painel da tarefa.
+
+### Dashboard
+Mostra a situação atual e os últimos 30 dias (criadas, concluídas, tempo até concluir e a evolução), com o período à vista e o link "Ver relatórios".
+
+### Detalhamento (clicar no indicador)
+- Todo card de indicador — nos Relatórios e no Dashboard — é **clicável**: abre um painel com as tarefas que formam aquele número, com o **mesmo período, filtros e regras de acesso**. A quantidade listada é sempre a do card.
+- Ao passar o mouse (ou focar pelo teclado), o card mostra **o que o indicador mede** e o convite "Ver tarefas".
+- Ordem da lista: situação atual = há mais tempo abertas primeiro; atrasadas = prazo mais antigo primeiro; criadas = mais recentes primeiro; concluídas, canceladas e tempos = encerradas mais recentemente primeiro.
+- Nos indicadores de tempo, cada tarefa mostra a **própria duração** (a média do card é a média dessas durações).
+- Na lista, "Visualizar" abre o painel da tarefa.
+- No gráfico de evolução, passar o mouse sobre um dia (ou semana) mostra as quantidades de criadas e concluídas.
+
+### Permissões
+Ver relatórios e indicadores exige `reports.view` (todos os perfis padrão têm). Os números respeitam o acesso aos projetos: ninguém vê contagens de projetos que não enxerga.
+
+## 9. Acesso à conta
+
+### Bloqueio por tentativas de login
+- Depois de **5 senhas erradas** para o mesmo e-mail (dentro de 24 h), novas tentativas ficam **bloqueadas por 5 minutos**. Se os erros continuarem, a cada 5 novas falhas o tempo dobra (10, 20, 40 minutos), até o máximo de **60 minutos**.
+- Enquanto está bloqueada, a tela de login avisa por quanto tempo esperar; a senha nem é conferida e essas tentativas não contam.
+- Entrar com a senha correta (depois do bloqueio) **zera** a contagem.
+- A regra vale igualmente para e-mails que não existem, para não revelar quais contas existem.
+- O bloqueio de conta existente fica registrado na auditoria ("Login bloqueado por excesso de tentativas"). Além dele, há o limite de tentativas por endereço de rede (rate limit).
+
+## 10. Campos obrigatórios por status
+
+Cada tipo de tarefa define, campo a campo, **quando** ele precisa estar preenchido (Configurações → Tipos de tarefa → Campos do tipo):
+
+| Configuração do campo | Quando é exigido |
+|---|---|
+| **Obrigatório** ligado | sempre — em qualquer status, inclusive ao criar |
+| **Obrigatório nos status** (ex.: Análise, Desenvolvimento) | só quando a tarefa está (ou vai ficar) em um desses status |
+| nenhum dos dois | nunca (opcional) |
+| campo **oculto** | nunca (não aparece no formulário) |
+
+- **A regra vale para o status em que a tarefa vai ficar.** Ao criar, editar ou mudar de status, a tarefa precisa ter preenchidos os campos exigidos nesse status. Exemplo: se "Parecer do analista" é exigido em Análise, a tarefa só entra em Análise com o parecer preenchido.
+- **Vale para toda mudança de status:** arrastar no Kanban, "Mover para" no Planejamento, troca rápida de status na tarefa, formulário completo e API.
+- **Preencher e mover:** quando falta algum campo, a tela abre um pop-up só com os campos que faltam; ao salvar, grava os valores e aplica a mudança de status. Cancelar deixa a tarefa onde estava.
+- **Enquanto a tarefa está num status que exige o campo, ele não pode ser apagado.** Voltando para um status que não exige, pode.
+- **Não é cumulativo:** se o campo precisa continuar preenchido nos status seguintes, marque-os também (ex.: Análise, Desenvolvimento e Homologação).
+- **Configuração nova vale na próxima alteração:** tarefas que já estavam num status quando a exigência foi criada passam a precisar do campo na próxima vez que forem salvas nesse status.
+- Status excluído sai automaticamente da lista do campo.
+- A **pré-visualização** do tipo tem "Validar como no status", que mostra (com *) o que é exigido em cada status; o formulário da tarefa marca os obrigatórios conforme o status escolhido.
+- A criação rápida do Kanban leva ao formulário completo quando a coluna exige campos sem valor padrão.
+- O histórico do tipo registra onde cada campo é exigido (ex.: "Parecer do analista (Análise, Desenvolvimento)").
+
+## 11. Tipos de tarefa traduzidos
+
+- O **nome e a descrição** de cada tipo de tarefa podem ter tradução para **inglês** e **espanhol** (Configurações → Tipos de tarefa → Editar → Traduções).
+- O texto principal do tipo é o **original em português** e continua editável como sempre. As traduções são opcionais: **em branco, a tela mostra o original**.
+- Ao trocar o idioma, os tipos aparecem traduzidos **em todo o sistema** — configurações, formulários e filtros, listas de tarefas, Kanban, Planejamento, detalhe da tarefa e relatórios (inclusive o recorte por tipo e a definição de "bug").
+- Os **8 tipos padrão** já vêm traduzidos (ex.: Documentação → Documentation / Documentación; Bug → Bug / Error). Se a empresa tinha alterado o nome ou a descrição de um tipo padrão, aquele texto não recebe a tradução pronta — fica para preencher.
+- **Não são traduzidos:** títulos, descrições e comentários das tarefas (texto escrito pelas pessoas) e o **histórico**, que guarda o nome do tipo como era no momento (em português).
+- Alterar as traduções de um tipo fica registrado no histórico do tipo.
+
+## 12. Timeline do projeto (expansão — Onda 1)
+
+### Datas da tarefa
+- Além do **Prazo**, a tarefa tem **Início planejado**. O início não pode ser depois do prazo (no mesmo dia pode). Vale ao criar, editar e mover na timeline — inclusive quando só uma das datas muda (a outra, já salva, é considerada).
+- Na timeline, a tarefa ocupa **do início ao prazo** (dias inteiros). Com só uma das datas, aparece como uma barra de um dia. Sem nenhuma, fica na lista **Sem datas**.
+
+### O que a timeline mostra
+- Todas as tarefas do projeto (até 2.000; acima disso, as primeiras pela numeração, com aviso), agrupadas por **sprint** (padrão), responsável, status, tipo ou sem grupos; grupos recolhíveis.
+- A barra tem a cor do **status**, mostra o **progresso** (subtarefas; sem subtarefas, o checklist) e ganha contorno vermelho quando está **atrasada** (aberta com prazo antes de hoje).
+- **Dependências** ("bloqueia" e "depende de") viram setas de quem vem antes para quem vem depois. **Conflito** = a tarefa começa antes do prazo da tarefa de que depende (começar no mesmo dia do prazo é permitido): a seta fica vermelha tracejada e a barra ganha um alerta. É só um aviso — nada é reprogramado sozinho.
+- **Sprints** com datas aparecem como faixas no topo; **marcos**, como losangos com linha tracejada; **hoje**, como linha e destaque na régua. Escalas: dias, semanas (padrão), meses e trimestres; a escolha, o agrupamento e "Ocultar encerradas" ficam lembrados.
+- Filtros e busca iguais aos do Kanban (responsável, tipo, prioridade, sprint, tag).
+
+### Mudar datas na timeline
+- **Arrastar a barra** move início e prazo juntos; **puxar a ponta esquerda** muda só o início; **a direita**, só o prazo (uma ponta não passa da outra).
+- **Teclado:** com a barra focada, setas movem um dia; Shift + setas mudam o prazo; Alt + setas mudam o início; Enter abre a tarefa. A gravação acontece após uma breve pausa.
+- **Tarefa sem datas:** arraste da lista "Sem datas" para o dia desejado — ela começa nesse dia e dura pela **estimativa** (8 horas por dia; mínimo 1 dia). Ou use **Datas** para escolher início e prazo.
+- Quem move: quem pode **editar a tarefa** (leitor só consulta). Cada mudança vai para o histórico da tarefa.
+- Clicar na barra abre o painel da tarefa.
+
+### Marcos
+- Entregas-chave do projeto: **nome, data, descrição e situação** (pendente ou atingido).
+- Criar, editar e excluir: **gestor ou dono** do projeto (mesma regra das sprints; projeto arquivado não aceita). Todos que veem o projeto veem os marcos.
+- Tudo fica no **histórico do projeto** ("Marco criado/alterado/excluído").
+
+## 13. Documentação (expansão — Onda 2)
+
+### Espaços
+- Um **espaço** reúne as páginas de um assunto, área ou projeto: nome, **chave** (2 a 10 letras/números, começando por letra, única; não muda depois), descrição, ícone e cor.
+- **Quem lê:** toda a empresa (qualquer pessoa com permissão de ler documentação) ou **só os membros de um projeto**. Um espaço só de membros precisa estar ligado a um projeto; o projeto é escolhido na criação e não muda.
+- Criar e configurar espaço: quem tem a permissão de **gerenciar documentação**; num espaço de projeto, também é preciso ser **gestor ou dono** do projeto. Excluir o espaço apaga as páginas, as versões e os arquivos (com confirmação).
+- Todo espaço nasce com a **página inicial** já publicada (título = nome do espaço; conteúdo = a descrição). A página inicial não pode ser movida nem excluída e fica sempre no topo da árvore.
+
+### Páginas e árvore
+- A árvore e as ações do espaço (configurar, "Nova página") ficam na **coluna do espaço**, à esquerda, separada da página. Como o menu principal, ela se **recolhe** numa faixa de ícones pelo botão **Recolher painel** (rodapé da coluna) e volta pelo mesmo lugar (**Expandir painel**); a escolha fica lembrada. No celular não há coluna: o botão **Páginas do espaço**, no topo da página, abre o mesmo conteúdo num painel lateral.
+- As páginas formam uma **árvore** de até **8 níveis** (página → subpáginas). Não é permitido colocar uma página dentro de uma subpágina dela mesma.
+- **Mover:** arrastando na árvore (parte de cima da linha = antes; de baixo = depois; meio = vira subpágina) ou pelo menu **Mover…**, que coloca a página no fim das subpáginas da nova página-mãe. Destinos proibidos nem acendem.
+- **Excluir** uma página exclui também as subpáginas, as versões e os arquivos delas; a confirmação diz quantas subpáginas vão junto.
+- Criar, editar, mover e excluir páginas: quem tem a permissão de **editar documentação** (num espaço de projeto, quem **colabora** no projeto — leitor do projeto só lê).
+
+### Rascunho e publicação
+- Página nova nasce como **rascunho**: só quem edita a vê (na árvore aparece em itálico, com marcador). Leitores só enxergam páginas publicadas — uma página invisível responde "não encontrada".
+- Enquanto se edita, o **rascunho é salvo sozinho** pouco depois de parar de digitar ("Rascunho salvo às…"). O rascunho é **um só por página** e compartilhado entre quem edita; se outra pessoa mexeu por último, o editor avisa.
+- **Publicar** grava o conteúdo como a **próxima versão** (1, 2, 3…) e é o que os leitores veem. Numa página já publicada, **descartar o rascunho** volta para a versão publicada.
+- **Histórico de versões:** cada versão guarda título, conteúdo, autor e data. **Restaurar** uma versão publica o conteúdo dela como a próxima versão (nada do histórico se perde).
+- O histórico de auditoria registra criação, publicação, movimentação, exclusão e restauração de páginas e as mudanças dos espaços; salvar rascunho não gera histórico.
+
+### Conteúdo
+- Editor visual com barra de ferramentas e atalho **"/"**: títulos (4 níveis), negrito, itálico, sublinhado, tachado, marca-texto, código, links, listas, lista de verificação, citação, bloco de código, **avisos** (informação, sucesso, atenção, perigo), **tabelas** (linhas/colunas, cabeçalho, mesclar), **imagens** (enviar, colar ou arrastar; largura 25/50/75/100%), **arquivos** (viram link para download), divisor e **sumário**. A leitura mostra também "Nesta página" com os títulos.
+- **Sumário:** não tem texto próprio — lista sozinho os **títulos** da página (Título 1 a 4), na ordem e com recuo por nível, e se atualiza a cada edição; clicar num item rola até o título. Texto comum não entra. Sem nenhum título, na edição o bloco explica como criar um (seletor "Texto" da barra, "/" ou começar a linha com `##` e espaço) e oferece **Adicionar título** (cria um Título 2 logo abaixo); na leitura, um sumário sem títulos não aparece.
+- **Segurança:** o servidor limpa tudo o que chega — só os blocos e formatações acima, **links** apenas http(s), e-mail ou páginas da documentação, **imagens** apenas de arquivos enviados à própria documentação. Nunca há HTML livre.
+- **Arquivos:** até 10 por envio e 20 MB cada; o tipo é conferido pelo conteúdo (um arquivo que finge ser imagem é recusado). Quem vê a página vê os arquivos dela; imagens abrem no navegador, os demais baixam.
+
+### Busca e recentes
+- A busca procura no **título e no conteúdo publicado** dos espaços que a pessoa lê, **sem diferenciar acentos nem maiúsculas** (2 a 100 caracteres; até 30 resultados), mostrando um trecho com o termo destacado.
+- "Atualizadas recentemente" lista as 10 últimas publicações dos espaços visíveis.
+
+## 14. Quadro de gerenciamento do projeto (Gerenciamento de Projetos — fase GP-1)
+
+> Diretriz própria: [diretriz_feature_gerenciamento_projetos.md](diretriz_feature_gerenciamento_projetos.md). O quadro fica na aba **Gerenciamento** do projeto (endereço `?tab=plan`), no estilo Monday.
+
+### Módulo à parte das tarefas
+- O quadro organiza a **gestão do projeto** — fases e atividades como reuniões, alinhamentos, entregas e aprovações — com **status, recursos, cronograma, esforço, duração e progresso próprios**.
+- **Não tem vínculo com as tarefas**: a aba **Tarefas** do projeto continua sendo a lista de tarefas; nada do quadro muda tarefas, Kanban, Planejamento ou relatórios, e vice-versa.
+
+### Grupos
+- O quadro se organiza em **grupos** (fases) com nome e cor, em até **2 níveis**: grupo (1.0, 2.0…) e subgrupo (2.1, 2.2…). A **numeração é automática**, pela ordem. O subgrupo aparece com o título do pai: "2.0 Planejamento | 2.1 Plano do Projeto".
+- Uma fase que só tem subgrupos (sem elementos próprios) aparece como um cabeçalho, com o menu dela; os subgrupos vêm logo abaixo.
+- Criar, renomear, mudar a cor, adicionar subgrupo, reordenar (**Mover para cima/baixo**), **duplicar** e excluir grupos: **gestor ou dono** do projeto.
+- **Duplicar** cria a cópia logo depois do original ("(cópia)" no nome), com os subgrupos, elementos e subelementos, com os mesmos valores.
+- **Excluir** um grupo apaga ele, os subgrupos e os elementos deles; a confirmação diz quantos subgrupos e elementos saem. O histórico fica registrado.
+- **Recolher** um grupo mostra uma linha de resumo com os totais alinhados às colunas; recolher a fase recolhe os subgrupos. **Expandir tudo / Recolher tudo** na barra. O que ficou recolhido é lembrado (por pessoa, no navegador).
+
+### Elementos e subelementos
+- **Elemento** = uma linha do grupo (ex.: "Reunião de kickoff"). Criar pela linha **+ Adicionar elemento** (Enter cria e já deixa pronto para o próximo) ou pelo botão **Criar elemento** (entra no primeiro grupo com o nome em edição). Novos elementos entram no fim do grupo.
+- **Subelemento** = item dentro do elemento, **um nível só**, na subtabela que abre pela seta ao lado do nome (com a quantidade) ou por **Adicionar subelemento** no menu do elemento. Subelemento fica sempre no grupo do elemento.
+- **Mover para outro grupo…** (menu do elemento) leva o elemento para o fim do grupo escolhido, com os subelementos.
+- **Excluir** o elemento apaga também os subelementos (a confirmação diz quantos).
+- **Tudo se edita direto na célula**: nome (clicar, Enter/sair confirma, Esc cancela), status, cronograma, recursos e números. Sem permissão, as células só mostram.
+
+### Colunas
+| Coluna | Elemento | Subelemento |
+|---|---|---|
+| Nome | Elemento | Subelemento |
+| Status | etiqueta (bloco colorido) | etiqueta |
+| Cronograma | intervalo de datas (1º clique = início, 2º = fim; "N dias selecionados") | intervalo |
+| Recursos | etiquetas de recurso (várias) | — |
+| Responsável | — | pessoa do projeto |
+| Data | — | uma data |
+| Esforço estimado / Trabalho (h) | horas (até 2 casas; vírgula ou ponto) | horas |
+| Realizado (h) | — | horas |
+| Duração | dias | — |
+| Progresso | barra 0–100% | barra 0–100% |
+
+- Cada coluna tem um menu (**…** no cabeçalho): **ordenar** crescente/decrescente (vazios sempre no fim), **recolher**, **ocultar** e **mover** para a esquerda/direita. Dá para **arrastar o cabeçalho** para reordenar e **redimensionar** pela borda (ou setas no teclado). Tudo vale para todos os grupos e fica lembrado por pessoa; **Colunas** mostra de volta as ocultas e restaura o padrão.
+- A coluna do nome fica fixa ao rolar para o lado (em telas médias e maiores); o quadro ocupa a largura toda.
+- A busca procura no nome (sem acento/maiúsculas): mostra o elemento que casa com todos os subelementos, ou o elemento com os subelementos que casam (já aberto).
+
+### Etiquetas de status
+- Cada projeto tem as **suas** etiquetas de status do quadro (não são os status das tarefas). Um projeto novo começa com: Planejado, Em progresso, Confirmar, Parado e Feito (no idioma de quem abre o quadro pela primeira vez).
+- Cada etiqueta tem nome, cor e **categoria** (A fazer, Em andamento, Em revisão, Bloqueado, Concluído, Cancelado). A categoria define os cálculos: **Concluído conta 100%** e **Cancelado não entra** no progresso.
+- **Editar etiquetas** (no seletor de status ou em **… → Etiquetas de status**): **gestor ou dono**. Excluir uma etiqueta deixa **em branco** os elementos que a usavam (a confirmação diz quantos).
+
+### Etiquetas de recurso
+- Recursos são **papéis ou pessoas** envolvidas (ex.: Gerente de Projetos, Cliente, Consultor), próprios do projeto; o elemento pode ter até **20**.
+- No seletor: **Criar ou localizar etiquetas** — digitar filtra; se não existir, **Criar "…"**. O nome não se repete no projeto (sem diferenciar acentos/maiúsculas).
+- Criar e renomear/mudar a cor: quem edita o quadro. **Excluir**: gestor ou dono — a etiqueta sai de todos os elementos.
+
+### Duração e cronograma
+- Com cronograma, a **duração** é calculada: dias corridos do início ao fim, contando os dois (uma data só = 1 dia); a célula mostra "Calculada pelo cronograma".
+- Sem cronograma, a duração pode ser **informada** (0 a 3.650 dias). O fim não pode ser antes do início.
+
+### Progresso
+- Etiqueta da categoria **Concluído = 100%**.
+- Elemento **com subelementos** (não cancelados): **Σ(trabalho × progresso) / Σ(trabalho)** dos subelementos; se nenhum tiver trabalho, a **média**.
+- Sem subelementos: o progresso **informado** (0 a 100, clicando na barra); sem ele, 0%. Progresso calculado (por subelementos ou concluído) não se digita — passar o mouse mostra de onde veio.
+
+### Totais do grupo (rodapé)
+Sobre os elementos do grupo (sem subelementos): **barra de distribuição dos status**, **período** (menor início → maior fim), **soma do esforço estimado**, **soma das durações** e **progresso** ponderado pelo esforço (sem esforço, a média; cancelados fora). Os mesmos totais aparecem no grupo recolhido.
+
+### Permissões
+| Ação | Quem |
+|---|---|
+| Ver o quadro | quem vê o projeto (inclusive leitor) + `plan.view` |
+| Criar/editar/mover/excluir elementos e subelementos; criar e editar etiquetas de recurso | dono, gestor ou membro do projeto + `plan.edit` |
+| Grupos (inclusive arrastar); etiquetas de status; excluir etiqueta de recurso; regra de dependências; criar grupos e status na importação | gestor ou dono + `plan.manage` |
+| Publicar e responder atualizações | quem vê o quadro (inclusive leitor) |
+| Editar atualização | o autor |
+| Excluir atualização ou arquivo de outra pessoa | gestor ou dono + `plan.manage` (a sua: quem publicou/enviou) |
+| Colar/anexar imagem ou arquivo | quem publica a atualização (inclusive leitor); depois, só o autor |
+| Projeto arquivado | somente leitura |
+
+### Histórico
+- Elementos: criação, cada mudança (nome, grupo, status, datas, responsável, recursos, esforço, realizado, duração, progresso), dependências, atualizações (publicada, editada, excluída), arquivos (enviado, excluído) e exclusão, com os nomes legíveis (não ids). Aparece na aba Histórico do painel do elemento.
+- Grupos e etiquetas: no histórico do projeto.
+
+### Arrastar e soltar (GP-2)
+- Pela alça (⋮⋮, ao passar o mouse): **elementos** reordenam no grupo e vão para **outro grupo** (com os subelementos; grupo vazio também recebe); **subelementos** reordenam só dentro do próprio elemento; **grupos** reordenam pelo título — a fase leva os subgrupos junto e os subgrupos reordenam dentro da fase. Aviso "Elemento movido." / "Grupo movido.".
+- Durante o arraste o destino abre espaço; operação inválida (subelemento para outro elemento, subgrupo para outra fase) não acontece. Teclado: espaço/Enter pega e solta, setas movem, Esc cancela; também há **Mover para cima/baixo** e **Mover para outro grupo…** no menu do elemento.
+- O arraste fica desligado com ordenação, busca, filtro ou agrupamento diferente de "Grupo" (a ordem da tela não é a do quadro). Reordenar não gera histórico; mudar de grupo gera.
+
+### Busca, pessoa, filtros, ordenação e agrupamento (GP-2)
+- **Filtro** (combinável; o botão mostra "Filtros (N)"): status (inclusive em branco), recursos (inclusive sem recurso), grupo (a fase inclui os subgrupos), período do cronograma (elementos cujo cronograma cruza o período), progresso (não iniciado 0% · em andamento 1–99% · concluído 100%), só atrasados (fim do cronograma já passou e não está concluído/cancelado) e dependências (com dependência pendente · com dependências). Campos diferentes somam (E); valores do mesmo campo alternam (OU). **Filtrar** no menu da coluna abre o filtro já na parte dela.
+- **Pessoa**: mostra só os elementos com subelementos de quem é responsável — e só esses subelementos, com a subtabela aberta.
+- Com busca/filtro, grupos sem resultado somem e os **totais do rodapé passam a ser os dos elementos visíveis** (mesma fórmula). "Nenhum elemento corresponde aos filtros selecionados." + limpar.
+- **Ordenar** (barra ou menu da coluna) vale dentro de cada grupo; vazios sempre no fim.
+- **Agrupar por** (independente dos filtros, lembrado por pessoa): grupo (padrão), status (na ordem das etiquetas; em branco no fim), recurso (o elemento aparece em cada recurso; sem recurso no fim) ou cronograma por mês (sem cronograma no fim). Nos agrupamentos não há ações de grupo, linha de adicionar nem arraste; os totais são os da seção.
+
+### Seleção em massa (GP-2)
+- A caixa de cada elemento (e "marcar todos" no cabeçalho do grupo) abre a barra **"N selecionados"**: mudar o **status**, **acrescentar ou tirar** um recurso de todos, **mover** para um grupo, **duplicar** e **excluir** (com confirmação e a contagem de subelementos). Até 200 por vez.
+- **Tudo ou nada**: se um elemento não puder receber a ação (ex.: regra de dependência), nenhum muda. Cada elemento alterado ganha o próprio registro no histórico.
+
+### Duplicar (GP-2)
+- Elemento ou subelemento: a cópia ("(cópia)") entra **logo depois do original**, com os mesmos valores e, no elemento, os subelementos. As dependências não são copiadas.
+
+### Dependências (GP-2)
+- Coluna **Dependência**: um elemento **depende de** outro (o outro o **bloqueia**) ou é **relacionado** a ele. "A depende de B" e "B bloqueia A" são a mesma ligação vista dos dois lados. Não vale ligar a ele mesmo, repetir a ligação nem fechar um **ciclo** de bloqueio.
+- **Dependência pendente** = depende de elemento ainda aberto (nem concluído nem cancelado): a célula fica destacada com ⚠.
+- **Regra do quadro** (gestor ou dono; ... → Regra de dependências): **só sinalizar** (padrão — mostra o aviso, deixa mudar o status) ou **impedir iniciar ou concluir** — levar o elemento para uma etiqueta Em andamento/Em revisão (vindo de A fazer/Bloqueado/em branco) ou Concluído fica bloqueado com *"Este elemento possui uma dependência pendente."*; o status volta ao anterior. Mudar para Bloqueado ou Cancelado continua livre.
+- Excluir um elemento desfaz as ligações dele. Criar e desfazer ligações: quem edita o quadro; ficam no histórico do elemento.
+
+### Importar elementos (GP-2)
+- **Criar elemento ▾ → Importar elementos**: planilha **CSV** (no Excel: Salvar como → CSV; ponto e vírgula ou vírgula), até 500 linhas. Há uma **planilha modelo** para baixar, no idioma de quem usa.
+- Uma linha por elemento; com **Subelemento** preenchido, a linha é subelemento do **Elemento** da mesma linha (no mesmo grupo — da planilha ou já existente). Colunas reconhecidas pelo nome nos três idiomas (Grupo, Elemento, Subelemento, Status, Início, Fim, Recursos, Esforço estimado, Realizado, Duração, Progresso); dá para trocar o que cada coluna preenche ou ignorá-la.
+- Datas no formato do idioma (dd/mm/aaaa; mm/dd/aaaa em inglês) ou AAAA-MM-DD; números com vírgula ou ponto ("2 h", "50%").
+- Grupo, status e recursos pelo **nome** (sem diferenciar acentos/maiúsculas; o grupo também pelo título numerado "1.0 Iniciação"). O que não existe é **criado** — grupos e etiquetas de status só pelo gestor/dono; recursos por quem edita.
+- **Tudo ou nada**: a tela aponta **linha e coluna** de cada problema e só importa quando não há nenhum. Um registro no histórico do projeto com as quantidades criadas.
+
+### Painel do elemento (GP-3)
+- O ícone de conversa ao lado do nome (elemento ou subelemento) abre o **painel lateral** sem sair do quadro, com as abas **Atualizações**, **Histórico** e **Detalhes**. O ícone mostra o **contador** de atualizações (as excluídas não contam). O endereço guarda o elemento aberto (`?item=…&panel=…`): dá para compartilhar o link, e as notificações abrem direto nele.
+- **Atualizações**: texto com **negrito**, *itálico*, listas e links; **@menção** de quem participa do projeto (a pessoa é **notificada**). A conversa mostra as principais da mais nova para a mais antiga, cada uma com as **respostas** (um nível, em ordem de chegada); responder avisa o autor da principal. Quem vê o quadro publica e responde — inclusive o leitor, como nos comentários das tarefas. O **autor edita** a sua (menção nova também notifica); o **autor ou o gestor exclui** — a atualização fica como "removida" (autor e data) e as respostas continuam.
+- **Imagens e arquivos na própria atualização** (não há aba Arquivos): na nova atualização ou na resposta, **cole** um print (Ctrl+V), **arraste** para o campo ou use **Anexar**. Antes de publicar aparecem em miniatura (imagens) ou pelo nome, e cada um sai pelo X. A imagem colada ganha um nome legível ("imagem-colada-20260930-140509.png"). Com imagem/arquivo, o **texto pode ficar vazio**.
+  - Até 10 por vez, 20 MB cada e 50 MB no total; o tipo é conferido pelo conteúdo (como nos anexos das tarefas); fotos grandes são reduzidas antes do envio. O texto e os arquivos são gravados juntos: se um arquivo for recusado, nada é publicado.
+  - Quem publica anexa (inclusive o leitor, na sua atualização); o autor também anexa depois, ao editar. Imagens abrem no visualizador; documentos baixam. O autor ou o gestor exclui o arquivo; excluir a atualização apaga os arquivos dela. Quem vê o quadro baixa.
+  - Texto copiado continua colando como texto (o Excel manda junto uma imagem da seleção, que é ignorada).
+  - Nos **comentários das tarefas** também dá para colar e arrastar imagens (lá o texto continua obrigatório).
+- **Histórico**: tudo o que mudou no elemento — campos, dependências, atualizações e arquivos —, com quem e quando.
+- **Detalhes**: resumo dos campos (status, cronograma, recursos ou responsável/data, esforço, duração, progresso, subelementos e dependências). A edição continua nas células do quadro.
+- Projeto arquivado: o painel fica só para leitura.
+
+### Próximas fases
+GP-4 visões Cronograma, Kanban, Gestão e relatórios · GP-5 colunas personalizadas.

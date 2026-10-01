@@ -1,0 +1,24 @@
+import { useState } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { RouterProvider } from 'react-router/dom'
+import { RepositoriesContext } from '@/presentation/common/repositories-context'
+import { AppToaster, AppTooltipProvider } from '@/presentation/components'
+import { useThemeSync } from '@/presentation/common/use-theme'
+import { queryClient, repositories } from './container'
+import { createAppRouter } from './router'
+
+export function App() {
+  const [router] = useState(createAppRouter)
+  useThemeSync()
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RepositoriesContext.Provider value={repositories}>
+        <AppTooltipProvider>
+          <RouterProvider router={router} />
+          <AppToaster />
+        </AppTooltipProvider>
+      </RepositoriesContext.Provider>
+    </QueryClientProvider>
+  )
+}

@@ -1,0 +1,53 @@
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { UserStatus } from '@/domain/entities'
+import type { ListQuery } from '@/domain/pagination'
+import type { CreateUserData, UpdateUserData } from '@/domain/repositories'
+import { useRepositories } from '@/presentation/common/repositories-context'
+
+export const usersKeys = {
+  all: ['users'] as const,
+  list: (query: ListQuery) => ['users', 'list', query] as const,
+}
+
+export function useUsersList(query: ListQuery, enabled = true) {
+  const { users } = useRepositories()
+  return useQuery({
+    queryKey: usersKeys.list(query),
+    queryFn: () => users.list(query),
+    placeholderData: keepPreviousData,
+    enabled,
+  })
+}
+
+export function useCreateUser() {
+  const { users } = useRepositories()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateUserData) => users.create(data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: usersKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['roles'] }) // contagem de usuários por perfil
+    },
+  })
+}
+
+export function useUpdateUser() {
+  const { users } = useRepositories()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserData }) => users.update(id, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: usersKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['roles'] })
+    },
+  })
+}
+
+export function useSetUserStatus() {
+  const { users } = useRepositories()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: UserStatus }) => users.setStatus(id, status),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: usersKeys.all }),
+  })
+}

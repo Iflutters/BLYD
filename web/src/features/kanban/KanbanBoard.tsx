@@ -1,0 +1,360 @@
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  closestCenter,
+  closestCorners,
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  pointerWithin,
+  TouchSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type UniqueIdentifier,
+} from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { Plus } from 'lucide-react'
+import {
+  buildContainers,
+  canTransition,
+  containerId,
+  neighbors,
+  parseContainer,
+  wipState,
+  type Board,
+  type BoardCard,
+  type BoardColumn,
+  type Lane,
+  type Swimlane,
+} from '@/domain/kanban'
+import { AppAvatar, AppIconButton, AppKanbanCard, AppKanbanColumnHeader, AppKanbanDropZone } from '@/presentation/components'
+import type { CustomFieldReferences } from '@/features/task-config/CustomFieldInput'
+import { TaskTypeIconBadge } from '@/features/task-config/config-visuals'
+import { optionColor } from '@/features/task-config/config-theme'
+import { LookupBadge } from '@/features/workflow/workflow-visuals'
+import { KanbanCardContent, SortableKanbanCard } from './KanbanCard'
+
+export interface KanbanDrop {
+  card: BoardCard
+  from: BoardColumn
+  to: BoardColumn
+  prevId?: string
+  nextId?: string
+}
+
+export interface KanbanBoardProps {
+  board: Board
+  swimlane: Swimlane
+  lanes: Lane[]
+  visible: (card: BoardCard) => boolean
+  references?: CustomFieldReferences
+  onOpen: (taskId: string) => void
+  onQuickAdd?: (statusId: string) => void
+  /** Soltou em posição nova (mesma coluna ou outra permitida). */
+  onMove: (drop: KanbanDrop) => void
+  /** Soltou numa coluna fora das transições permitidas. */
+  onBlocked: (from: BoardColumn, to: BoardColumn) => void
+  onDraggingChange?: (dragging: boolean) => void
+}
+
+const isContainer = (id: UniqueIdentifier) => String(id).includes('::')
+
+/** Estado do arraste: cópia dos contêineres (movida durante o arraste) presa ao quadro de origem. */
+interface DragState {
+  items: Record<string, string[]>
+  origin: string
+  board: Board
+}
+
+export function KanbanBoard({ board, swimlane, lanes, visible, references, onOpen, onQuickAdd, onMove, onBlocked, onDraggingChange }: KanbanBoardProps) {
+  const { t } = useTranslation()
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [drag, setDrag] = useState<DragState | null>(null)
+  // Depois de soltar, a cópia fica até o quadro mudar (atualização otimista): sem "piscar".
+  if (drag && !activeId && drag.board !== board) setDrag(null)
+
+  const laneIds = useMemo(() => lanes.map((l) => l.id), [lanes])
+  const base = useMemo(() => buildContainers(board, laneIds, swimlane, visible), [board, laneIds, swimlane, visible])
+  const containers = drag ? drag.items : base
+
+  const cards = useMemo(() => {
+    const map = new Map<string, { card: BoardCard; column: BoardColumn }>()
+    board.columns.forEach((column) => column.cards.forEach((card) => map.set(card.id, { card, column })))
+    return map
+  }, [board])
+  const columnOf = (statusId: string) => board.columns.find((c) => c.status.id === statusId)
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    // Enter fica para abrir o card; Espaço pega e solta
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
+    }),
+  )
+
+  function findContainer(id: UniqueIdentifier, from = containers): string | undefined {
+    const key = String(id)
+    if (key in from) return key
+    return Object.keys(from).find((k) => from[k]?.includes(key))
+  }
+
+  /** Destino permitido a partir da origem do arraste: mesma raia e transição liberada. */
+  function allowed(target: string, origin = drag?.origin): boolean {
+    if (!origin) return true
+    const a = parseContainer(origin)
+    const b = parseContainer(target)
+    return a.lane === b.lane && canTransition(board, a.statusId, b.statusId)
+  }
+
+  // Sob o ponteiro, prefere o card mais próximo; fora de qualquer área, o canto mais próximo.
+  const collision: CollisionDetection = (args) => {
+    const within = pointerWithin(args)
+    if (within.length === 0) return closestCorners(args)
+    const overCards = new Set(within.filter((c) => !isContainer(c.id)).map((c) => c.id))
+    if (overCards.size === 0) return within
+    return closestCenter({ ...args, droppableContainers: args.droppableContainers.filter((d) => overCards.has(d.id)) })
+  }
+
+  function onDragStart({ active }: DragStartEvent) {
+    const origin = findContainer(active.id, base)
+    if (!origin) return
+    setActiveId(String(active.id))
+    setDrag({ items: Object.fromEntries(Object.entries(base).map(([k, v]) => [k, [...v]])), origin, board })
+    onDraggingChange?.(true)
+  }
+
+  function onDragOver({ active, over }: DragOverEvent) {
+    if (!over || !drag) return
+    const from = findContainer(active.id)
+    const to = findContainer(over.id)
+    if (!from || !to || from === to || !allowed(to)) return
+    setDrag((current) => {
+      if (!current) return current
+      const source = (current.items[from] ?? []).filter((id) => id !== String(active.id))
+      const target = [...(current.items[to] ?? [])]
+      let index = target.length
+      if (!isContainer(over.id)) {
+        const overIndex = target.indexOf(String(over.id))
+        const translated = active.rect.current.translated
+        const below = !!translated && translated.top > over.rect.top + over.rect.height / 2
+        index = overIndex < 0 ? target.length : overIndex + (below ? 1 : 0)
+      }
+      target.splice(index, 0, String(active.id))
+      return { ...current, items: { ...current.items, [from]: source, [to]: target } }
+    })
+  }
+
+  function finish() {
+    setActiveId(null)
+    onDraggingChange?.(false)
+  }
+
+  function onDragCancel() {
+    setDrag(null)
+    finish()
+  }
+
+  function onDragEnd({ active, over }: DragEndEvent) {
+    const state = drag
+    const id = String(active.id)
+    const entry = cards.get(id)
+    if (!state || !over || !entry) return onDragCancel()
+    const current = findContainer(id, state.items)
+    const target = findContainer(over.id, state.items)
+    if (!current || !target) return onDragCancel()
+
+    // soltou sobre coluna bloqueada: o card nunca saiu da origem
+    if (target !== current && !allowed(target, state.origin)) {
+      const to = columnOf(parseContainer(target).statusId)
+      if (to && parseContainer(target).lane === parseContainer(state.origin).lane) onBlocked(entry.column, to)
+      return onDragCancel()
+    }
+
+    let list = state.items[current] ?? []
+    if (target === current && !isContainer(over.id) && over.id !== active.id) {
+      list = arrayMove(list, list.indexOf(id), list.indexOf(String(over.id)))
+    }
+    const originList = base[state.origin] ?? []
+    const unchanged = current === state.origin && list.join('|') === originList.join('|')
+    const to = columnOf(parseContainer(current).statusId)
+    if (unchanged || !to) return onDragCancel()
+
+    setDrag({ ...state, items: { ...state.items, [current]: list } })
+    finish()
+    onMove({ card: entry.card, from: entry.column, to, ...neighbors(list, id) })
+  }
+
+  const labelOf = (id: UniqueIdentifier) => {
+    const card = cards.get(String(id))?.card
+    return card ? `${card.code} · ${card.title}` : String(id)
+  }
+  const columnName = (id: UniqueIdentifier | undefined) => {
+    const key = id === undefined ? undefined : findContainer(id)
+    return key ? (columnOf(parseContainer(key).statusId)?.status.name ?? '') : ''
+  }
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => t('kanban.announce.picked', { card: labelOf(active.id), column: columnName(active.id) }),
+    onDragOver: ({ active, over }) => (over ? t('kanban.announce.over', { card: labelOf(active.id), column: columnName(over.id) }) : undefined),
+    onDragEnd: ({ active, over }) => (over ? t('kanban.announce.dropped', { card: labelOf(active.id), column: columnName(over.id) }) : undefined),
+    onDragCancel: ({ active }) => t('kanban.announce.cancelled', { card: labelOf(active.id) }),
+  }
+
+  const active = activeId ? cards.get(activeId)?.card : undefined
+  const originStatus = drag && activeId ? parseContainer(drag.origin).statusId : null
+  const showLanes = swimlane !== 'none'
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collision}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDragCancel={onDragCancel}
+      accessibility={{ announcements, screenReaderInstructions: { draggable: t('kanban.announce.instructions') } }}
+    >
+      {/* rolagem horizontal com "encaixe" por coluna no celular */}
+      <div className="relative -mx-4 snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:snap-none sm:px-0" data-testid="kanban-board">
+        {/* colunas crescem para ocupar a largura; abaixo de 16rem cada, o quadro rola na horizontal */}
+        <div className="grid min-w-full gap-3" style={{ gridTemplateColumns: `repeat(${board.columns.length}, minmax(16rem, 1fr))` }}>
+          {board.columns.map((column) => {
+            const wip = wipState(column)
+            const blocked = !!originStatus && !canTransition(board, originStatus, column.status.id)
+            return (
+              <div key={column.status.id} className="snap-start">
+                <AppKanbanColumnHeader
+                  title={column.status.name}
+                  accent={optionColor(column.status.color)}
+                  count={column.wipLimit ? `${column.total}/${column.wipLimit}` : column.total}
+                  countLabel={column.wipLimit ? t('kanban.wipCount', { count: column.total, limit: column.wipLimit }) : t('kanban.count', { count: column.total })}
+                  wip={wip}
+                  blocked={blocked}
+                  actions={
+                    onQuickAdd && (
+                      <AppIconButton
+                        size="sm"
+                        variant="ghost"
+                        icon={<Plus />}
+                        label={t('kanban.addTo', { name: column.status.name })}
+                        onClick={() => onQuickAdd(column.status.id)}
+                      />
+                    )
+                  }
+                />
+              </div>
+            )
+          })}
+
+          {lanes.map((lane) => (
+            <Fragment key={lane.id}>
+              {showLanes && (
+                <div className="sticky left-0 col-span-full mt-2 flex items-center gap-2 text-sm font-medium text-fg" role="heading" aria-level={2}>
+                  <LaneLabel lane={lane} swimlane={swimlane} />
+                </div>
+              )}
+              {board.columns.map((column) => {
+                const key = containerId(lane.id, column.status.id)
+                return (
+                  <Cell
+                    key={key}
+                    id={key}
+                    ids={containers[key] ?? []}
+                    blocked={!!drag && !!activeId && !allowed(key)}
+                    tall={!showLanes}
+                    label={showLanes ? `${column.status.name} · ${lane.name || t(`kanban.noLane.${swimlane}`)}` : column.status.name}
+                    footer={
+                      column.truncated && !showLanes ? <p className="px-1 pt-1 text-xs text-subtle">{t('kanban.truncated', { shown: column.cards.length, total: column.total })}</p> : null
+                    }
+                    empty={!showLanes ? t('kanban.emptyColumn') : undefined}
+                  >
+                    {(containers[key] ?? []).map((cardId) => {
+                      const card = cards.get(cardId)?.card
+                      return card ? <SortableKanbanCard key={cardId} card={card} locked={!board.capabilities.move} onOpen={onOpen} references={references} /> : null
+                    })}
+                  </Cell>
+                )
+              })}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+
+      <DragOverlay dropAnimation={null}>
+        {active ? (
+          <AppKanbanCard overlay className="w-72">
+            <KanbanCardContent card={active} references={references} />
+          </AppKanbanCard>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  )
+}
+
+function Cell({
+  id,
+  ids,
+  blocked,
+  tall,
+  label,
+  footer,
+  empty,
+  children,
+}: {
+  id: string
+  ids: string[]
+  blocked: boolean
+  tall: boolean
+  label: string
+  footer: ReactNode
+  empty?: string
+  children: ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  return (
+    <SortableContext id={id} items={ids} strategy={verticalListSortingStrategy}>
+      <AppKanbanDropZone
+        ref={setNodeRef}
+        over={isOver}
+        blocked={blocked}
+        aria-label={label}
+        data-testid={`kanban-cell-${id}`}
+        className={tall ? 'max-h-[calc(100dvh-17rem)] min-h-40 overflow-y-auto' : undefined}
+      >
+        {children}
+        {ids.length === 0 && empty && <p className="py-6 text-center text-xs text-subtle">{empty}</p>}
+        {footer}
+      </AppKanbanDropZone>
+    </SortableContext>
+  )
+}
+
+function LaneLabel({ lane, swimlane }: { lane: Lane; swimlane: Swimlane }) {
+  const { t } = useTranslation()
+  if (!lane.id) return <span className="text-muted">{t(`kanban.noLane.${swimlane}`)}</span>
+  if (lane.person) {
+    return (
+      <>
+        <AppAvatar name={lane.person.name} src={lane.person.avatarUrl} size="xs" />
+        {lane.name}
+      </>
+    )
+  }
+  if (lane.icon && lane.color) {
+    return (
+      <>
+        <TaskTypeIconBadge icon={lane.icon} color={lane.color} size="sm" />
+        {lane.name}
+      </>
+    )
+  }
+  return lane.color ? <LookupBadge item={{ name: lane.name, color: lane.color }} /> : <>{lane.name}</>
+}

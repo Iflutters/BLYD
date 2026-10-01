@@ -1,0 +1,170 @@
+# Registro de decisões (ADR)
+
+Formato: contexto → decisão → consequências. Novas decisões entram no fim, numeradas.
+
+---
+
+## ADR-001 — Frontend em React + TypeScript (Vite)
+
+- **Data:** 2026-09-28 · **Status:** aceita (escolha do responsável pelo produto)
+- **Contexto:** a diretriz sugere uma estrutura `lib/` (estilo Flutter) mas deixa o framework em aberto. Flutter Web e React foram avaliados.
+- **Decisão:** React 19 + TypeScript estrito + Vite. Bibliotecas: React Router 8, TanStack Query 5 (server state), Zustand (UI state), TanStack Table 9, Radix UI (primitivos acessíveis), Tailwind CSS 4 (tokens), i18next, react-hook-form + zod, cmdk, React-Toastify (padrão de mensagens definido pelo responsável do produto, canto superior direito).
+- **Consequências:** ecossistema maduro para DataTable, drag & drop e editor rico. A estrutura `lib/` foi mapeada para `src/` com as mesmas camadas. Um app mobile futuro exigirá outro cliente (a API já está pronta para isso).
+
+## ADR-002 — PocketBase com hooks em JavaScript
+
+- **Data:** 2026-09-28 · **Status:** aceita (escolha do responsável pelo produto)
+- **Contexto:** PocketBase é o banco definido na diretriz. Havia duas opções para as regras de negócio: estender em Go ou usar hooks JS (JSVM/goja).
+- **Decisão:** binário oficial (0.40.4) + `pb_hooks` em JavaScript.
+- **Consequências:** o JSVM é síncrono, CommonJS e isola cada handler numa VM. Para manter TDD e Clean Architecture, domínio e aplicação são módulos puros (sem globais do PocketBase), testados com `node --test`; só `infrastructure/` usa `$app`. O ESLint bloqueia sintaxe arriscada no JSVM.
+
+## ADR-003 — API própria `/api/v1`; API genérica do PocketBase bloqueada
+
+- **Contexto:** a API nativa do PocketBase expõe as collections com regras de filtro; replicar RBAC configurável e auditoria nessas regras seria frágil e sujeito a IDOR.
+- **Decisão:** todas as collections têm regras nulas (apenas superusuário). A aplicação usa somente `/api/v1` (rotas em `pb_hooks`), com envelope `{ data, meta, error }`, validação, RBAC e auditoria. O login por senha nativo da collection `users` é desativado.
+- **Consequências:** controle total do contrato e da segurança; a API é independente do PocketBase (facilita trocar de backend). Recursos nativos (realtime, arquivos) precisarão de rotas próprias quando usados.
+
+## ADR-004 — Sessão opaca em cookie HttpOnly
+
+- **Contexto:** tokens JWT do PocketBase não permitem revogar uma sessão específica nem listar sessões ativas; token em `localStorage` fica exposto a XSS.
+- **Decisão:** token aleatório de 48 caracteres; o banco guarda apenas o SHA-256 (`sessions.token_hash`). Cookie `kb_session` com `HttpOnly`, `SameSite=Strict`, `Path=/api/` e `Secure` em produção. Expiração absoluta (12h ou 30 dias com "lembrar-me"), expiração por inatividade (120 min, sessões comuns) e renovação deslizante (sessões persistentes). CSRF: `SameSite=Strict` + header obrigatório `X-Requested-With: kamban` em mutações.
+- **Consequências:** logout real, revogação individual, "sessões ativas" e derrubada imediata ao desativar usuário. Uma consulta extra por requisição (resolução da sessão) — aceitável no SQLite; `last_seen_at` só é gravado a cada 5 min.
+
+## ADR-005 — Catálogo de permissões definido pelo sistema; matriz configurável
+
+- **Contexto:** a diretriz exige permissões configuráveis sem codificá-las na UI.
+- **Decisão:** o **catálogo** (códigos como `tasks.edit`) é definido no código do backend, pois cada código corresponde a uma verificação real. **Quais perfis têm cada permissão** é dado configurável (collection `role_permissions`), editável na tela de Permissões. Perfis personalizados podem ser criados. `SUPER_ADMIN` tem tudo implicitamente e é imutável.
+- **Consequências:** novas permissões chegam por migration junto com a funcionalidade que as verifica. Regras anti-escalonamento: ninguém concede o que não tem nem altera o próprio perfil.
+
+## ADR-006 — Campos de data do PocketBase: `created`/`updated`
+
+- **Contexto:** a diretriz usa `created_at`/`updated_at`; o PocketBase usa `created`/`updated` por padrão (inclusive na collection `users`).
+- **Decisão:** o banco segue a convenção do PocketBase; a API expõe `created_at`/`updated_at` (presenters). Relações usam sufixo `_id` (`role_id`, `user_id`) como na diretriz.
+- **Consequências:** o contrato público segue a diretriz sem brigar com o PocketBase. Ordenações da API mapeiam `created_at → created` por whitelist.
+
+## ADR-007 — Código de desenvolvimento apenas local (sem git por enquanto)
+
+- **Data:** 2026-09-28 · **Status:** vigente até nova orientação
+- **Decisão:** o projeto não é um repositório git neste momento; nada é commitado. Os arquivos `.gitignore` já existem para quando o versionamento for ativado.
+
+## ADR-008 — Acesso a projetos: RBAC global + vínculo com o projeto
+
+- **Data:** 2026-09-28 · **Status:** aceita
+- **Contexto:** a diretriz pede membros por projeto e proteção contra IDOR, sem codificar permissões na UI. Só o RBAC global permitiria que qualquer `projects.edit` alterasse projetos de outros times.
+- **Decisão:** a ação exige a permissão global **e** o vínculo: membro (papéis `manager`, `member`, `viewer`), dono, ou a nova permissão `projects.view_all` (acesso administrativo, padrão no ADMIN). Projeto sem acesso responde 404. A chave do projeto é imutável (prefixo das tarefas). Exclusão só de projeto arquivado. A API devolve `capabilities` por projeto.
+- **Consequências:** regras centralizadas em `domain/project.js` e reaproveitáveis por tarefas/Kanban (Fases 4–5). Admins podem ver tudo sem virar membros; a busca de candidatos a membro não exige `users.view`.
+
+## ADR-009 — Mensagens (toasts) com React-Toastify
+
+- **Data:** 2026-09-28 · **Status:** aceita (pedido do responsável pelo produto)
+- **Decisão:** React-Toastify no canto superior direito, sempre via `notify` (success, error, info, warning, promise). Duração mínima de 3 s (sucesso 8 s, erro 12 s), barra de progresso decrescente, pausa ao passar o mouse.
+- **Consequências:** a regra global de `prefers-reduced-motion` exclui `.Toastify__progress-bar`, pois a biblioteca fecha o toast ao fim dessa animação (zerá-la fazia os toasts sumirem na hora).
+
+## ADR-010 — Campos personalizados como biblioteca reutilizável
+
+- **Data:** 2026-09-28 · **Status:** aceita
+- **Contexto:** cada tipo de tarefa (Bug, Melhoria…) pede campos diferentes, mas vários se repetem entre tipos (Módulo, Cliente afetado). Definir campos dentro de cada tipo duplicaria configuração e impediria filtros e relatórios transversais.
+- **Decisão:** campos ficam numa **biblioteca** (`custom_fields` + `custom_field_options`) e os tipos apenas os **vinculam** (`task_type_fields`) com ordem, obrigatório, visível e "no card". `name` e `type` do campo são imutáveis (a API, os filtros e os valores já gravados dependem deles). Opções em uso são desativadas, não removidas. O valor padrão de seleção vem das opções marcadas como padrão. Tipos em uso são desativados, não excluídos. Tipos de campo que dependem de dados da Fase 4 (usuário, usuários, projeto, imagem, arquivo) já existem no catálogo, mas o preenchimento chega com as tarefas.
+- **Consequências:** o mesmo `CustomFieldInput` e a mesma validação (`validateValue` no backend, `valueIssue` no front) servem para a pré-visualização e, na Fase 4, para as tarefas. Leitura liberada a `tasks.view` para que o formulário de tarefas não exija `settings.manage`. Os valores das tarefas ficarão em `task_custom_values` (Fase 4), indexados pelos campos filtráveis.
+
+## ADR-011 — Status e prioridades globais, com categoria
+
+- **Data:** 2026-09-28 · **Status:** aceita
+- **Contexto:** tarefas precisam de status e prioridade antes do Kanban (Fase 5). A diretriz permite fluxo configurável, mas relatórios e datas (início/conclusão) precisam saber o que cada etapa significa, independentemente do nome escolhido.
+- **Decisão:** listas **globais** configuráveis (`task_statuses`, `task_priorities`) com chave imutável, ordem, cor, ativo e exatamente um item padrão. O status tem **categoria** (`backlog`, `todo`, `in_progress`, `done`, `cancelled`): entrar em `in_progress` (ou encerrar) preenche `started_at`; entrar em `done`/`cancelled` preenche `completed_at` e reabrir limpa. Um único serviço (`application/lookups.js`) e uma única tela (`LookupsPage`) atendem às duas listas.
+- **Consequências:** a ordem dos status é a ordem das colunas do Kanban; colunas por projeto, WIP e transições permitidas entram na Fase 5 sobre esta base. Itens em uso não são excluídos (desativar).
+
+## ADR-012 — Comentários abertos a todo o projeto, com menções
+
+- **Data:** 2026-09-28 · **Status:** aceita (pedido do responsável pelo produto)
+- **Decisão:** qualquer pessoa com acesso ao projeto comenta, **inclusive o papel leitor** — comentar não é editar a tarefa. Menções no estilo WhatsApp/Instagram: o editor abre a lista ao digitar `@` e grava `@[Nome](id)`; o servidor aceita só pessoas ativas com acesso ao projeto. Comentário adicionado/editado/excluído e as pessoas mencionadas vão para o histórico da tarefa (texto sem marcação). Texto em Markdown simples renderizado sem HTML cru (`AppMarkdown`). Exclusão lógica (autor ou gestor).
+- **Consequências:** `capabilities.comment` separado de `capabilities.edit`. Os IDs mencionados ficam em `comments.mentions`, prontos para as notificações internas (diretriz §41).
+
+## ADR-013 — Anexos: tipo pelo conteúdo, arquivo protegido e download pela API própria
+
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Contexto:** a diretriz §16 exige validação de MIME, limite de tamanho, proteção contra upload malicioso e "nunca confiar apenas na extensão"; a API genérica do PocketBase está fechada (ADR-003).
+- **Decisão:** duas barreiras de tipo — assinatura dos primeiros bytes no domínio (`domain/attachment.js`, testável sem PocketBase) + lista de tipos do campo `file` do PocketBase (que também detecta pelo conteúdo). SVG/HTML proibidos. Arquivo `protected`; download só por `/api/v1/attachments/{id}/file`, que confere o acesso ao projeto e responde com `nosniff`, CSP `sandbox` e sem cache compartilhado. Um arquivo por requisição (até 20 MB). Fotos grandes são reduzidas no navegador antes do envio (máx. 2560 px; mantém o original se não ficar menor; GIF nunca). Campos personalizados de imagem/arquivo referenciam anexos da própria tarefa.
+- **Consequências:** miniaturas do PocketBase não são usadas (exigiriam acesso público/token); a galeria carrega a imagem original com `loading="lazy"`. Antivírus pode ser acrescentado em produção sem mudar o domínio.
+
+## ADR-014 — Notificações internas geradas pelos casos de uso
+
+- **Data:** 2026-09-29 · **Status:** aceita
+- **Decisão:** notificações ficam na collection `notifications` e são criadas **dentro da mesma transação** do evento (menção, atribuição, comentário, mudança de status), por um `notifier` compartilhado (`application/notifications.js`). Quem faz a ação não é notificado; cada pessoa recebe uma por evento (menção tem prioridade sobre "comentário"); só recebe quem tem acesso ao projeto. Lembretes de prazo (amanhã e vencido) rodam num `cronAdd` diário às 08:00, com `dedupe_key` para não repetir. O front consulta o contador a cada 30 s e ao voltar para a aba (sem WebSocket por enquanto).
+- **Consequências:** nenhum evento se perde se a ação falhar (tudo na transação). Envio por e-mail e preferências por tipo podem ser acrescentados sobre a mesma collection.
+
+## ADR-015 — Kanban sobre o fluxo global, com posição fracionária
+- **Contexto:** a diretriz pede colunas configuráveis, WIP, transições permitidas, swimlanes, filtros, quick add e atualização otimista.
+- **Decisão:** colunas são os status ativos (mesma ordem e configuração para todos os projetos — ADR-011); `wip_limit` e `allowed_next` ficam no status. A ordem dos cards é `tasks.position` (passo 1024, inserção entre vizinhos, renumeração quando o espaço acaba), sem reescrever a coluna a cada movimento. O servidor valida a transição em toda troca de status (quadro ou edição). O WIP é **alerta**, não bloqueio. Filtros, busca e raias (responsável, prioridade, tipo) rodam no navegador sobre o quadro já carregado; colunas de encerramento trazem só as 30 mais recentes. O quadro atualiza a cada 15 s (pausado durante o arraste) — tempo real por SSE fica para o hardening.
+- **Consequências:** mover é uma chamada curta e auditada; o quick add cai no formulário completo quando o tipo tem campo obrigatório sem padrão. Colunas por projeto, se necessárias, entram depois sem mudar o modelo de posição.
+
+## ADR-016 — Backlog como lista de planejamento, com sprints leves
+- **Contexto:** a diretriz pede backlog com priorização por arraste, filtros, ordenação e "sprint/ciclo futuro"; o usuário pediu (2026-09-30) o termo **Sprint** e que tarefas já analisadas também possam ser planejadas.
+- **Decisão:** o Backlog lista o que ainda não começou (categorias `backlog` e `todo`), agrupado por sprint (abertas, na ordem manual definida pelo gestor) e "sem sprint". A prioridade reaproveita `tasks.position` (ADR-015), com renumeração conjunta dos status planejáveis. É uma **lista de planejamento com arrastar**, não um `AppDataTable` (a tabela não reordena linhas); busca, filtros e ordenações alternativas ficam na própria página. Sprint é só planejamento (sem velocidade/burndown); encerrar devolve ao backlog o que não terminou. "Transformar em tarefa ativa" é mover de status pela mesma rota do Kanban (mesmas transições e histórico).
+- **Consequências:** Kanban e Backlog compartilham ordem e regras; a sprint é um campo da tarefa (`sprint_id`), então aparece no formulário, no detalhe, no histórico e como filtro. Métricas de sprint podem entrar depois sem mudar o modelo.
+
+## ADR-017 — Relações dirigidas com inversos derivados, pai por campo e fork com cópia escolhida
+- **Contexto:** a diretriz lista dez tipos (Relacionado a, Bloqueia/Bloqueado por, Duplicado de/em, Depende de/Dependência, Pai/Filho, Fork de), pede evitar ciclos e um fork com cópia configurável.
+- **Decisão:** `task_relations` grava só quatro tipos dirigidos; os inversos são a mesma linha vista do outro lado (sem duplicar dados nem risco de ficarem inconsistentes). Pai/Filho usa `parent_task_id` e Fork de usa `forked_from_task_id` (são atributos da tarefa, não relações livres). Bloqueia e Depende de formam um único grafo de precedência verificado contra ciclos a cada inclusão (busca incremental no banco). O fork reaproveita a criação de tarefa (mesmas validações e histórico) e executa as cópias opcionais (anexos com cópia real do arquivo, relações, histórico da origem) na mesma transação. O que copiar é escolhido a cada fork, com padrões definidos no domínio.
+- **Consequências:** "Bloqueada" é calculada nos resumos (sem campo redundante) e é só um aviso. Relações entre projetos existem, mas ficam invisíveis para quem não vê o outro lado. Padrões de cópia do fork por projeto/organização podem virar configuração depois sem mudar a API.
+
+## ADR-018 — Relatórios calculados na hora, com definições explícitas
+- **Contexto:** a diretriz exige indicadores de dados reais, consistentes e com o período sempre claro; o volume do MVP é moderado.
+- **Decisão:** um único endpoint (`/reports`) calcula tudo na hora a partir de uma consulta enxuta de `tasks` (colunas mínimas, SQL direto) e de funções puras em `domain/report.js` (testadas sem banco). Não há tabelas de agregação. O período e o fuso vêm do cliente; a resposta devolve o período, o momento do cálculo e as definições usadas (tipos considerados bug, prioridade considerada crítica). Gráficos são componentes leves do design system (`AppStatCard`, `AppBarList`, `AppTrendChart`) com tabela acessível, sem biblioteca externa.
+- **Consequências:** números sempre coerentes com as tarefas e com as regras de acesso; se o volume crescer, a mesma interface pode passar a ler agregados pré-calculados. "Bug" e "crítica" dependem da chave BUG e da ordem das prioridades — documentado e visível na tela.
+
+## ADR-019 — Sem tempo real no MVP: dados atualizados por cache curto e invalidação
+- **Contexto:** a diretriz pede dados sempre coerentes; o tempo real do PocketBase passa pela API genérica (fechada, ADR-003) e os hooks JSVM são síncronos.
+- **Decisão:** TanStack Query com cache de 30 s; toda ação invalida as chaves afetadas (o que a pessoa faz aparece na hora) e cada tela busca de novo ao ser aberta. Sem SSE/WebSocket no MVP. A sessão é verificada a cada 5 min e ao focar a janela.
+- **Consequências:** mudanças feitas por outras pessoas aparecem ao reabrir a tela (ou após 30 s ao navegar). Tempo real pode entrar depois com um canal próprio sob `/api/v1` sem mudar as telas.
+
+## ADR-020 — Bloqueio progressivo por conta, com chave anônima
+- **Contexto:** o rate limit por IP não impede tentativas distribuídas contra uma conta; bloquear só contas existentes revelaria quais e-mails existem.
+- **Decisão:** falhas contadas por SHA-256 do e-mail normalizado (`login_attempts`), também para e-mails inexistentes. 5 falhas em 24 h bloqueiam por 5 min; a cada 5 novas o tempo dobra até 60 min. Durante o bloqueio a senha não é conferida (`429 ACCOUNT_LOCKED` com `retry_after_seconds`) e a tentativa não conta; login correto zera. Limpeza diária por cron.
+- **Consequências:** um atacante pode atrasar o login de alguém por até 60 min — aceito em troca de proteger a senha; o suporte pode orientar a esperar ou a entrar depois. Nenhum e-mail fica gravado em claro.
+
+## ADR-021 — Criar/editar em pop-up; "Visualizar" em painel lateral
+- **Contexto:** o usuário pediu (2026-09-30) que a criação de tarefas, projetos etc. deixe de ser um painel lateral e vire um pop-up na tela, grande quando houver muitos campos, com rolagem.
+- **Decisão:** formulários de criação/edição usam `AppDialog` em tamanho `xl`/`2xl` (cabeçalho e ações fixos, corpo com rolagem, conteúdo em duas colunas no desktop e empilhado no celular) e **não fecham por clique fora** (Esc e "Cancelar" fecham) — evita perder um formulário longo. "Visualizar" continua em `AppDrawer` (consulta sem perder o contexto).
+- **Consequências:** `TaskFormDialog`, `ProjectFormDialog`, `UserFormDialog` e `CustomFieldFormDialog` seguem o mesmo padrão; diálogos menores (sprint, criação rápida, relação, fork) já eram `AppDialog`.
+
+## ADR-022 — Indicadores clicáveis com detalhamento calculado no servidor
+- **Contexto:** o usuário pediu (2026-09-30) cards de indicador interativos; o número do card e a lista por trás dele não podem divergir.
+- **Decisão:** `GET /api/v1/reports/tasks?metric=…` recebe o mesmo período, fuso e filtros de `/reports` e seleciona as tarefas com **a mesma função de classificação** usada na contagem (`domain/report.js`: `selectForMetric`), paginando no servidor. A dica do card explica o que entra na conta.
+- **Consequências:** um teste de domínio garante, para os 13 indicadores, que o tamanho da lista é igual ao número; outro de API compara com o relatório real.
+
+## ADR-023 — Obrigatoriedade de campos por status do fluxo
+- **Contexto:** o usuário pediu (2026-09-30) que, na configuração do tipo, cada status exija seus próprios campos (ex.: Análise exige "Parecer do analista"), em vez de uma obrigatoriedade fixa.
+- **Decisão:** cada vínculo campo × tipo ganha `required_status_ids` (JSON) ao lado de `required` (exigido em todos). A regra única, em `domain/task.js` (`requiredIn`) e espelhada em `web/src/domain/task-config.ts` (`isRequiredIn`), é: **ao salvar, a tarefa precisa ter os campos exigidos no status em que vai ficar**. Como todas as mudanças de status passam por `updateTask` (inclusive `/move`), nenhuma escapa. O erro é o `VALIDATION_ERROR` de sempre (`custom_values.<nome>: required`) com `details.status`, e a interface transforma isso em "Preencha para mover" (salva os valores e refaz a mudança).
+- **Consequências:** a lista não é cumulativa (o administrador marca cada status que exige). Exigências novas valem para tarefas antigas na próxima vez que forem salvas naquele status — mesmo comportamento do "Obrigatório" geral. Validar só na transição (e não em edições) foi descartado para não permitir apagar um campo exigido enquanto a tarefa está no status.
+
+## ADR-024 — Tipos de tarefa traduzidos no servidor, pelo idioma da requisição
+- **Contexto:** o usuário pediu (2026-09-30) que, ao trocar o idioma, os tipos de tarefa também apareçam traduzidos, mantendo a liberdade de editar nome e descrição como hoje. Escopo escolhido por ele: só tipos de tarefa, com o padrão já traduzido.
+- **Decisão:** o registro guarda o original (pt-BR) em `name`/`description` e as versões en/es em `translations` (JSON). O app envia `Accept-Language` com o idioma da tela; o handler resolve o idioma (`domain/content-locale.js`) e o coloca no container da requisição (`deps.locale`). Os pontos que expõem o nome do tipo — a própria API de tipos, o resumo das tarefas (listas, Kanban, Planejamento, detalhe), relatórios e "Usado em" dos campos — localizam com a mesma função (`localize`), com o original como reserva. A API de tipos também devolve `translations` com as três versões, e o formulário sempre edita o original em português. Trocar o idioma invalida o cache do app. O histórico continua gravando o original.
+- **Consequências:** nenhuma tela precisou saber de traduções além do formulário do tipo. Campos, opções, status e prioridades podem seguir o mesmo modelo depois (`translations` + `localize` no presenter). Texto das tarefas não é traduzido.
+
+## ADR-025 — Timeline calculada sobre as tarefas, com arraste no cliente e regra no servidor
+- **Contexto:** Onda 1 da expansão (estilo Monday): cronograma vivo do projeto, com datas ajustáveis na tela, dependências e marcos.
+- **Decisão:** a tarefa ganha `start_date`; a barra vai do início ao prazo (uma só data = um dia). `GET /projects/{id}/timeline` entrega numa chamada tarefas, dependências (reaproveitando "bloqueia/depende de" das relações — `precedenceOf`), sprints e marcos (`project_milestones`, gerenciados pelo gestor). O componente `AppTimeline` do design system desenha régua, grupos, barras, setas (SVG), faixas e marcos numa área que rola dentro de si (sem 2ª barra no documento), com arraste por ponteiro, pontas para esticar, teclado e soltar de fora (HTML5). Mover grava pelo `PATCH /tasks/{id}` de sempre (mesma validação, permissão e histórico), com atualização otimista. A regra de conflito (começa antes do prazo da anterior) fica no domínio dos dois lados (backend responde `conflict`; o web recalcula na hora durante a atualização otimista).
+- **Consequências:** nenhuma coleção extra para "itens da timeline" — tudo continua sendo tarefa. Reprogramação em cascata, linha de base e caminho crítico ficam para a Onda 6.
+
+## ADR-026 — Documentação em JSON estruturado, higienizado no servidor, com editor TipTap no design system
+- **Contexto:** Onda 2 da expansão (estilo Confluence/SharePoint): páginas ricas (tabelas, imagens, avisos) editadas por várias áreas e lidas por outras, sem abrir brecha de XSS.
+- **Decisão:** o conteúdo é o **documento JSON do ProseMirror** (TipTap 3 no web). O servidor (`domain/doc-content.js`) higieniza cada gravação por lista de permissão — blocos, marcações e atributos conhecidos; links só http(s)/mailto/`/docs/…`/arquivos da documentação; imagens só `/api/v1/docs/files/{id}`; limites de profundidade, nós e texto — e extrai o texto "dobrado" (sem acento/minúsculas) para a busca. Rascunho (um por página) separado do publicado; publicar cria `doc_page_versions`; restaurar publica a versão antiga como a próxima. Árvore por `parent_id` + `position` (passo 1024, renumera quando não há folga), até 8 níveis, sem ciclo. Acesso por espaço (`docs.view/edit/manage` + visibilidade empresa/projeto, com as regras de membro do projeto); o que não se pode ver responde 404. No web, `AppRichTextEditor`/`AppRichTextView` usam as **mesmas extensões** (leitura = editor não editável), ficam em `presentation/components/rich-text` (import separado) e o TipTap/ProseMirror vai no chunk `vendor-editor`, carregado só nas rotas `/docs`.
+- **Consequências:** nada de `dangerouslySetInnerHTML`; o formato é versionável e pesquisável. Um bloco novo exige mudar o higienizador (servidor) e as extensões (web) juntos. Edição simultânea em tempo real fica fora (rascunho compartilhado, último a salvar prevalece).
+
+## ADR-027 — Quadro de gerenciamento como módulo à parte das tarefas (elementos com etiquetas próprias), cálculos no servidor
+- **Contexto:** módulo Gerenciamento de Projetos (diretriz própria, fase GP-1): quadro estilo Monday na aba **Gerenciamento** do projeto para a gestão do projeto (fases, reuniões, alinhamentos, entregas), com status, recursos, cronograma, esforço, duração e progresso. A primeira versão pendurava o plano nas tarefas (grupo, recursos e progresso na tarefa); o usuário corrigiu o conceito: **tarefas são tarefas do projeto; o gerenciamento é um módulo à parte, sem vínculo**.
+- **Decisão:** collections próprias — `project_groups` (fases, 2 níveis, numeração derivada da posição), `plan_items` (elementos e subelementos, 1 nível, `metrics` JSON com `estimated_hours`/`actual_hours`/`duration_days` onde null ≠ 0), `plan_statuses` (etiquetas de status **por projeto**, com categoria que dirige os cálculos; padrões criados na 1ª leitura do quadro, no idioma da requisição) e `plan_resources` (etiquetas de recurso por projeto, nome único sem acento/maiúsculas). A migration `1790000021` remove os campos de plano que tinham ido para `tasks`. Duração, progresso (concluído = 100; subelementos ponderados pelo trabalho; manual) e totais do grupo são calculados em `domain/plan.js` e entregues por `GET /projects/{id}/plan` numa chamada. Permissões `plan.view/edit/manage` (editar = colaborador; grupos e etiquetas de status = gestor). No web, o quadro usa `AppBoardTable` + `useBoardColumns` (colunas compartilhadas por todos os grupos: ordem, largura, ocultas, recolhidas e ordenação, lembradas por pessoa), com edição direta nas células (`AppInlineEdit`, `AppPopover`, `AppRangeCalendar`) e atualização otimista.
+- **Consequências:** tarefas, Kanban, Planejamento e relatórios não mudam por causa do quadro (e vice-versa); a chave de cache é `plan` (fora de `tasks`). Mais tabelas e telas para manter, em troca de um modelo que corresponde ao que o time faz na gestão. Filtros, agrupar, arrastar linhas, seleção em massa, dependências e importação ficam para a GP-2; painel do elemento para a GP-3; visões Cronograma/Kanban/Gestão para a GP-4; colunas personalizadas para a GP-5.
+
+## ADR-028 — Quadro GP-2: dependências como "bloqueia/relacionado" com regra por quadro; massa e importação tudo ou nada; visões calculadas no navegador
+- **Contexto:** GP-2 do Gerenciamento de Projetos (diretriz §8–§11): arrastar e soltar, filtros, agrupar por, seleção em massa, dependências com bloqueio configurável e importação.
+- **Decisão:** dependências em `plan_item_links` com só dois tipos gravados — `blocks` (de → para; "para depende de de") e `relates` —, sem ciclo de bloqueio (`domain/plan-links.js`); a regra do quadro fica em `plan_settings` (`warn` padrão, `block` impede iniciar/concluir, checada no servidor em toda troca de status, inclusive em massa). Seleção em massa (`POST …/plan/items/bulk`) e importação (`POST …/plan/import`) validam tudo antes e gravam numa transação (tudo ou nada), com histórico por elemento (massa) ou um registro com as quantidades (importação). A planilha é lida no navegador (`web/src/domain/plan-import.ts`: CSV, colunas em 3 idiomas, datas/números do idioma) e o servidor revalida (`domain/plan-import.js`). Mover usa `PUT /plan/items/{id}/move` com vizinhos (`placeAmong` + renumeração sem folga), como grupos e o backlog. Filtros, pessoa, ordenação e agrupar por são **visões** calculadas no navegador sobre o quadro já carregado (`web/src/domain/plan-view.ts`); com recorte, os totais do rodapé usam a mesma fórmula do servidor sobre os elementos visíveis. O caso de uso novo (`application/plan-interaction.js`) e o do quadro compartilham `application/plan-support.js`.
+- **Consequências:** uma chamada continua trazendo o quadro inteiro (inclusive `links`, `settings` e `blocked` por elemento); visões mudam sem ida ao servidor. A fórmula dos totais existe nos dois lados (documentada e testada nos dois). Arrastar fica desligado quando a ordem da tela não é a do quadro (ordenação, recorte ou agrupamento).
+
+## ADR-029 — Painel do elemento (GP-3): conversa e arquivos próprios do quadro; notificações apontam para tarefa ou elemento
+- **Contexto:** GP-3 do Gerenciamento de Projetos (diretriz §12): atualizações com respostas e @menções que notificam, arquivos e histórico num painel lateral, com contador na linha — sem acoplar o quadro às tarefas.
+- **Decisão:** coleções próprias `plan_item_updates` (resposta de um nível por `parent_id`; exclusão lógica) e `plan_item_files` (arquivo protegido, servido pela API com `nosniff` e CSP `sandbox`), com cascade no elemento; o caso de uso `application/plan-collaboration.js` reaproveita a base do quadro (`plan-support.js`), as regras de arquivo (`domain/attachment.js`) e as menções — extraídas para `domain/mentions.js` e compartilhadas com os comentários das tarefas. `notifications` ganhou `plan_item_id` + `project_id` (e `task_id` deixou de ser obrigatório) com os tipos `plan_mention` e `plan_reply`; o notificador tem `notifyItem`, e a API devolve `task` ou `plan_item`. O histórico do elemento é o `listEntityHistory("plan_item")`. No web, o painel é um `AppDrawer` cujo estado fica no endereço (`?item=&panel=`), a galeria e o envio de arquivos passaram a aceitar qualquer arquivo (`FileItem`, `useFileUploader`) e as consultas do painel ficam sob a chave do quadro.
+- **Revisão (2026-09-30, pedido do usuário):** em vez da aba Arquivos, imagens e arquivos vão **na própria atualização** — colados (Ctrl+V), soltos no campo ou anexados. `plan_item_files.update_id` (migration 1790000024); `POST /plan/items/{id}/updates` aceita multipart e grava texto + arquivos na mesma transação (tudo ou nada; com arquivo o texto pode ficar vazio; 50 MB por envio); `POST /plan/updates/{id}/files` para o autor anexar depois; as rotas da aba (`GET/POST /plan/items/{id}/files`) saíram. No web, `AppMentionTextarea` ganhou `onFiles` (colar/soltar; texto copiado continua texto), e o envio com miniaturas (`usePendingFiles` + `FilesToSend`, nome legível para imagem colada) é o mesmo nos comentários das tarefas.
+- **Consequências:** comentários de tarefa e atualizações do quadro continuam independentes (regras e histórico próprios) e dividem só o formato das menções e as regras de arquivo. `getPlan` traz os contadores (`updates`, `files`) numa consulta agrupada por projeto. Assinaturas/seguidores do elemento ficam fora (só menção e resposta notificam).

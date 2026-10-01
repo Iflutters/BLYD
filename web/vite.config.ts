@@ -1,0 +1,55 @@
+/// <reference types="vitest/config" />
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+const API_TARGET = process.env.KAMBAN_API_TARGET ?? 'http://127.0.0.1:8090'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  server: {
+    port: 5173,
+    // Falha se a porta estiver ocupada (evita subir silenciosamente em outra porta).
+    strictPort: true,
+    // Mesma origem no navegador: o cookie de sessão (SameSite=Strict, Path=/api/) funciona via proxy.
+    proxy: { '/api': { target: API_TARGET, changeOrigin: false } },
+  },
+  build: {
+    // O build de produção é servido pelo próprio PocketBase (backend/pb_public).
+    outDir: '../backend/pb_public',
+    emptyOutDir: true,
+    sourcemap: false,
+    rolldownOptions: {
+      output: {
+        // Vendors em chunks estáveis: mudam pouco e ficam em cache entre deploys.
+        codeSplitting: {
+          groups: [
+            // Ids de módulo chegam normalizados com "/" em todas as plataformas.
+            { name: 'vendor-react', test: /node_modules\/(react|react-dom|scheduler|react-router)\//, priority: 30 },
+            { name: 'vendor-ui', test: /node_modules\/(@radix-ui|radix-ui|@floating-ui|cmdk|react-toastify|@dnd-kit|lucide-react)\//, priority: 20 },
+            { name: 'vendor-forms', test: /node_modules\/(zod|react-hook-form|@hookform)\//, priority: 20 },
+            { name: 'vendor-table', test: /node_modules\/@tanstack\/(react-table|table-core|react-store|store)\//, priority: 20 },
+            // Editor da documentação: só carrega nas telas /docs. Prioridade mínima: os grupos puxam as
+            // dependências junto, e as compartilhadas (floating-ui, use-sync-external-store…) devem ficar
+            // nos grupos do carregamento inicial, não aqui.
+            { name: 'vendor', test: /node_modules\/(?!@tiptap\/|prosemirror-|linkifyjs\/|orderedmap\/|rope-sequence\/|w3c-keyname\/)/, priority: 10 },
+            { name: 'vendor-editor', test: /node_modules\/(@tiptap|prosemirror-[a-z-]+|linkifyjs|orderedmap|rope-sequence|w3c-keyname)\//, priority: 5 },
+          ],
+        },
+      },
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    restoreMocks: true,
+    // testes de interface digitam e abrem menus; com a suíte inteira em paralelo, 5 s é pouco
+    testTimeout: 15000,
+  },
+})

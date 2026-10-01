@@ -1,0 +1,437 @@
+import type { AuditEntry, CurrentUser, Permission, Role, Session, User, UserStatus } from './entities'
+import type { ListQuery, Page } from './pagination'
+import type { PermissionCode } from './permissions'
+import type { CustomField, FieldConfig, FieldType, FieldValue, OptionColor, TaskType, TaskTypeDetail, TaskTypeIcon, TranslatedLocale, TypeTexts } from './task-config'
+import type { LookupItem, StatusCategory, TaskPriority, TaskStatus } from './workflow'
+import type { Attachment } from './attachments'
+import type { AppNotification } from './notifications'
+import type { Board } from './kanban'
+import type { BacklogView } from './backlog'
+import type { ForkInput, LinkOption, TaskRelation, TaskRelations } from './relations'
+import type { Report, ReportMetric, ReportQuery, ReportTask } from './reports'
+import type { Milestone, MilestoneInput, Timeline } from './timeline'
+import type { DocDraft, DocFile, DocMoveTarget, DocPage, DocRecent, DocSearchResult, DocSpace, DocSpaceDetail, DocSpaceInput, DocVersion, DocVersionDetail, RichContent } from './docs'
+import type { Sprint, SprintInput } from './sprints'
+import type {
+  DependencyRule,
+  Plan,
+  PlanBulkInput,
+  PlanBulkResult,
+  PlanGroup,
+  PlanGroupInput,
+  PlanGroupMove,
+  PlanImportResult,
+  PlanImportRow,
+  PlanItem,
+  PlanItemInput,
+  PlanItemMove,
+  PlanLink,
+  PlanLinkKind,
+  PlanResource,
+  PlanResourceInput,
+  PlanStatus,
+  PlanStatusInput,
+} from './plan'
+import type { PlanFile, PlanUpdate, PlanUpdateInput, PlanUpdates } from './plan-updates'
+import type { IssueInput, JournalEntry, JournalInput, PlanIssue, PlanIssues, PlanJournal, PlanReport } from './plan-management'
+import type { Tag, TaskComment, TaskDetail, TaskInput, TaskSummary } from './tasks'
+import type {
+  MemberRole,
+  Project,
+  ProjectCover,
+  ProjectIcon,
+  ProjectMember,
+  ProjectPriority,
+  ProjectStatus,
+  ProjectView,
+  UserSummary,
+} from './projects'
+import type { Language } from '@/core/i18n'
+import type { ThemePreference } from '@/core/theme/theme'
+
+/**
+ * Contratos de acesso a dados. A apresentação depende apenas destas interfaces;
+ * as implementações HTTP ficam em src/data e podem ser trocadas sem afetar a UI.
+ */
+
+export interface LoginCredentials {
+  email: string
+  password: string
+  remember: boolean
+}
+
+export interface AuthRepository {
+  login(credentials: LoginCredentials): Promise<void>
+  logout(): Promise<void>
+  /** Retorna null quando não há sessão válida. */
+  me(): Promise<CurrentUser | null>
+  listSessions(): Promise<Session[]>
+  revokeSession(id: string): Promise<{ current: boolean }>
+  /** Encerra todas as sessões do usuário, exceto a atual. */
+  revokeOtherSessions(): Promise<{ revoked: number }>
+  changePassword(currentPassword: string, newPassword: string): Promise<{ otherSessionsRevoked: number }>
+}
+
+export interface CreateUserData {
+  name: string
+  email: string
+  password: string
+  roleId: string
+  locale: Language
+}
+
+export interface UpdateUserData {
+  name?: string
+  email?: string
+  roleId?: string
+  locale?: Language
+  theme?: ThemePreference
+}
+
+export interface UserRepository {
+  list(query: ListQuery): Promise<Page<User>>
+  get(id: string): Promise<User>
+  create(data: CreateUserData): Promise<User>
+  update(id: string, data: UpdateUserData): Promise<User>
+  setStatus(id: string, status: UserStatus): Promise<User>
+  resetPassword(id: string, password: string): Promise<void>
+  history(id: string, query: Pick<ListQuery, 'page' | 'perPage'>): Promise<Page<AuditEntry>>
+}
+
+export interface RoleData {
+  code: string
+  name: string
+  description: string
+  permissions?: PermissionCode[]
+}
+
+export interface RoleRepository {
+  list(): Promise<Role[]>
+  listPermissions(): Promise<Permission[]>
+  create(data: RoleData): Promise<Role>
+  update(id: string, data: Pick<RoleData, 'name' | 'description'>): Promise<Role>
+  updatePermissions(id: string, permissions: PermissionCode[]): Promise<Role>
+  remove(id: string): Promise<void>
+}
+
+export interface AuditQuery {
+  page: number
+  perPage: number
+  filters: Record<string, string>
+}
+
+export interface AuditRepository {
+  list(query: AuditQuery): Promise<Page<AuditEntry>>
+}
+
+export interface ProjectListQuery extends ListQuery {
+  view: ProjectView
+}
+
+/** Datas no formato AAAA-MM-DD (somente data). */
+export interface ProjectData {
+  name: string
+  description: string
+  icon: ProjectIcon
+  cover: ProjectCover
+  status: ProjectStatus
+  priority: ProjectPriority
+  startDate: string | null
+  dueDate: string | null
+}
+
+export interface ProjectRepository {
+  list(query: ProjectListQuery): Promise<Page<Project>>
+  get(id: string): Promise<Project>
+  create(data: ProjectData & { key: string }): Promise<Project>
+  update(id: string, data: Partial<ProjectData>): Promise<Project>
+  archive(id: string): Promise<Project>
+  unarchive(id: string): Promise<Project>
+  remove(id: string): Promise<void>
+  transferOwnership(id: string, userId: string): Promise<Project>
+  listMembers(id: string): Promise<ProjectMember[]>
+  addMember(id: string, userId: string, role: MemberRole): Promise<ProjectMember[]>
+  updateMemberRole(id: string, userId: string, role: MemberRole): Promise<ProjectMember[]>
+  removeMember(id: string, userId: string): Promise<void>
+  memberCandidates(id: string, search: string): Promise<UserSummary[]>
+  history(id: string, query: Pick<ListQuery, 'page' | 'perPage'>): Promise<Page<AuditEntry>>
+}
+
+export interface FieldOptionInput {
+  id?: string
+  label: string
+  color: OptionColor
+  isActive: boolean
+  isDefault: boolean
+}
+
+export interface CustomFieldInput {
+  label: string
+  name?: string
+  type?: FieldType
+  description: string
+  config: FieldConfig
+  defaultValue?: FieldValue
+  searchable: boolean
+  filterable: boolean
+  sortable: boolean
+  options?: FieldOptionInput[]
+}
+
+export interface CustomFieldRepository {
+  list(query?: { search?: string; type?: FieldType }): Promise<CustomField[]>
+  get(id: string): Promise<CustomField>
+  create(data: CustomFieldInput): Promise<CustomField>
+  update(id: string, data: Partial<CustomFieldInput>): Promise<CustomField>
+  remove(id: string): Promise<void>
+}
+
+export interface TaskTypeInput {
+  key?: string
+  /** Original (pt-BR). */
+  name: string
+  description: string
+  /** Traduções opcionais; substituem as anteriores (vazio = usa o original). */
+  translations?: Partial<Record<TranslatedLocale, Partial<TypeTexts>>>
+  icon: TaskTypeIcon
+  color: OptionColor
+  isActive?: boolean
+}
+
+export interface TaskTypeFieldInput {
+  fieldId: string
+  required: boolean
+  visible: boolean
+  showOnCard: boolean
+  /** Status em que o campo passa a ser exigido (além de `required`). */
+  requiredStatusIds: string[]
+}
+
+export interface TaskTypeRepository {
+  list(options?: { includeInactive?: boolean }): Promise<TaskType[]>
+  get(id: string): Promise<TaskTypeDetail>
+  create(data: TaskTypeInput & { key: string }): Promise<TaskTypeDetail>
+  update(id: string, data: Partial<TaskTypeInput>): Promise<TaskTypeDetail>
+  remove(id: string): Promise<void>
+  reorder(ids: string[]): Promise<TaskType[]>
+  setFields(id: string, fields: TaskTypeFieldInput[]): Promise<TaskTypeDetail>
+  history(id: string): Promise<Page<AuditEntry>>
+}
+
+export interface LookupInput {
+  name: string
+  description: string
+  color: OptionColor
+  isActive?: boolean
+  isDefault?: boolean
+  /** Só em status. */
+  category?: StatusCategory
+  wipLimit?: number
+  allowedNext?: string[]
+}
+
+/** Status e prioridades (mesmo contrato; ver domain/workflow.ts). */
+export interface LookupRepository<T extends LookupItem = LookupItem> {
+  list(options?: { includeInactive?: boolean }): Promise<T[]>
+  create(data: LookupInput & { key: string }): Promise<T>
+  update(id: string, data: Partial<LookupInput>): Promise<T>
+  remove(id: string): Promise<void>
+  reorder(ids: string[]): Promise<T[]>
+}
+
+/** Filtros extras da listagem de tarefas (além de busca, ordenação e `filters` da tabela). */
+export interface TaskListOptions {
+  projectId?: string
+}
+
+export interface TaskRepository {
+  list(query: ListQuery, options?: TaskListOptions): Promise<Page<TaskSummary>>
+  get(id: string): Promise<TaskDetail>
+  create(data: TaskInput & { projectId: string; taskTypeId: string; title: string }): Promise<TaskDetail>
+  update(id: string, data: TaskInput): Promise<TaskDetail>
+  remove(id: string): Promise<void>
+  history(id: string): Promise<Page<AuditEntry>>
+}
+
+export interface AttachmentRepository {
+  list(taskId: string): Promise<Attachment[]>
+  /** Um arquivo por vez; `field` = campo de imagem/arquivo; `commentId` = anexo do comentário. */
+  upload(taskId: string, file: File, options?: { field?: string; commentId?: string }): Promise<Attachment[]>
+  remove(id: string): Promise<void>
+}
+
+export interface NotificationRepository {
+  list(query: { page: number; perPage: number; unreadOnly?: boolean }): Promise<Page<AppNotification>>
+  unreadCount(): Promise<number>
+  markRead(id: string): Promise<void>
+  markAllRead(): Promise<number>
+}
+
+export interface TagRepository {
+  list(): Promise<Tag[]>
+  create(data: { name: string; color: OptionColor }): Promise<Tag>
+  update(id: string, data: { name?: string; color?: OptionColor }): Promise<Tag>
+  remove(id: string): Promise<void>
+}
+
+export interface CommentRepository {
+  list(taskId: string): Promise<TaskComment[]>
+  /** `content` no formato salvo (menções `@[Nome](id)`). */
+  create(taskId: string, content: string): Promise<TaskComment>
+  update(id: string, content: string): Promise<TaskComment>
+  remove(id: string): Promise<void>
+  /** Pessoas que podem ser mencionadas na tarefa. */
+  mentionCandidates(taskId: string): Promise<UserSummary[]>
+}
+
+/** Quadro Kanban do projeto. */
+export interface BoardRepository {
+  get(projectId: string): Promise<Board>
+  /** Move o card para o status, entre prevId (acima) e nextId (abaixo). */
+  move(taskId: string, target: { statusId: string; prevId?: string; nextId?: string }): Promise<TaskDetail>
+}
+
+/** Indicadores e relatórios (período sempre explícito). */
+export interface ReportRepository {
+  get(query: ReportQuery): Promise<Report>
+  /** Detalhamento de um indicador: as tarefas por trás do número (mesmo período e filtros). */
+  listTasks(query: ReportQuery, metric: ReportMetric, page: { page: number; perPage: number }): Promise<Page<ReportTask>>
+}
+
+/** Timeline do projeto (tarefas com datas, dependências, sprints e marcos numa chamada). */
+export interface TimelineRepository {
+  get(projectId: string): Promise<Timeline>
+}
+
+/** Marcos do projeto. */
+export interface MilestoneRepository {
+  list(projectId: string): Promise<Milestone[]>
+  create(projectId: string, input: MilestoneInput): Promise<Milestone>
+  update(id: string, input: MilestoneInput): Promise<Milestone>
+  remove(id: string): Promise<void>
+}
+
+/** Quadro do projeto (Gerenciamento de Projetos): grupos, elementos e etiquetas próprias. */
+export interface PlanRepository {
+  get(projectId: string): Promise<Plan>
+  createGroup(projectId: string, input: PlanGroupInput): Promise<PlanGroup>
+  updateGroup(id: string, input: PlanGroupInput): Promise<PlanGroup>
+  moveGroup(id: string, target: PlanGroupMove): Promise<PlanGroup>
+  duplicateGroup(id: string): Promise<PlanGroup>
+  deleteGroup(id: string): Promise<{ deleted: number; items: number }>
+  createItem(projectId: string, input: PlanItemInput): Promise<PlanItem>
+  updateItem(id: string, input: PlanItemInput): Promise<PlanItem>
+  deleteItem(id: string): Promise<{ deleted: number }>
+  createStatus(projectId: string, input: PlanStatusInput): Promise<PlanStatus>
+  updateStatus(id: string, input: PlanStatusInput): Promise<PlanStatus>
+  deleteStatus(id: string): Promise<{ deleted: boolean; items: number }>
+  createResource(projectId: string, input: PlanResourceInput): Promise<PlanResource>
+  updateResource(id: string, input: PlanResourceInput): Promise<PlanResource>
+  deleteResource(id: string): Promise<{ deleted: boolean; items: number }>
+  moveItem(id: string, target: PlanItemMove): Promise<PlanItem>
+  duplicateItem(id: string): Promise<PlanItem>
+  bulk(projectId: string, input: PlanBulkInput): Promise<PlanBulkResult>
+  createLink(itemId: string, input: { kind: PlanLinkKind; itemId: string }): Promise<PlanLink>
+  deleteLink(id: string): Promise<void>
+  updateSettings(projectId: string, input: { dependencyRule: DependencyRule }): Promise<{ dependencyRule: DependencyRule }>
+  importItems(projectId: string, rows: PlanImportRow[]): Promise<PlanImportResult>
+  // painel do elemento (GP-3)
+  listUpdates(itemId: string): Promise<PlanUpdates>
+  /** Com `files`, as imagens/arquivos seguem junto (tudo ou nada). */
+  createUpdate(itemId: string, input: PlanUpdateInput): Promise<PlanUpdate>
+  editUpdate(id: string, content: string): Promise<PlanUpdate>
+  deleteUpdate(id: string): Promise<void>
+  mentionCandidates(itemId: string): Promise<UserSummary[]>
+  /** O autor anexa mais à atualização. */
+  addUpdateFiles(updateId: string, files: File[]): Promise<PlanFile[]>
+  deleteFile(id: string): Promise<void>
+  history(itemId: string): Promise<Page<AuditEntry>>
+  // visões e gestão (GP-4)
+  saveBaseline(projectId: string): Promise<{ savedAt: Date | null; items: number }>
+  clearBaseline(projectId: string): Promise<void>
+  listJournal(projectId: string): Promise<PlanJournal>
+  createJournalEntry(projectId: string, input: JournalInput): Promise<JournalEntry>
+  updateJournalEntry(id: string, input: JournalInput): Promise<JournalEntry>
+  deleteJournalEntry(id: string): Promise<void>
+  listIssues(projectId: string): Promise<PlanIssues>
+  createIssue(projectId: string, input: IssueInput): Promise<PlanIssue>
+  updateIssue(id: string, input: IssueInput): Promise<PlanIssue>
+  deleteIssue(id: string): Promise<void>
+  /** `tzOffset`: minutos (Date#getTimezoneOffset) — "hoje" no fuso de quem consulta. */
+  report(projectId: string, tzOffset: number): Promise<PlanReport>
+}
+
+/** Documentação: espaços, páginas (rascunho/publicação/versões), árvore, busca e arquivos. */
+export interface DocsRepository {
+  listSpaces(): Promise<DocSpace[]>
+  getSpace(key: string): Promise<DocSpaceDetail>
+  createSpace(input: DocSpaceInput): Promise<DocSpace>
+  updateSpace(id: string, input: DocSpaceInput): Promise<DocSpace>
+  deleteSpace(id: string): Promise<void>
+  createPage(spaceId: string, input: { title: string; parentId?: string | null }): Promise<DocPage>
+  getPage(id: string): Promise<DocPage>
+  deletePage(id: string): Promise<number>
+  getDraft(id: string): Promise<DocDraft>
+  saveDraft(id: string, input: { title: string; content: RichContent }): Promise<Date | null>
+  discardDraft(id: string): Promise<void>
+  publish(id: string, input?: { title?: string; content?: RichContent }): Promise<DocPage>
+  move(id: string, target: DocMoveTarget): Promise<DocPage>
+  listVersions(id: string): Promise<DocVersion[]>
+  getVersion(id: string, version: number): Promise<DocVersionDetail>
+  restoreVersion(id: string, version: number): Promise<DocPage>
+  uploadFiles(pageId: string, files: File[]): Promise<DocFile[]>
+  search(q: string): Promise<DocSearchResult[]>
+  recent(): Promise<DocRecent[]>
+}
+
+/** Relacionamentos, subtarefas e fork. */
+export interface RelationRepository {
+  list(taskId: string): Promise<TaskRelations>
+  /** `type` do ponto de vista da tarefa `taskId` (pai/filho são tratados pela edição da tarefa). */
+  create(taskId: string, input: { type: Exclude<LinkOption, 'parent' | 'child'>; targetId: string }): Promise<TaskRelation>
+  remove(relationId: string): Promise<void>
+  fork(taskId: string, input: ForkInput): Promise<TaskDetail>
+}
+
+/** Backlog do projeto (priorização e planejamento em sprints). */
+export interface BacklogRepository {
+  get(projectId: string): Promise<BacklogView>
+  /** Coloca entre prevId e nextId; `sprintId` presente troca a sprint (null = sem sprint). */
+  rank(taskId: string, target: { prevId?: string; nextId?: string; sprintId?: string | null }): Promise<TaskDetail>
+}
+
+export interface SprintRepository {
+  list(projectId: string, options?: { includeClosed?: boolean }): Promise<Sprint[]>
+  create(projectId: string, data: SprintInput & { name: string }): Promise<Sprint>
+  /** Ao encerrar, `returnedCount` = itens devolvidos ao backlog sem sprint. */
+  update(id: string, data: SprintInput): Promise<Sprint & { returnedCount?: number }>
+  remove(id: string): Promise<void>
+  /** Ordem manual das sprints abertas (lista completa). */
+  reorder(projectId: string, ids: string[]): Promise<Sprint[]>
+}
+
+export interface Repositories {
+  auth: AuthRepository
+  users: UserRepository
+  roles: RoleRepository
+  audit: AuditRepository
+  projects: ProjectRepository
+  customFields: CustomFieldRepository
+  taskTypes: TaskTypeRepository
+  statuses: LookupRepository<TaskStatus>
+  priorities: LookupRepository<TaskPriority>
+  tasks: TaskRepository
+  tags: TagRepository
+  comments: CommentRepository
+  attachments: AttachmentRepository
+  notifications: NotificationRepository
+  board: BoardRepository
+  backlog: BacklogRepository
+  relations: RelationRepository
+  reports: ReportRepository
+  timeline: TimelineRepository
+  milestones: MilestoneRepository
+  plan: PlanRepository
+  docs: DocsRepository
+  sprints: SprintRepository
+}

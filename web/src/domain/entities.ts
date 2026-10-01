@@ -1,0 +1,76 @@
+import type { PermissionCode } from './permissions'
+import type { ThemePreference } from '@/core/theme/theme'
+import type { Language } from '@/core/i18n'
+
+export type UserStatus = 'active' | 'disabled'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  avatarUrl: string | null
+  status: UserStatus
+  roleId: string
+  locale: Language
+  theme: ThemePreference
+  createdAt: Date | null
+  updatedAt: Date | null
+  lastLoginAt: Date | null
+}
+
+export interface Role {
+  id: string
+  code: string
+  name: string
+  description: string
+  isSystem: boolean
+  permissions: PermissionCode[]
+  userCount: number
+}
+
+export type RoleSummary = Pick<Role, 'id' | 'code' | 'name' | 'description' | 'isSystem'>
+
+export interface Permission {
+  id: string
+  code: PermissionCode
+  module: string
+}
+
+export interface Session {
+  id: string
+  ip: string
+  userAgent: string
+  remember: boolean
+  createdAt: Date | null
+  lastSeenAt: Date | null
+  expiresAt: Date | null
+  current: boolean
+}
+
+export interface AuditActor {
+  id: string
+  name: string | null
+  email: string | null
+}
+
+/** Registro imutável do histórico de auditoria. */
+export interface AuditEntry {
+  id: string
+  entityType: string
+  entityId: string
+  action: string
+  oldValue: Record<string, unknown> | null
+  newValue: Record<string, unknown> | null
+  user: AuditActor | null
+  ip: string
+  correlationId: string
+  createdAt: Date | null
+}
+
+/** Contexto do usuário autenticado (GET /auth/me). */
+export interface CurrentUser {
+  user: User
+  role: RoleSummary | null
+  permissions: PermissionCode[]
+  session: Session | null
+}

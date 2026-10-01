@@ -1,0 +1,151 @@
+# Perfis e permissões (RBAC)
+
+> Diretriz §7. Decisão em [ADR-005](decisions.md#adr-005--catálogo-de-permissões-definido-pelo-sistema-matriz-configurável).
+
+## Modelo
+- **Catálogo** (definido pelo sistema): `backend/pb_hooks/src/domain/permissions.js`, espelhado em `web/src/domain/permissions.ts`.
+- **Matriz perfil × permissão** (configurável): collection `role_permissions`, editada em *Configurações → Permissões*.
+- **Perfis**: 5 de sistema (não excluíveis) + perfis personalizados (*Configurações → Perfis*).
+
+## Catálogo
+| Módulo | Permissões |
+|---|---|
+| projects | `projects.view`, `projects.create`, `projects.edit`, `projects.delete`, `projects.view_all` (desde a migration 1790000003) |
+| tasks | `tasks.view`, `tasks.create`, `tasks.edit`, `tasks.delete`, `tasks.assign`, `tasks.fork`, `tasks.link` |
+| kanban | `kanban.view`, `kanban.manage` |
+| users | `users.view`, `users.create`, `users.edit`, `users.disable` |
+| reports | `reports.view` |
+| audit | `audit.view` (desde a migration 1790000002) |
+| docs | `docs.view`, `docs.edit`, `docs.manage` (expansão Onda 2, migration 1790000019) |
+| settings | `settings.manage`, `permissions.manage` |
+
+## Matriz inicial (seed)
+| Permissão | SUPER_ADMIN | ADMIN | MANAGER | MEMBER | VIEWER |
+|---|:-:|:-:|:-:|:-:|:-:|
+| projects.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| projects.create / edit | ✓ | ✓ | ✓ | | |
+| projects.delete | ✓ | ✓ | | | |
+| projects.view_all | ✓ | ✓ | | | |
+| tasks.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| tasks.create / edit / assign / fork / link | ✓ | ✓ | ✓ | ✓ | |
+| tasks.delete | ✓ | ✓ | ✓ | | |
+| kanban.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| kanban.manage | ✓ | ✓ | ✓ | | |
+| users.view | ✓ | ✓ | ✓ | | |
+| users.create / edit / disable | ✓ | ✓ | | | |
+| reports.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| audit.view | ✓ | ✓ | | | |
+| settings.manage / permissions.manage | ✓ | ✓ | | | |
+| docs.view | ✓ | ✓ | ✓ | ✓ | ✓ |
+| docs.edit | ✓ | ✓ | ✓ | ✓ | |
+| docs.manage | ✓ | ✓ | ✓ | | |
+
+SUPER_ADMIN possui tudo **implicitamente** (a verificação não consulta a matriz).
+
+## Regras (backend: `domain/rbac.js`, `domain/user.js`)
+1. Alterar permissões de perfil exige `permissions.manage`.
+2. SUPER_ADMIN é imutável (`ROLE_IMMUTABLE`).
+3. Ninguém além do SUPER_ADMIN altera as permissões do próprio perfil (`CANNOT_EDIT_OWN_ROLE`).
+4. Só códigos do catálogo são aceitos (`VALIDATION_ERROR`).
+5. Não se concede permissão que não se possui (`PRIVILEGE_ESCALATION`).
+6. Atribuir perfil a usuário: SUPER_ADMIN só por SUPER_ADMIN; demais perfis só se o ator tiver todas as permissões do perfil.
+7. Ninguém desativa a si mesmo (`CANNOT_DISABLE_SELF`); só SUPER_ADMIN altera um SUPER_ADMIN.
+8. O próprio usuário edita nome, idioma e tema; perfil e e-mail exigem `users.edit` e não podem ser alterados por ele mesmo.
+9. Perfis de sistema e perfis com usuários não podem ser excluídos (`ROLE_IMMUTABLE`, `ROLE_IN_USE`).
+10. Mudanças valem na próxima requisição (o principal é recarregado a cada requisição).
+
+A UI replica essas regras apenas para desabilitar controles e explicar o motivo (`web/src/domain/rbac.ts`).
+
+## Acesso por projeto (Fase 2)
+A permissão global é necessária, mas não suficiente: também conta o vínculo com o projeto.
+
+| Ação | Exige |
+|---|---|
+| Ver projeto | `projects.view` **e** (membro, dono ou `projects.view_all`) — caso contrário 404 |
+| Editar, gerenciar membros, arquivar | `projects.edit` **e** (gestor do projeto, dono ou `projects.view_all`) |
+| Transferir posse | `projects.edit` **e** (dono ou `projects.view_all`) |
+| Excluir | `projects.delete` **e** (dono ou `projects.view_all`) **e** projeto arquivado |
+| Sair do projeto | ser membro (o dono não sai sem transferir a posse) |
+
+Papéis no projeto: **gestor** (administra o projeto), **membro** (trabalha nas tarefas), **leitor** (consulta e comenta; não edita). A API devolve `capabilities` em cada projeto para a interface habilitar só o que é permitido. Regras em `backend/pb_hooks/src/domain/project.js`.
+
+## Tarefas, comentários e configurações (Fase 4)
+Regras em `backend/pb_hooks/src/domain/task.js`.
+
+| Ação | Exige |
+|---|---|
+| Ver tarefa (e histórico) | `tasks.view` **e** ver o projeto — caso contrário `TASK_NOT_FOUND` (404) |
+| Criar / editar tarefa, checklist e tags da tarefa | `tasks.create` / `tasks.edit` **e** colaborar no projeto (dono, gestor, membro ou `projects.view_all`); o **leitor** do projeto não edita |
+| Atribuir responsável | `tasks.assign` **e** colaborar no projeto; o responsável precisa colaborar no projeto (leitor não pode ser responsável) |
+| Excluir tarefa | `tasks.delete` **e** (gestor do projeto, `projects.view_all` ou autor da tarefa) |
+| **Comentar** | ver a tarefa — **qualquer pessoa com acesso ao projeto, inclusive o leitor** (regra do produto, diretriz §18) |
+| Editar comentário | ser o autor |
+| Excluir comentário | ser o autor **ou** gestor do projeto / `projects.view_all` (exclusão lógica) |
+| Anexar arquivo no comentário | ser o autor do comentário (vale para o leitor); remover: autor ou gestor |
+| Mencionar (@) | a pessoa mencionada precisa ter acesso ao projeto e estar ativa |
+| Status, prioridades, tags, tipos e campos | ler: `settings.manage` ou `tasks.view`; alterar: `settings.manage` |
+
+Projeto arquivado: tudo fica somente leitura (inclusive comentários). A API devolve `capabilities` (`edit`, `delete`, `assign`, `comment`) em cada tarefa e (`edit`, `delete`) em cada comentário.
+
+## Adicionando uma permissão nova
+1. Incluir o código em `domain/permissions.js` (backend) e `domain/permissions.ts` (frontend) + traduções em `permissions.codes`.
+2. Criar migration que insere o registro em `permissions` e, se preciso, em `role_permissions` para os perfis padrão.
+3. Verificar a permissão no caso de uso (`rbac.assertCan`) com teste.
+4. Atualizar esta página.
+
+## Kanban (Fase 5)
+| Ação | Exige |
+|---|---|
+| Ver o quadro | `kanban.view` **e** acesso ao projeto (mesma regra de ver tarefas) — caso contrário 404 |
+| Mover card | mesma regra de editar a tarefa (`tasks.edit` + colaborador no projeto, projeto não arquivado) **e** transição permitida pelo status de origem |
+| Criar pelo quadro | mesma regra de criar tarefa (`tasks.create` + colaborador) |
+| Limite WIP e transições | configurados em Status (`settings.manage`) |
+
+O leitor vê o quadro, abre os cards e comenta, mas não arrasta nem cria (o quadro vem com `capabilities.move/create = false`). `kanban.manage` fica reservado para configurações próprias do quadro.
+
+## Backlog e sprints (Fase 6)
+| Ação | Exige |
+|---|---|
+| Ver o backlog | `tasks.view` **e** acesso ao projeto |
+| Priorizar, planejar na sprint, mover de status | regra de editar a tarefa (`tasks.edit` + colaborador, projeto não arquivado); mover respeita as transições |
+| Criar/editar/ordenar/encerrar/excluir sprints | `projects.edit` **e** gestor/dono do projeto (ou `projects.view_all`), projeto não arquivado |
+
+Detalhes funcionais em [regras-de-negocio.md](regras-de-negocio.md#6-backlog-e-sprints).
+
+## Quadro do projeto (Gerenciamento de Projetos, GP-1)
+Módulo **Gerenciamento de projetos** no catálogo: `plan.view`, `plan.edit`, `plan.manage`.
+
+| Ação | Exige |
+|---|---|
+| Ver o quadro | acesso ao projeto **e** `plan.view` |
+| Criar/editar/mover/excluir elementos e subelementos; criar/editar etiquetas de recurso | `plan.edit` **e** dono, gestor ou membro do projeto (ou `projects.view_all`), projeto não arquivado |
+| Mover (arrastar), duplicar, seleção em massa, dependências e importar elementos | `plan.edit` **e** dono, gestor ou membro do projeto (ou `projects.view_all`), projeto não arquivado |
+| Painel do elemento: publicar e responder atualizações | ver o quadro (acesso ao projeto + `plan.view`, inclusive leitor), projeto não arquivado; editar só o autor; excluir o autor ou o gestor (`plan.manage`) |
+| Painel do elemento: colar/anexar imagem ou arquivo na atualização | quem publica (ver o quadro, projeto aberto — inclusive leitor); depois, só o autor; excluir: o autor ou o gestor; baixar: quem vê o quadro |
+| Grupos (criar, renomear, subgrupo, mover/arrastar, duplicar, excluir); etiquetas de status; excluir etiqueta de recurso; regra de dependências; criar grupos e status na importação | `plan.manage` **e** gestor/dono do projeto (ou `projects.view_all`), projeto não arquivado |
+
+Registro de projeto invisível responde 404 (`PROJECT_NOT_FOUND`, `GROUP_NOT_FOUND`, `PLAN_*_NOT_FOUND`). Detalhes funcionais em [regras-de-negocio.md](regras-de-negocio.md#14-quadro-de-gerenciamento-do-projeto-gerenciamento-de-projetos--fase-gp-1).
+
+## Relacionamentos, subtarefas e fork (Fase 7)
+| Ação | Exige |
+|---|---|
+| Ver relações | ver a tarefa; o outro lado só aparece se também for visível |
+| Relacionar / desfazer | `tasks.link` **e** colaborador no projeto (desfazer: em qualquer um dos lados) |
+| Subtarefa (criar / vincular / soltar) | `tasks.create` para criar; editar a tarefa filha para vincular/soltar (mesmo projeto) |
+| Fork | `tasks.fork` **e** colaborador no projeto de origem **e** `tasks.create` + colaborador no destino |
+
+Detalhes em [regras-de-negocio.md](regras-de-negocio.md#7-relacionamentos-subtarefas-e-fork).
+
+## Relatórios (Fase 8)
+| Ação | Exige |
+|---|---|
+| Relatórios e indicadores do dashboard | `reports.view`; contagens só dos projetos visíveis (`projects.view` + vínculo, ou `projects.view_all`) |
+
+## Documentação (expansão — Onda 2)
+Permissão global **e** regra do espaço (`domain/docs.js` → `spaceAccess`):
+
+| Ação | Exige |
+|---|---|
+| Ler espaço/página publicada, arquivos, versões, busca | `docs.view` **e** (espaço da empresa **ou** acesso ao projeto do espaço) — caso contrário 404 |
+| Ver rascunhos; criar, editar, publicar, mover, excluir páginas; enviar arquivos; restaurar versão | `docs.edit` **e** (espaço da empresa **ou** colaborador do projeto — leitor do projeto não) |
+| Criar, configurar e excluir espaço | `docs.manage` **e** (espaço da empresa **ou** gestor/dono do projeto) |

@@ -1,0 +1,50 @@
+# KAMBAN — Plataforma de Gestão de Projetos, Backlog e Kanban
+
+A diretriz completa e obrigatória está em [docs/diretriz-desenvolvimento.md](docs/diretriz-desenvolvimento.md). Consulte a seção relevante antes de alterar qualquer módulo. Documentação técnica em [docs/](docs/) (comece por [architecture.md](docs/architecture.md)). Regras de negócio do fluxo (status, início/conclusão, transições, WIP, Kanban, backlog) em [regras-de-negocio.md](docs/regras-de-negocio.md) — manter atualizado a cada regra nova.
+
+## Stack (ver docs/decisions.md)
+
+- **Frontend** `web/`: React 19 + TypeScript estrito + Vite, React Router 8, TanStack Query 5, TanStack Table 9 (API v9: `useTable` + `tableFeatures`), Zustand, Radix UI, Tailwind 4, i18next, react-hook-form + zod.
+- **Backend** `backend/`: PocketBase 0.40.4 (binário em `backend/bin`) + hooks JS em `backend/pb_hooks`. API própria `/api/v1`; a API genérica do PocketBase fica bloqueada.
+- **Git liberado (2026-09-30):** repositório local (branch `main`); commitar ao concluir cada etapa verificada; remoto/push só quando o usuário pedir. Nunca versionar `.env`, `pb_data`, binário ou builds (`.gitignore`).
+
+## Comandos
+
+| Raiz | |
+|---|---|
+| `npm run dev` | API :8090 + web :5173 |
+| `npm run check` | lint + tipos + todos os testes |
+| `npm run build` | build do web em `backend/pb_public` |
+| `npm run e2e` | build + testes de ponta a ponta no navegador (Edge) |
+
+Backend: `npm test` (unitários), `npm run test:api` (PocketBase real isolado), `npm run lint`, `npm run create-admin`.
+Web: `npm test`, `npm run typecheck`, `npm run lint`.
+Windows: rode a partir de `E:\KAMBAN` (letra maiúscula). Com o diretório como `e:\KAMBAN`, o Vitest carrega módulos em dobro e todos os arquivos falham com "failed to find the current suite".
+
+## Regras essenciais
+
+- **Escopo do MVP (exclusivo):** Projetos + Backlog + Tarefas + Kanban + Tipos de tarefa + Campos personalizados + Usuários + RBAC + Anexos/Imagens + Histórico + Relatórios + API. Nada fora disso sem autorização explícita.
+- **Expansão autorizada (2026-09-30), em ondas:** Timeline/Portfólio estilo Monday e Documentação/FAQ estilo Confluence (com link público). Plano, decisões e escopo de cada onda em [docs/roadmap-expansao.md](docs/roadmap-expansao.md). Onda 1 (Timeline) ✅ → Onda 2 (Documentação) ✅ → **módulo Gerenciamento de Projetos** (vinculado a Projetos; diretriz obrigatória em [docs/diretriz_feature_gerenciamento_projetos.md](docs/diretriz_feature_gerenciamento_projetos.md), fases GP-1 a GP-5; **GP-1 ✅** — módulo **à parte das tarefas** na aba **Gerenciamento** (`?tab=plan`): `project_groups`, `plan_items` (elementos/subelementos), `plan_statuses`/`plan_resources` por projeto, `GET /projects/{id}/plan`, `domain/plan.js`, `AppBoardTable` + `useBoardColumns`; nunca acoplar a `tasks`; **GP-2 ✅** — `application/plan-interaction.js` (mover, massa, dependências `plan_item_links` + regra `plan_settings`, importação), visões em `web/src/domain/plan-view.ts`, CSV em `plan-import.ts`; **GP-3 ✅** — painel do elemento `features/plan/ItemPanel.tsx` (`?item=`), `application/plan-collaboration.js`, `plan_item_updates`/`plan_item_files`, notificações com `plan_item_id`; próxima GP-4).
+- **Arquitetura:** Clean Architecture + SOLID. Nenhuma regra de negócio na UI.
+  - Backend: `core` → `domain` → `application` (casos de uso, portas) → `infrastructure` (único lugar com `$app`) → `http`. Domínio/aplicação são CommonJS puros testados com `node --test`.
+  - JSVM do PocketBase: síncrono, sem `?.`/`??`/`await`; handlers rodam em VMs isoladas → `main.pb.js` só registra rotas e faz `require` dentro do handler.
+  - Web: `app` (composition root) · `core` · `domain` (entidades, interfaces de repositório, regras de UI do RBAC, zod) · `data` (DTO/mappers/HTTP) · `presentation` (design system, layouts, navegação) · `features`. UI usa repositórios via `useRepositories()`; `fetch` é proibido em presentation/features.
+- **TDD:** RED → GREEN → REFACTOR. Pronto = testes passando + lint + tipos.
+- **API:** envelope `{ data, meta, error }`, snake_case, códigos de erro estáveis; mutações exigem `X-Requested-With: kamban`; sessão por cookie HttpOnly `kb_session`. Atualizar `http/openapi.js` e `docs/api.md` a cada rota nova.
+- **Permissões:** catálogo em `backend/pb_hooks/src/domain/permissions.js` + `web/src/domain/permissions.ts`; matriz configurável. Backend sempre valida; regras anti-escalonamento em `domain/rbac`.
+- **Obrigatoriedade por status:** ao criar/editar/mudar de status, a tarefa precisa dos campos exigidos no status em que vai ficar (`requiredIn` em `domain/task.js`, `isRequiredIn` no web); falta de campo na mudança de status abre "Preencha para mover" (`RequiredFieldsDialog`). Regras em `docs/regras-de-negocio.md` §10.
+- **Auditoria:** toda mutação relevante grava `audit_logs` na mesma transação (`unitOfWork`), sem dados sensíveis.
+- **Design System:** usar componentes `App*` de `@/presentation/components`; nunca duplicar. Toda listagem usa `AppDataTable` + `useDataTableState`; "Visualizar" abre `AppDrawer`; criar/editar abrem `AppDialog` grande (pop-up, `xl`/`2xl`). Só o `<main>` rola (sem 2ª barra de rolagem).
+- **i18n:** pt-BR, es, en — nenhum texto fixo; o teste de locales exige as mesmas chaves nos três. Cadastros traduzidos (hoje: tipos de tarefa): original pt-BR + `translations` en/es; a API localiza pelo `Accept-Language` (`domain/content-locale.js`, `deps.locale`); trocar o idioma rebusca os dados.
+- **Tema:** tokens em `web/src/styles/index.css`; nunca cores literais nos componentes.
+- **Toasts:** sempre via `notify` (React-Toastify, canto superior direito, mín. 3 s). Nunca outra lib.
+- **Edições por script:** não usar heredoc do shell com barras invertidas nem `String.replace(a, b)` com `$` em `b` (corrompe regex/código); preferir Edit ou scripts gravados em arquivo com `slice/indexOf`.
+- **Fases:** 1 Fundação ✅ → 2 Projetos ✅ → 3 Tipos e campos ✅ → 4 Tarefas ✅ → 5 Kanban ✅ → 6 Backlog ✅ → 7 Relacionamentos ✅ → 8 Relatórios ✅ → 9 Hardening ✅.
+
+## Antes de alterar qualquer módulo (§45)
+
+Entender a arquitetura → identificar o domínio → verificar componentes reutilizáveis → verificar regras existentes → criar/atualizar testes → implementar → rodar testes → lint/análise estática → validar segurança → revisar impacto.
+
+## Definition of Done (§47)
+
+Código + testes passando + lint + análise estática + permissões + segurança + responsividade + light/dark + API (quando aplicável) + auditoria (quando aplicável) + documentação atualizada + sem duplicação + sem regra de negócio na UI + performance.
