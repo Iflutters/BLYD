@@ -57,13 +57,29 @@ Vazão (req/s) e p95 por número de requisições simultâneas:
 |---|---|---|---|---|
 | Antes: pool 15 (padrão do PocketBase) | 39,5 · 0,36 s | 23,1 · 1,0 s | 17,4 · 2,8 s | 15,3 · 5,9 s |
 | Fase 0, só o quadro enxuto (pool 15) | 50,0 · 0,35 s | 25,8 · 0,92 s | 15,3 · 3,0 s | 16,5 · 5,5 s |
-| **Fase 0 completa (pool 60 + quadro enxuto)** | **56,6 · 0,21 s** | **75,6 · 0,30 s** | **74,8 · 0,52 s** | 37,9 · 4,2 s |
+| Fase 0 (pool 60 + quadro enxuto), ainda com middlewares globais | 56,6 · 0,21 s | 75,6 · 0,30 s | 74,8 · 0,52 s | 37,9 · 4,2 s |
+| **Fase 0 completa (+ middlewares fora do caminho global)** | **59,8 · 0,21 s** | **73,7 · 0,29 s** | **72,2 · 0,54 s** | **61,7 · 1,8 s** |
 
 - Nenhum erro em nenhum nível: a plataforma **fica lenta, mas não falha**.
-- O gargalo é a **execução do JavaScript do PocketBase**: cada requisição ocupa uma VM do pool e cada registro gravado que o tempo real observa ocupa outra. Com o pool esgotado o PocketBase cria VMs na hora (recarregando todos os módulos) e a vazão **cai** em vez de estabilizar. Com 60 VMs prontas a vazão útil **triplica** (23 → 75 req/s com p95 ≤ 0,5 s).
+- O gargalo é a **execução do JavaScript do PocketBase**: cada requisição ocupa uma VM do pool (mais uma por middleware em JS no caminho) e cada registro gravado que o tempo real observa ocupa outra. Com o pool esgotado o PocketBase cria VMs na hora (recarregando todos os módulos) e a vazão **cai** em vez de estabilizar. Com 60 VMs prontas a vazão útil **triplica** (23 → 75 req/s com p95 ≤ 0,5 s).
 - Acima de ~20 requisições simultâneas as **gravações fazem fila** (o SQLite aceita uma por vez, e com a CPU disputada cada gravação segura a vez por mais tempo): editar tarefa e comentar passam de 1 s. Esse é o limite que a edição Supabase remove.
 - Quadro do Kanban com 400 cartões, sem concorrência: **98 → 77 ms** com a consulta enxuta (só as colunas do cartão, sem montar o registro completo). As outras chamadas ficam em 15–30 ms.
 - Memória com 60 VMs: ~90 MB parado e pico de ~950 MB com 80 requisições simultâneas — reservar **2 GB** para o servidor.
+
+### Cenário: equipe pequena + muitos leitores da documentação
+
+`npm --prefix backend run load:docs`: **10 pessoas trabalhando** (Kanban, listas, Gestão, gravações, com pausa de 1–3 s) e **500 leitores logados** abrindo páginas da documentação (árvore do espaço + página + 2 imagens de ~40 KB), cada um com a conexão do tempo real aberta e a conferência da sessão e do sino a cada 5 min. 510 conexões do tempo real abertas o tempo todo.
+
+| Leitores abrem uma página a cada | Páginas/s | Vazão | p95 (tudo) | Abrir uma página (p95) | Antes da correção dos middlewares |
+|---|---|---|---|---|---|
+| ~60 s (uso esperado) | 8,3 | 59,9 req/s | **44 ms** | 77 ms | p50 de **47 s** e 3 GB de memória |
+| ~30 s (2×) | 16,7 | 89,0 req/s | **46 ms** | 78 ms | — |
+| ~15 s (4×) | 33,3 | satura (~70 req/s; p50 0,4 s, cauda de dezenas de segundos) | — | — | — |
+
+- Com o uso esperado sobra **folga de ~3×** nesta máquina (que ainda divide a CPU com o gerador de carga); memória de pico ~715 MB.
+- A equipe de 10 pessoas não sente os leitores: Kanban p95 ≤ 120 ms, editar tarefa ≤ 250 ms.
+- **Limites por IP** (Configurações do PocketBase → Rate limits; padrão: 600 chamadas/min por IP na API e 10 logins/min): numa rede local cada computador tem o seu IP e não há problema. **Atrás de proxy reverso**, configure o *Trusted proxy* (cabeçalho `X-Forwarded-For`) para o servidor enxergar o IP real; se as pessoas chegarem de fato por um IP só (NAT/VPN), aumente os limites — senão os leitores recebem 429.
+- Os leitores precisam de conta (perfil Leitor). O **link público** da documentação (planejado) dispensaria a conta, o login e a conexão do tempo real para quem só lê.
 
 **De requisições para pessoas** (uma pessoa com a tela aberta e trabalhando):
 
@@ -87,6 +103,9 @@ Vazão (req/s) e p95 por número de requisições simultâneas:
 3. ✅ **Atualizações ao vivo controladas:** no máximo uma busca a cada 2,5 s por tela; a primeira depois de um tempo quieto continua saindo em 250 ms.
 4. ✅ **Kanban leve:** consulta enxuta das colunas do cartão (`listForBoard`); as colunas de encerramento já mostravam só as 30 mais recentes. O formato da resposta não mudou (contrato da API preservado).
 5. ✅ **Nova linha de base** no teste de carga (seção 3; o aquecimento agora passa por todas as VMs do pool).
+6. ✅ **Nada de middleware em JS global** (achado no cenário com 500 leitores): no PocketBase um middleware em JS segura uma VM durante todo o `e.next()` — inclusive nas conexões do tempo real, abertas por horas. Os dois middlewares globais (envelope de erros e cabeçalhos do frontend) faziam **cada requisição ocupar 3 VMs** e **cada aba logada prender 2**; com algumas dezenas de abas o pool acabava. Agora o envelope fica em cada rota da API (`apiRoute` em `main.pb.js`) e os cabeçalhos na rota própria do frontend (`GET /{path...}`, servindo o `--publicDir`): 2 VMs por requisição e nenhuma presa pelo tempo real. Regressão em `tests/api/capacity.test.js`.
+7. ✅ **Sinal de vida do tempo real** a cada 3 min (`kamban_realtime_keepalive`): o PocketBase fecha a conexão após 5 min sem mensagens, e cada reconexão refazia as assinaturas e as buscas da tela.
+8. ✅ **Planejamento (backlog)** com a mesma consulta enxuta do quadro (400 tarefas: ~250 → ~170 ms) e o formulário de tarefa, montado nas telas, sem buscar sprints, tipo, membros e anexos enquanto está fechado.
 
 ## 5. O que muda e o que fica (edição Supabase)
 

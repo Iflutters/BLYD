@@ -103,14 +103,15 @@ function TaskForm({ open, onOpenChange, task, projectId, initial, onSaved }: Tas
 
   const projects = useProjects(PROJECT_QUERY, open && !isEdit && !projectId)
   const types = useTaskTypes(false)
-  const typeDetail = useTaskType(draft.typeId || undefined)
+  // o formulário fica montado nas telas: fechado, não busca nada além das listas gerais (já em cache)
+  const typeDetail = useTaskType(open ? draft.typeId || undefined : undefined)
   const statuses = useStatuses(false)
   const priorities = usePriorities(false)
-  const members = useProjectMembers(draft.projectId || undefined)
+  const members = useProjectMembers(open ? draft.projectId || undefined : undefined)
   // campos de imagem/arquivo escolhem entre os anexos da tarefa (só na edição: na criação ainda não há anexos)
-  const taskAttachments = useTaskAttachments(task?.id)
+  const taskAttachments = useTaskAttachments(open ? task?.id : undefined)
   const tags = useTags(open)
-  const sprints = useSprints(draft.projectId || undefined)
+  const sprints = useSprints(open ? draft.projectId || undefined : undefined)
 
   // Padrões de status/prioridade na criação (ajuste durante a renderização).
   if (!isEdit && !draft.statusId && statuses.data) {

@@ -56,4 +56,27 @@ function broadcast(app, event) {
     })
 }
 
-module.exports = { LINKS, changeFromRecord, broadcast }
+/** Nome do sinal de vida: não é tópico de ninguém, então o navegador ignora. */
+const KEEPALIVE_EVENT = 'kamban_keepalive'
+
+/**
+ * Sinal de vida para todas as conexões: o PocketBase fecha a conexão SSE depois de 5 min sem
+ * mensagens; o navegador reconecta, refaz as assinaturas e busca as telas de novo — com centenas de
+ * pessoas paradas lendo, isso vira carga à toa (e o aviso "Reconectando…" pisca).
+ */
+function keepAlive(app) {
+  const message = new SubscriptionMessage({ name: KEEPALIVE_EVENT, data: '{}' })
+  let sent = 0
+  app
+    .subscriptionsBroker()
+    .chunkedClients(300)
+    .forEach((chunk) => {
+      chunk.forEach((client) => {
+        client.send(message)
+        sent++
+      })
+    })
+  return sent
+}
+
+module.exports = { LINKS, KEEPALIVE_EVENT, changeFromRecord, broadcast, keepAlive }

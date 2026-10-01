@@ -58,4 +58,9 @@ function recordChanged(e, action) {
   }
 }
 
-module.exports = { authorizeSubscriptions, recordChanged }
+/** Rotina (main.pb.js): mantém as conexões vivas abaixo do limite de 5 min sem mensagens. */
+function keepAlive() {
+  require(`${__hooks}/src/infrastructure/realtime.js`).keepAlive($app)
+}
+
+module.exports = { authorizeSubscriptions, recordChanged, keepAlive }

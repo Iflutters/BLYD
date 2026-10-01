@@ -879,8 +879,8 @@ function createTaskRepository(app) {
     }
   }
 
-  /** Linha do quadro: as colunas do cartão (sem a descrição); -0 = número com casas decimais. */
-  const BOARD_ROW = {
+  /** Linha do quadro e do backlog: as colunas do cartão (sem a descrição); -0 = número com casas decimais. */
+  const CARD_ROW = {
     id: '',
     project_id: '',
     number: 0,
@@ -906,10 +906,10 @@ function createTaskRepository(app) {
     created: '',
     updated: '',
   }
-  const BOARD_COLUMNS = Object.keys(BOARD_ROW).map((name) => (name === 'checklist' ? "COALESCE(checklist, '') AS checklist" : name))
+  const CARD_COLUMNS = Object.keys(CARD_ROW).map((name) => (name === 'checklist' ? "COALESCE(checklist, '') AS checklist" : name))
 
   /** Mesma entidade de `toEntity`, a partir da linha enxuta (a descrição não vai ao quadro). */
-  function boardRowToEntity(row) {
+  function cardRowToEntity(row) {
     const hours = (value) => (value > 0 ? value : null)
     let checklist = []
     if (row.checklist && row.checklist !== 'null') {
@@ -1036,29 +1036,33 @@ function createTaskRepository(app) {
     // consulta enxuta (só as colunas do cartão, sem montar o registro completo): o quadro é a chamada
     // mais frequente e a mais pesada em projetos grandes — ver docs/plano-migracao-supabase.md §3 e §4
     listForBoard(projectId, statusId, options) {
-      const rows = arrayOf(new DynamicModel(BOARD_ROW))
+      const rows = arrayOf(new DynamicModel(CARD_ROW))
       app
         .db()
-        .select(...BOARD_COLUMNS)
+        .select(...CARD_COLUMNS)
         .from(COLLECTION)
         .where($dbx.hashExp({ project_id: projectId, status_id: statusId }))
         .orderBy(...(options.closed ? ['completed_at DESC', 'updated DESC'] : ['position ASC', 'number ASC']))
         .limit(options.limit)
         .all(rows)
-      return rows.map(boardRowToEntity)
+      return rows.map(cardRowToEntity)
     },
 
     /** Backlog: tarefas nos status indicados, em ordem manual (limit 0 = todas). */
+    // mesma consulta enxuta do quadro (só as colunas do cartão, sem montar o registro completo)
     listBacklog(projectId, statusIds, limit) {
       if (statusIds.length === 0) return []
-      const select = app.recordQuery(COLLECTION)
-      select.andWhere($dbx.hashExp({ project_id: projectId }))
-      select.andWhere($dbx.in.apply(null, ['status_id'].concat(statusIds)))
-      select.orderBy('position ASC', 'number ASC')
+      const rows = arrayOf(new DynamicModel(CARD_ROW))
+      const select = app
+        .db()
+        .select(...CARD_COLUMNS)
+        .from(COLLECTION)
+        .where($dbx.hashExp({ project_id: projectId }))
+        .andWhere($dbx.in.apply(null, ['status_id'].concat(statusIds)))
+        .orderBy('position ASC', 'number ASC')
       if (limit) select.limit(limit)
-      const records = arrayOf(new Record())
-      select.all(records)
-      return records.map(toEntity)
+      select.all(rows)
+      return rows.map(cardRowToEntity)
     },
 
     /** Maior posição entre os status indicados (null se não houver tarefas). */

@@ -22,7 +22,7 @@
 ## CSRF, XSS e cabeçalhos
 - CSRF: `SameSite=Strict` + header `X-Requested-With: kamban` obrigatório em mutações (inclusive no login).
 - XSS: React escapa a saída; nenhum `dangerouslySetInnerHTML`; nenhum token acessível ao JavaScript.
-- CSP no frontend servido pelo PocketBase: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-ancestors 'none'; object-src 'none'…` (`'unsafe-inline'` em estilos é exigido por atributos `style` dos componentes; scripts inline não são usados — o tema inicial é aplicado por `public/theme-init.js`).
+- CSP no frontend servido pelo PocketBase (rota própria `GET /{path...}` em `main.pb.js`, que serve a pasta do `--publicDir`): `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-ancestors 'none'; object-src 'none'…` (`'unsafe-inline'` em estilos é exigido por atributos `style` dos componentes; scripts inline não são usados — o tema inicial é aplicado por `public/theme-init.js`).
 - Também: `Referrer-Policy`, `Permissions-Policy`, e os padrões do PocketBase (`X-Content-Type-Options`, `X-Frame-Options`, `Cross-Origin-Opener-Policy`). API com `Cache-Control: no-store`.
 - Redirecionamento pós-login só aceita caminhos internos (`safeRedirect`, contra open redirect).
 

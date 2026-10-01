@@ -36,7 +36,8 @@ const MUTATIONS = ['POST', 'PUT', 'PATCH', 'DELETE']
 function registeredRoutes() {
   const source = fs.readFileSync(path.join(__dirname, '..', '..', 'pb_hooks', 'main.pb.js'), 'utf8')
   const routes = []
-  const re = /routerAdd\(\s*'([A-Z]+)'\s*,\s*'([^']+)'/g
+  // rotas da API ficam em apiRoute(...) (com o envelope de erros); routerAdd fica só para o frontend
+  const re = /(?:apiRoute|routerAdd)\(\s*'([A-Z]+)'\s*,\s*'([^']+)'/g
   let m
   while ((m = re.exec(source))) routes.push({ method: m[1], path: m[2] })
   return routes.filter((r) => r.path.startsWith('/api/v1/') && !r.path.includes('{path...}'))

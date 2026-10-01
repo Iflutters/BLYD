@@ -102,7 +102,7 @@ Estratégia de cache: `staleTime` 30s; listas usam `keepPreviousData` na pagina�
 ## Fluxo de uma requisição
 
 1. `ApiClient` envia `X-Correlation-Id`, `X-Requested-With: kamban` (mutações) e o cookie de sessão.
-2. Middleware `kamban_api_errors` garante envelope padrão até para erros da plataforma (rate limit, body limit).
+2. Middleware `kamban_api_errors` (preso a cada rota por `apiRoute` em `main.pb.js`, **nunca global**) garante envelope padrão até para erros da plataforma (rate limit, body limit); rota inexistente cai no `/api/v1/{path...}`. **Regra:** nada de `routerUse` com JS — no PocketBase o middleware em JS segura uma VM do pool durante todo o `e.next()`, inclusive nas conexões do tempo real, que ficam abertas por horas (o pool acabava com algumas dezenas de abas logadas). Os cabeçalhos de segurança do frontend ficam na rota própria `GET /{path...}` (`$apis.static` + middleware só dela); a rotina `kamban_realtime_keepalive` manda um sinal de vida a cada 3 min (o PocketBase fecha conexões sem mensagens após 5 min). Teste de regressão: `tests/api/capacity.test.js`.
 3. `handler.handle`: correlation id → CSRF → sessão (`auth.authenticate`) → caso de uso → `{ data, meta, error }`.
 4. Caso de uso valida entrada, aplica RBAC/regras de domínio, grava via `unitOfWork` com auditoria.
 5. Erros de aplicação viram `{ error: { code, message, details } }`; erros inesperados viram `INTERNAL_ERROR` sem vazar detalhes e são logados com o correlation id.

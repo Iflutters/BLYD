@@ -81,7 +81,7 @@ async function startPocketBase(extraEnv, options) {
   const serveArgs = ['serve', `--http=127.0.0.1:${port}`].concat(args())
   if (options && options.publicDir) serveArgs.push(`--publicDir=${options.publicDir}`)
   // mesmo pool de VMs do JS da produção (KAMBAN_HOOKS_POOL ajusta, ex.: no teste de carga)
-  serveArgs.push(...productionServeArgs(process.env))
+  serveArgs.push(...productionServeArgs(env))
   const child = spawn(BIN, serveArgs, { env, stdio: 'pipe' })
   let output = ''
   child.stdout.on('data', (d) => (output += d))

@@ -19,6 +19,8 @@ Todas as mudanças relevantes do projeto ficam aqui. Formato baseado em [Keep a 
 - **Desempenho:** o servidor sobe com 60 VMs do JavaScript (`KAMBAN_HOOKS_POOL`; o padrão do PocketBase é 15), o quadro do Kanban usa uma consulta mais leve, as consultas periódicas viram rede de segurança (5 min) quando o tempo real está ligado e as atualizações ao vivo fazem no máximo uma busca a cada 2,5 s por tela. No teste de carga a vazão útil triplicou (~200 pessoas simultâneas). **Atenção:** o servidor usa mais memória — reserve 2 GB (ou diminua `KAMBAN_HOOKS_POOL`).
 
 ### Corrigido
+- **Muitas pessoas conectadas deixavam o servidor lento:** cada aba aberta com o tempo real prendia VMs do JavaScript por causa de middlewares globais; com algumas dezenas de abas o pool acabava e as respostas passavam de segundos (500 leitores da documentação: 47 s). Os middlewares agora ficam só nas rotas da API e na rota do frontend, e um sinal de vida a cada 3 min evita que o PocketBase derrube as conexões paradas a cada 5 min. Com 500 leitores e 10 pessoas trabalhando: p95 de 44 ms.
+- **Planejamento mais rápido:** o backlog usa a mesma consulta enxuta do Kanban e o formulário de tarefa não busca dados enquanto está fechado.
 - Relatórios da Gestão de projetos: o nome do recurso não fica mais cortado (o detalhe de pendentes e horas foi para uma linha própria).
 
 ## [0.1.0] — 2026-10-01
