@@ -572,3 +572,45 @@ export interface PlanReportDto {
   groups: Array<{ group_id: string; number: string | null; name: string; color: string; items: number; done: number; overdue: number; progress: number; estimated: number | null; actual: number | null }>
   health: { level: string; factors: Array<{ key: string; level: string; value: number | null; count?: number; of?: number; planned?: number | null; actual?: number | null; hours?: number | null }> }
 }
+
+// ---------------------------------------------------------------- Configurador geral
+
+export interface PlatformInfoDto {
+  name: string
+  logo_light_url: string | null
+  logo_dark_url: string | null
+  favicon_url: string | null
+}
+
+export interface PlatformValuesDto {
+  audit_retention_months: number
+  lockout_threshold: number
+  lockout_base_minutes: number
+  lockout_max_minutes: number
+  password_min_length: number
+  password_require_mixed_case: boolean
+  password_require_symbol: boolean
+  platform_name: string
+}
+
+interface RangeDto {
+  min: number
+  max: number
+}
+
+export interface PlatformSettingsDto {
+  values: PlatformValuesDto
+  defaults: PlatformValuesDto
+  limits: { lockout_threshold: RangeDto; lockout_base_minutes: RangeDto; lockout_max_minutes: RangeDto; password_min_length: RangeDto; platform_name: { max: number } }
+  retention_options: number[]
+  branding: Record<string, { name: string; mime: string; size: number } | null>
+  updated_at: string | null
+}
+
+export interface PasswordPolicyDto {
+  min_length: number
+  max_length: number
+  require_letters_numbers: boolean
+  require_mixed_case: boolean
+  require_symbol: boolean
+}

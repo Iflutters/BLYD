@@ -6,9 +6,10 @@ import { isAppError } from '@/core/errors/app-error'
 import { SUPPORTED_LANGUAGES, currentLanguage } from '@/core/i18n'
 import type { Role, User } from '@/domain/entities'
 import { assignableRoles } from '@/domain/rbac'
-import { createUserSchema, updateUserSchema, type CreateUserInput } from '@/domain/validation'
+import { createUserSchemaFor, updateUserSchema, type CreateUserInput } from '@/domain/validation'
 import { AppButton, AppDialog, AppSelect, AppTextField, notify } from '@/presentation/components'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
+import { usePasswordHint, usePasswordPolicy } from '@/features/auth/use-password-policy'
 import { useSession } from '@/features/auth/session'
 import { useCreateUser, useUpdateUser } from './queries'
 
@@ -40,9 +41,12 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
     return list.map((role) => ({ value: role.id, label: role.name }))
   }, [current, roles, user])
 
+  const policy = usePasswordPolicy()
+  const passwordHint = usePasswordHint(policy)
+  const schema = useMemo(() => (isEdit ? updateUserSchema : createUserSchemaFor(policy)) as ReturnType<typeof createUserSchemaFor>, [isEdit, policy])
   const form = useForm<CreateUserInput>({
     // Na edição a senha não é enviada; o schema de edição ignora o campo.
-    resolver: zodResolver((isEdit ? updateUserSchema : createUserSchema) as typeof createUserSchema),
+    resolver: zodResolver(schema),
     defaultValues: { name: '', email: '', password: '', roleId: '', locale: currentLanguage() },
   })
   const { register, handleSubmit, reset, control, setError, formState } = form
@@ -136,7 +140,7 @@ export function UserFormDialog({ open, onOpenChange, user, roles, canChangeAcces
             revealable
             required
             autoComplete="new-password"
-            hint={t('users.passwordHint')}
+            hint={passwordHint}
             error={errors.password?.message}
             {...register('password')}
           />

@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { AppShell } from '@/presentation/layouts/AppShell'
-import { LegacyBacklogRedirect } from './legacy-redirects'
+import { LegacyBacklogRedirect, SettingsIndexRedirect } from './legacy-redirects'
 import { GuestOnly, PermissionGate, RequireAuth } from '@/features/auth/guards'
 import { NotFoundPage, RouteErrorPage } from '@/features/errors/ErrorPages'
 
@@ -87,9 +87,13 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'settings',
-        element: <PermissionGate anyOf={['settings.manage', 'permissions.manage', 'audit.view']} />,
+        element: <PermissionGate anyOf={['platform.manage', 'settings.manage', 'permissions.manage', 'audit.view']} />,
         children: [
-          { index: true, element: <Navigate to="/settings/roles" replace /> },
+          { index: true, element: <SettingsIndexRedirect /> },
+          {
+            element: <PermissionGate permission="platform.manage" />,
+            children: [{ path: 'general', ...page(() => import('@/features/settings/GeneralSettingsPage').then((m) => ({ default: m.GeneralSettingsPage }))) }],
+          },
           {
             element: <PermissionGate permission="settings.manage" />,
             children: [

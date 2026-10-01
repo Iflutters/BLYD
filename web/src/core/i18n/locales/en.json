@@ -108,7 +108,12 @@
     "follows_parent": "A subtask stays in its parent task’s group",
     "self": "Cannot be itself",
     "duplicate": "Already exists",
-    "upload_too_large": "Upload up to 50 MB at a time"
+    "upload_too_large": "Upload up to 50 MB at a time",
+    "needs_mixed_case": "Use upper and lower case letters",
+    "needs_symbol": "Include a symbol (e.g. ! @ # $)",
+    "below_base": "Can't be less than the initial time",
+    "unsafe_svg": "SVG with active content (scripts, events or external links) is not allowed",
+    "invalid_slot": "Invalid image slot"
   },
   "errors": {
     "VALIDATION_ERROR": "Check the highlighted fields.",
@@ -221,7 +226,8 @@
     "planning": "Planning",
     "timeline": "Timeline",
     "docs": "Documentation",
-    "management": "Project management"
+    "management": "Project management",
+    "general": "General"
   },
   "commandPalette": {
     "title": "Command palette",
@@ -364,7 +370,6 @@
     "searchPlaceholder": "Search by name or email",
     "selectRole": "Select a role",
     "cannotChangeOwnRole": "You can't change your own access role.",
-    "passwordHint": "At least 10 characters, with letters and numbers.",
     "neverLoggedIn": "Never signed in",
     "historyNote": "Every change to this account is recorded in the audit history.",
     "status": {
@@ -478,7 +483,8 @@
       "docs.manage": "Manage documentation spaces",
       "plan.view": "View the management board",
       "plan.edit": "Edit board items",
-      "plan.manage": "Manage board groups and labels"
+      "plan.manage": "Manage board groups and labels",
+      "platform.manage": "Configure the platform (security and branding)"
     }
   },
   "audit": {
@@ -516,7 +522,9 @@
       "sprint": "Sprint",
       "doc_space": "Documentation space",
       "doc_page": "Documentation page",
-      "plan_item": "Board item"
+      "plan_item": "Board item",
+      "platform_settings": "Platform settings",
+      "audit_log": "Audit history"
     },
     "fields": {
       "name": "Name",
@@ -619,7 +627,19 @@
       "column_type": "Column type",
       "lost_values": "Lost values",
       "cleared_values": "Cleared values",
-      "filled_values": "Filled values"
+      "filled_values": "Filled values",
+      "audit_retention_months": "History retention (months)",
+      "lockout_threshold": "Attempts before lockout",
+      "lockout_base_minutes": "Initial lockout (min)",
+      "lockout_max_minutes": "Maximum lockout (min)",
+      "password_min_length": "Minimum password length",
+      "password_require_mixed_case": "Require upper and lower case",
+      "password_require_symbol": "Require a symbol",
+      "platform_name": "Platform name",
+      "slot": "Image",
+      "removed": "Records removed",
+      "retention_months": "Retention (months)",
+      "before": "Older than"
     },
     "actions": {
       "auth.login": "Signed in",
@@ -732,7 +752,11 @@
       "plan_column.updated": "Column edited",
       "plan_column.type_changed": "Column type changed",
       "plan_column.duplicated": "Column duplicated",
-      "plan_column.deleted": "Column deleted"
+      "plan_column.deleted": "Column deleted",
+      "platform_settings.update": "Platform settings changed",
+      "platform_settings.branding_update": "Logo or icon uploaded",
+      "platform_settings.branding_remove": "Logo or icon removed",
+      "audit_log.purge": "Old history removed (retention)"
     }
   },
   "projects": {
@@ -2790,5 +2814,83 @@
     "pickHint": "Project management works per project: choose which one to open.",
     "notFound": "Project not found",
     "open": "Open project management"
+  },
+  "password": {
+    "hint": "At least {{count}} characters, with {{rules}}.",
+    "hintLength": "At least {{count}} characters.",
+    "rules": {
+      "letters_numbers": "letters and numbers",
+      "mixed_case": "upper and lower case",
+      "symbol": "a symbol"
+    }
+  },
+  "platform": {
+    "title": "General settings",
+    "description": "Branding, passwords, login lockout and history retention. They apply to the whole platform.",
+    "save": "Save changes",
+    "saved": "Settings saved.",
+    "nothingChanged": "Nothing changed.",
+    "range": "From {{min}} to {{max}}",
+    "identity": {
+      "title": "Branding",
+      "description": "Name, logo and icon show in the menu, on the sign-in page and in the browser tab.",
+      "name": "Platform name",
+      "nameHint": "E.g. your company or portal name.",
+      "slots": {
+        "logo_light": "Logo (light theme)",
+        "logo_dark": "Logo (dark theme)",
+        "favicon": "Browser icon"
+      },
+      "slotHints": {
+        "logo_light": "Preferably square. Used in the light theme.",
+        "logo_dark": "For dark backgrounds. Without it, the light one is used.",
+        "favicon": "Small icon in the browser tab."
+      },
+      "previewAlt": "Preview: {{slot}}",
+      "usingDefault": "Using the default mark",
+      "logoTypes": "PNG, JPG, WebP or SVG, up to 1 MB",
+      "faviconTypes": "ICO, PNG, WebP or SVG, up to 1 MB",
+      "uploaded": "Image uploaded.",
+      "removed": "Image removed; back to the default mark.",
+      "remove": "Remove"
+    },
+    "password": {
+      "title": "Passwords",
+      "description": "Requirements for new passwords.",
+      "minLength": "Minimum length",
+      "lettersNumbers": "Letters and numbers are always required.",
+      "mixedCase": "Require upper and lower case letters",
+      "symbol": "Require a symbol (e.g. ! @ # $)",
+      "appliesTo": "Applies to passwords created or changed from now on; current ones stay valid."
+    },
+    "login": {
+      "title": "Login lockout",
+      "description": "Protects accounts against password guessing.",
+      "threshold": "Wrong attempts",
+      "baseMinutes": "Initial lockout (min)",
+      "maxMinutes": "Maximum lockout (min)",
+      "summary_one": "After {{count}} wrong attempt the account is locked for {{base}} min; each new round doubles the time, up to {{max}} min.",
+      "summary_other": "After {{count}} wrong attempts the account is locked for {{base}} min; each new round doubles the time, up to {{max}} min."
+    },
+    "retention": {
+      "title": "History retention",
+      "description": "How long the audit history (changes, sign-ins, deletions) is kept.",
+      "keep": "Keep for",
+      "months_one": "{{count}} month",
+      "months_other": "{{count}} months",
+      "forever": "Keep forever",
+      "hint": "Cleanup runs on its own every night and deletes what is past the period.",
+      "confirmTitle": "Shorten retention?",
+      "confirmDescription_one": "{{count}} history record falls outside the new period and will be deleted in the next cleanup. This can't be undone.",
+      "confirmDescription_other": "{{count}} history records fall outside the new period and will be deleted in the next cleanup. This can't be undone.",
+      "confirm": "Shorten and save",
+      "runNow": "Clean up now",
+      "runTitle": "Clean up the history now?",
+      "runDescription_one": "Deletes history older than {{count}} month right away (the same nightly cleanup). This can't be undone.",
+      "runDescription_other": "Deletes history older than {{count}} months right away (the same nightly cleanup). This can't be undone.",
+      "ran_one": "{{count}} record removed.",
+      "ran_other": "{{count}} records removed.",
+      "ran_zero": "Nothing to remove: the history is within the period."
+    }
   }
 }

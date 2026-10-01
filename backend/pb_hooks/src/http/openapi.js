@@ -775,6 +775,26 @@ function build() {
       '/docs/search': {
         get: op('Busca no título e no conteúdo publicado dos espaços visíveis (sem acento/maiúsculas; 2 a 100 caracteres), com trecho', ['docs'], { 200: ok('Resultados', { type: 'array', items: { type: 'object' } }) }, { parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string' } }] }),
       },
+      '/platform': {
+        get: op('Público (sem login): identidade da plataforma — { name, logo_light_url, logo_dark_url, favicon_url } (endereços com ?v= para o cache)', ['platform'], { 200: ok('Identidade', { type: 'object' }) }),
+      },
+      '/platform/branding/{slot}': {
+        get: op('Público: logo claro/escuro ou ícone do navegador (nosniff + CSP sandbox; cache de 1 dia — o endereço muda a cada troca)', ['platform'], { 200: { description: 'Imagem' }, 404: errorResponse('NOT_FOUND') }, { parameters: [{ name: 'slot', in: 'path', required: true, schema: { type: 'string', enum: ['logo_light', 'logo_dark', 'favicon'] } }] }),
+      },
+      '/settings/platform': {
+        get: op('Configurações da plataforma (platform.manage): { values, defaults, limits, retention_options, branding, updated_at }', ['platform'], { 200: ok('Configurações', { type: 'object' }) }),
+        patch: op('Altera (platform.manage), parcial: audit_retention_months (1, 3, 6, 12, 24 ou 0 = manter sempre), lockout_threshold (3–20), lockout_base_minutes (1–60), lockout_max_minutes (≥ inicial, até 1440), password_min_length (8–64), password_require_mixed_case, password_require_symbol, platform_name (até 40). Com dry_run: true devolve { dry_run, audit_to_delete } sem gravar', ['platform'], { 200: ok('Configurações ou prévia', { type: 'object' }), 400: errorResponse('VALIDATION_ERROR') }, { parameters: [csrfHeader] }),
+      },
+      '/settings/platform/branding/{slot}': {
+        post: op('Envia logo/ícone (platform.manage): multipart "file" — PNG, JPG, WebP, SVG sem conteúdo ativo (ICO só no ícone), até 1 MB, tipo conferido pelo conteúdo', ['platform'], { 200: ok('Configurações', { type: 'object' }), 400: errorResponse('VALIDATION_ERROR') }, { parameters: [{ name: 'slot', in: 'path', required: true, schema: { type: 'string', enum: ['logo_light', 'logo_dark', 'favicon'] } }, csrfHeader] }),
+        delete: op('Remove logo/ícone (volta a marca padrão)', ['platform'], { 200: ok('Configurações', { type: 'object' }) }, { parameters: [{ name: 'slot', in: 'path', required: true, schema: { type: 'string', enum: ['logo_light', 'logo_dark', 'favicon'] } }, csrfHeader] }),
+      },
+      '/settings/platform/purge-audit': {
+        post: op('Aplica a retenção do histórico agora (platform.manage; mesma regra da rotina diária) → { removed }', ['platform'], { 200: ok('Resultado', { type: 'object' }) }, { parameters: [csrfHeader] }),
+      },
+      '/auth/password-policy': {
+        get: op('Exigências vigentes para senhas (quem está logado): { min_length, max_length, require_letters_numbers, require_mixed_case, require_symbol }', ['auth'], { 200: ok('Política', { type: 'object' }) }),
+      },
       '/docs/recent': {
         get: op('Páginas publicadas mais recentes dos espaços visíveis', ['docs'], { 200: ok('Recentes', { type: 'array', items: { type: 'object' } }) }),
       },

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,12 +8,13 @@ import { z } from 'zod'
 import { ArrowRight, KeyRound } from 'lucide-react'
 import { isAppError } from '@/core/errors/app-error'
 import type { CurrentUser } from '@/domain/entities'
-import { changePasswordSchema, type ChangePasswordInput } from '@/domain/validation'
+import { changePasswordSchemaFor, type ChangePasswordInput } from '@/domain/validation'
 import { AppAvatar, AppBadge, AppButton, AppCard, AppTextField, notify } from '@/presentation/components'
 import { PageHeader } from '@/presentation/layouts/PageHeader'
 import { useRepositories } from '@/presentation/common/repositories-context'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { SESSION_QUERY_KEY, useSession } from '@/features/auth/session'
+import { usePasswordHint, usePasswordPolicy } from '@/features/auth/use-password-policy'
 
 const profileSchema = z.object({ name: z.string().trim().min(1, 'required').max(120, 'too_long') })
 type ProfileInput = z.infer<typeof profileSchema>
@@ -97,8 +98,11 @@ function PasswordCard() {
   const { auth } = useRepositories()
   const queryClient = useQueryClient()
   const errorMessage = useErrorMessage()
+  const policy = usePasswordPolicy()
+  const passwordHint = usePasswordHint(policy)
+  const schema = useMemo(() => changePasswordSchemaFor(policy), [policy])
   const { register, handleSubmit, reset, setError, formState } = useForm<ChangePasswordInput>({
-    resolver: zodResolver(changePasswordSchema),
+    resolver: zodResolver(schema),
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   })
 
@@ -141,7 +145,7 @@ function PasswordCard() {
           revealable
           required
           autoComplete="new-password"
-          hint={t('users.passwordHint')}
+          hint={passwordHint}
           error={formState.errors.newPassword?.message}
           {...register('newPassword')}
         />

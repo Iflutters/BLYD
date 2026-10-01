@@ -486,3 +486,21 @@ Fator sem dados (ex.: nenhum elemento com cronograma) aparece como "Sem dados" e
 
 ### Próximas fases
 As fases GP-1 a GP-5 da diretriz estão concluídas.
+
+## 15. Configurador geral da plataforma
+
+Tela **Configurações → Geral**, só para quem tem a permissão **Configurar a plataforma** (`platform.manage`; por padrão só o Admin — o Super Admin tem tudo). Um único "Salvar alterações" grava o que mudou; cada alteração fica no histórico de auditoria com o antes e o depois.
+
+**Limites seguros** (valem na tela e no servidor): ninguém desliga uma proteção por engano. Enquanto ninguém muda, valem os padrões de sempre.
+
+| Bloco | O que se configura | Limites | Padrão |
+|---|---|---|---|
+| Identidade | nome da plataforma; logo para tema claro e para tema escuro; ícone da aba do navegador | nome até 40 caracteres; imagens PNG, JPG, WebP ou SVG (ícone também ICO), até 1 MB | "KAMBAN" e a marca padrão |
+| Senhas | tamanho mínimo; exigir maiúsculas e minúsculas; exigir um símbolo | mínimo de 8 a 64; **letras e números são sempre exigidos** | 10 caracteres, letras e números |
+| Bloqueio de login | tentativas erradas antes do bloqueio; tempo inicial; tempo máximo | 3 a 20 tentativas; 1 a 60 min; máximo de 1 a 1.440 min e nunca menor que o inicial | 5 tentativas, 5 min, até 60 min |
+| Retenção do histórico | por quanto tempo o histórico de auditoria fica guardado | 1, 3, 6, 12 ou 24 meses, ou "Manter sempre" | 3 meses |
+
+- **Identidade:** nome, logo e ícone aparecem no menu, na tela de login, no título e no ícone da aba. São **públicos** (a tela de login precisa deles); o resto das configurações só quem tem a permissão vê. Sem logo do tema escuro, usa-se o do claro; sem nenhum, a marca padrão. O tipo da imagem é conferido pelo conteúdo; SVG com script, eventos, conteúdo externo ou entidades é recusado. Remover a imagem volta à marca padrão.
+- **Senhas:** a política vale para senhas **criadas ou trocadas** a partir da mudança (as atuais continuam valendo). As telas de troca de senha, novo usuário e redefinição mostram as exigências vigentes ("Mínimo de 12 caracteres, com letras e números e um símbolo").
+- **Bloqueio de login:** depois de N tentativas erradas a conta fica bloqueada pelo tempo inicial; a cada nova série de N o tempo dobra, até o máximo (regra de §9). Vale na próxima tentativa.
+- **Retenção:** a limpeza roda **sozinha todo dia de madrugada** e apaga do histórico o que passou do prazo; a própria limpeza fica registrada (quantos registros saíram e a data de corte), sem dados sensíveis. **Encurtar o prazo pede confirmação** mostrando quantos registros ficam fora do novo prazo. "Limpar agora" aplica a mesma regra na hora (e fica registrado com quem pediu). "Manter sempre" desliga a limpeza.

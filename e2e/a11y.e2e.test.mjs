@@ -119,6 +119,7 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       ['conta', '/account'],
       ['sessões', '/account/sessions'],
       ['usuários', '/users'],
+      ['configurações gerais', '/settings/general'],
       ['tipos de tarefa', '/settings/task-types'],
       ['tipo de tarefa', `/settings/task-types/${type.id}`],
       ['campos personalizados', '/settings/custom-fields'],

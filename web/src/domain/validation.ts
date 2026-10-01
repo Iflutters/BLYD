@@ -3,6 +3,7 @@ import { SUPPORTED_LANGUAGES } from '@/core/i18n'
 import { PROJECT_COVERS, PROJECT_ICONS, PROJECT_PRIORITIES, PROJECT_STATUSES } from './projects'
 import { SPACE_ICONS, SPACE_VISIBILITIES } from './docs'
 import { OPTION_COLORS } from './task-config'
+import { DEFAULT_PASSWORD_POLICY, type PasswordPolicy } from './platform'
 
 /**
  * Schemas de validação de formulários. As mensagens são chaves de i18n (validation.*),
@@ -14,11 +15,18 @@ export const PASSWORD_MAX = 72
 
 const email = z.string().trim().min(1, 'required').max(254, 'too_long').email('invalid_email')
 
-export const passwordSchema = z
-  .string()
-  .min(PASSWORD_MIN, 'too_short')
-  .max(PASSWORD_MAX, 'too_long')
-  .refine((value) => /[A-Za-z]/.test(value) && /[0-9]/.test(value), 'weak_password')
+/** Senha pela política vigente do Configurador geral (mesmos códigos da API). */
+export function passwordSchemaFor(policy: PasswordPolicy) {
+  return z
+    .string()
+    .min(policy.minLength, 'too_short')
+    .max(policy.maxLength, 'too_long')
+    .refine((value) => /[A-Za-z]/.test(value) && /[0-9]/.test(value), 'weak_password')
+    .refine((value) => !policy.requireMixedCase || (/[a-z]/.test(value) && /[A-Z]/.test(value)), 'needs_mixed_case')
+    .refine((value) => !policy.requireSymbol || /[^A-Za-z0-9]/.test(value), 'needs_symbol')
+}
+
+export const passwordSchema = passwordSchemaFor({ ...DEFAULT_PASSWORD_POLICY, minLength: PASSWORD_MIN, maxLength: PASSWORD_MAX })
 
 export const loginSchema = z.object({
   email,
@@ -30,13 +38,16 @@ export type LoginInput = z.infer<typeof loginSchema>
 const name = z.string().trim().min(1, 'required').max(120, 'too_long')
 const locale = z.enum(SUPPORTED_LANGUAGES)
 
-export const createUserSchema = z.object({
-  name,
-  email,
-  password: passwordSchema,
-  roleId: z.string().min(1, 'required'),
-  locale,
-})
+export function createUserSchemaFor(policy: PasswordPolicy) {
+  return z.object({
+    name,
+    email,
+    password: passwordSchemaFor(policy),
+    roleId: z.string().min(1, 'required'),
+    locale,
+  })
+}
+export const createUserSchema = createUserSchemaFor(DEFAULT_PASSWORD_POLICY)
 export type CreateUserInput = z.infer<typeof createUserSchema>
 
 export const updateUserSchema = z.object({
@@ -47,19 +58,25 @@ export const updateUserSchema = z.object({
 })
 export type UpdateUserInput = z.infer<typeof updateUserSchema>
 
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'required'),
-    newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, 'required'),
-  })
-  .refine((v) => v.newPassword === v.confirmPassword, { path: ['confirmPassword'], message: 'passwords_dont_match' })
-  .refine((v) => v.newPassword !== v.currentPassword, { path: ['newPassword'], message: 'same_as_current' })
+export function changePasswordSchemaFor(policy: PasswordPolicy) {
+  return z
+    .object({
+      currentPassword: z.string().min(1, 'required'),
+      newPassword: passwordSchemaFor(policy),
+      confirmPassword: z.string().min(1, 'required'),
+    })
+    .refine((v) => v.newPassword === v.confirmPassword, { path: ['confirmPassword'], message: 'passwords_dont_match' })
+    .refine((v) => v.newPassword !== v.currentPassword, { path: ['newPassword'], message: 'same_as_current' })
+}
+export const changePasswordSchema = changePasswordSchemaFor(DEFAULT_PASSWORD_POLICY)
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
 
-export const resetPasswordSchema = z
-  .object({ password: passwordSchema, confirmPassword: z.string().min(1, 'required') })
-  .refine((v) => v.password === v.confirmPassword, { path: ['confirmPassword'], message: 'passwords_dont_match' })
+export function resetPasswordSchemaFor(policy: PasswordPolicy) {
+  return z
+    .object({ password: passwordSchemaFor(policy), confirmPassword: z.string().min(1, 'required') })
+    .refine((v) => v.password === v.confirmPassword, { path: ['confirmPassword'], message: 'passwords_dont_match' })
+}
+export const resetPasswordSchema = resetPasswordSchemaFor(DEFAULT_PASSWORD_POLICY)
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
 
 export const roleSchema = z.object({

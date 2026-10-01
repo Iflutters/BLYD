@@ -108,7 +108,12 @@
     "follows_parent": "A subtarefa fica no grupo da tarefa pai",
     "self": "Não pode ser ele mesmo",
     "duplicate": "Já existe",
-    "upload_too_large": "Envie até 50 MB de uma vez"
+    "upload_too_large": "Envie até 50 MB de uma vez",
+    "needs_mixed_case": "Use letras maiúsculas e minúsculas",
+    "needs_symbol": "Inclua um símbolo (ex.: ! @ # $)",
+    "below_base": "Não pode ser menor que o tempo inicial",
+    "unsafe_svg": "SVG com conteúdo ativo (script, eventos ou links externos) não é aceito",
+    "invalid_slot": "Lugar de imagem inválido"
   },
   "errors": {
     "VALIDATION_ERROR": "Verifique os campos destacados.",
@@ -221,7 +226,8 @@
     "planning": "Planejamento",
     "timeline": "Timeline",
     "docs": "Documentação",
-    "management": "Gestão de projetos"
+    "management": "Gestão de projetos",
+    "general": "Geral"
   },
   "commandPalette": {
     "title": "Paleta de comandos",
@@ -364,7 +370,6 @@
     "searchPlaceholder": "Buscar por nome ou e-mail",
     "selectRole": "Selecione um perfil",
     "cannotChangeOwnRole": "Você não pode alterar o próprio perfil de acesso.",
-    "passwordHint": "Mínimo de 10 caracteres, com letras e números.",
     "neverLoggedIn": "Nunca acessou",
     "historyNote": "Todas as alterações nesta conta ficam registradas no histórico de auditoria.",
     "status": {
@@ -478,7 +483,8 @@
       "docs.manage": "Gerenciar espaços de documentação",
       "plan.view": "Ver o quadro de gerenciamento",
       "plan.edit": "Editar elementos do quadro",
-      "plan.manage": "Gerenciar grupos e etiquetas do quadro"
+      "plan.manage": "Gerenciar grupos e etiquetas do quadro",
+      "platform.manage": "Configurar a plataforma (segurança e identidade)"
     }
   },
   "audit": {
@@ -516,7 +522,9 @@
       "sprint": "Sprint",
       "doc_space": "Espaço de documentação",
       "doc_page": "Página de documentação",
-      "plan_item": "Elemento do quadro"
+      "plan_item": "Elemento do quadro",
+      "platform_settings": "Configurações da plataforma",
+      "audit_log": "Histórico de auditoria"
     },
     "fields": {
       "name": "Nome",
@@ -619,7 +627,19 @@
       "column_type": "Tipo da coluna",
       "lost_values": "Valores perdidos",
       "cleared_values": "Valores limpos",
-      "filled_values": "Valores preenchidos"
+      "filled_values": "Valores preenchidos",
+      "audit_retention_months": "Retenção do histórico (meses)",
+      "lockout_threshold": "Tentativas antes do bloqueio",
+      "lockout_base_minutes": "Bloqueio inicial (min)",
+      "lockout_max_minutes": "Bloqueio máximo (min)",
+      "password_min_length": "Tamanho mínimo da senha",
+      "password_require_mixed_case": "Exigir maiúsculas e minúsculas",
+      "password_require_symbol": "Exigir símbolo",
+      "platform_name": "Nome da plataforma",
+      "slot": "Imagem",
+      "removed": "Registros removidos",
+      "retention_months": "Retenção (meses)",
+      "before": "Anteriores a"
     },
     "actions": {
       "auth.login": "Entrou no sistema",
@@ -732,7 +752,11 @@
       "plan_column.updated": "Coluna editada",
       "plan_column.type_changed": "Tipo da coluna alterado",
       "plan_column.duplicated": "Coluna duplicada",
-      "plan_column.deleted": "Coluna excluída"
+      "plan_column.deleted": "Coluna excluída",
+      "platform_settings.update": "Configurações da plataforma alteradas",
+      "platform_settings.branding_update": "Logo ou ícone enviado",
+      "platform_settings.branding_remove": "Logo ou ícone removido",
+      "audit_log.purge": "Histórico antigo removido (retenção)"
     }
   },
   "projects": {
@@ -2790,5 +2814,83 @@
     "pickHint": "A gestão de projetos é por projeto: escolha qual abrir.",
     "notFound": "Projeto não encontrado",
     "open": "Abrir a gestão do projeto"
+  },
+  "password": {
+    "hint": "Mínimo de {{count}} caracteres, com {{rules}}.",
+    "hintLength": "Mínimo de {{count}} caracteres.",
+    "rules": {
+      "letters_numbers": "letras e números",
+      "mixed_case": "maiúsculas e minúsculas",
+      "symbol": "um símbolo"
+    }
+  },
+  "platform": {
+    "title": "Configurações gerais",
+    "description": "Identidade, senhas, bloqueio de login e retenção do histórico. Valem para toda a plataforma.",
+    "save": "Salvar alterações",
+    "saved": "Configurações salvas.",
+    "nothingChanged": "Nada foi alterado.",
+    "range": "De {{min}} a {{max}}",
+    "identity": {
+      "title": "Identidade",
+      "description": "Nome, logo e ícone aparecem no menu, na tela de login e na aba do navegador.",
+      "name": "Nome da plataforma",
+      "nameHint": "Ex.: o nome da empresa ou do portal.",
+      "slots": {
+        "logo_light": "Logo (tema claro)",
+        "logo_dark": "Logo (tema escuro)",
+        "favicon": "Ícone do navegador"
+      },
+      "slotHints": {
+        "logo_light": "Quadrado, de preferência. Usado no tema claro.",
+        "logo_dark": "Para fundos escuros. Sem ele, usa o do tema claro.",
+        "favicon": "Ícone pequeno da aba do navegador."
+      },
+      "previewAlt": "Prévia: {{slot}}",
+      "usingDefault": "Usando a marca padrão",
+      "logoTypes": "PNG, JPG, WebP ou SVG, até 1 MB",
+      "faviconTypes": "ICO, PNG, WebP ou SVG, até 1 MB",
+      "uploaded": "Imagem enviada.",
+      "removed": "Imagem removida; voltou a marca padrão.",
+      "remove": "Remover"
+    },
+    "password": {
+      "title": "Senhas",
+      "description": "Exigências para senhas novas.",
+      "minLength": "Tamanho mínimo",
+      "lettersNumbers": "Letras e números são sempre exigidos.",
+      "mixedCase": "Exigir letras maiúsculas e minúsculas",
+      "symbol": "Exigir um símbolo (ex.: ! @ # $)",
+      "appliesTo": "Vale para senhas criadas ou trocadas a partir de agora; as atuais continuam valendo."
+    },
+    "login": {
+      "title": "Bloqueio de login",
+      "description": "Protege as contas contra tentativas de adivinhar a senha.",
+      "threshold": "Tentativas erradas",
+      "baseMinutes": "Bloqueio inicial (min)",
+      "maxMinutes": "Bloqueio máximo (min)",
+      "summary_one": "Depois de {{count}} tentativa errada a conta fica bloqueada por {{base}} min; a cada nova série o tempo dobra, até {{max}} min.",
+      "summary_other": "Depois de {{count}} tentativas erradas a conta fica bloqueada por {{base}} min; a cada nova série o tempo dobra, até {{max}} min."
+    },
+    "retention": {
+      "title": "Retenção do histórico",
+      "description": "Por quanto tempo o histórico de auditoria (alterações, logins, exclusões) fica guardado.",
+      "keep": "Guardar por",
+      "months_one": "{{count}} mês",
+      "months_other": "{{count}} meses",
+      "forever": "Manter sempre",
+      "hint": "A limpeza roda sozinha todo dia de madrugada e apaga o que passou do prazo.",
+      "confirmTitle": "Encurtar a retenção?",
+      "confirmDescription_one": "{{count}} registro do histórico fica fora do novo prazo e será apagado na próxima limpeza. Não dá para desfazer.",
+      "confirmDescription_other": "{{count}} registros do histórico ficam fora do novo prazo e serão apagados na próxima limpeza. Não dá para desfazer.",
+      "confirm": "Encurtar e salvar",
+      "runNow": "Limpar agora",
+      "runTitle": "Limpar o histórico agora?",
+      "runDescription_one": "Apaga já o histórico com mais de {{count}} mês (a mesma limpeza da madrugada). Não dá para desfazer.",
+      "runDescription_other": "Apaga já o histórico com mais de {{count}} meses (a mesma limpeza da madrugada). Não dá para desfazer.",
+      "ran_one": "{{count}} registro removido.",
+      "ran_other": "{{count}} registros removidos.",
+      "ran_zero": "Nada a remover: o histórico está dentro do prazo."
+    }
   }
 }

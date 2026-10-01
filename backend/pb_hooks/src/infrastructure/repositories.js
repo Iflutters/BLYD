@@ -384,6 +384,20 @@ function createAuditRepository(app) {
       record.set('correlation_id', entry.correlationId)
       app.save(record)
     },
+
+    countBefore(date) {
+      return app.countRecords(COLLECTION, $dbx.exp('created < {:c}', { c: toPbDate(date) }))
+    },
+
+    /** Retenção (Configurador geral): apaga em lotes o que é anterior à data; o histórico não tem arquivos. */
+    purgeBefore(date) {
+      const c = toPbDate(date)
+      const total = app.countRecords(COLLECTION, $dbx.exp('created < {:c}', { c }))
+      for (let left = total; left > 0; left -= 1000) {
+        app.db().newQuery('DELETE FROM audit_logs WHERE id IN (SELECT id FROM audit_logs WHERE created < {:c} ORDER BY created LIMIT 1000)').bind({ c }).execute()
+      }
+      return total
+    },
   }
 }
 
@@ -2207,7 +2221,10 @@ function createRepositories(app) {
   const { createPlanCollabRepositories } = require('./plan-collab-repositories')
   // Gestão do quadro (GP-4: diário e problemas) em arquivo próprio
   const { createPlanManagementRepositories } = require('./plan-management-repositories')
+  // Configurador geral em arquivo próprio
+  const { createPlatformSettingsRepository } = require('./platform-repositories')
   return Object.assign(createDocRepositories(app), createPlanCollabRepositories(app), createPlanManagementRepositories(app), {
+    platformSettingsRepository: createPlatformSettingsRepository(app),
     taskRepository: createTaskRepository(app),
     relationRepository: createRelationRepository(app),
     loginAttemptRepository: createLoginAttemptRepository(app),

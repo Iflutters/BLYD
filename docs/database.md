@@ -225,3 +225,8 @@ A migration `1790000021` também concede `plan.view/edit/manage` aos perfis padr
 ### GP-5 — migration `1790000026_plan_columns.js`
 - `plan_columns`: `project_id` (cascade), `name` (≤ 60), `type` (`text` | `number` | `date` | `checkbox` | `dropdown` | `people` | `link`), `settings` (JSON: opções da lista com id/nome/cor; unidade do número), `position`, `created_by`. Índice `(project_id, position)`.
 - `plan_items.custom` (JSON `{ coluna: valor }`): valores das colunas personalizadas no elemento (excluir/alterar a coluna reescreve os valores na mesma transação).
+
+## Configurador geral (migration 1790000027)
+- `platform_settings` — **registro único**: `values` (JSON só com o que foi alterado; o que falta usa o padrão do domínio `domain/platform-settings.js`), `files` (JSON com nome, tipo e tamanho de cada imagem) e os arquivos protegidos `logo_light`, `logo_dark`, `favicon` (até 1 MB; servidos só por `/api/v1/platform/branding/{slot}`). Sem regras de API (acesso só por `/api/v1`). Se o registro sumir, é recriado vazio.
+- Permissão `platform.manage` criada e concedida ao Admin.
+- **Retenção do histórico:** a rotina diária `kamban_audit_retention` (03:45) apaga de `audit_logs` o que é anterior ao corte, em lotes de 1.000 (índice `idx_audit_created`), e grava `audit_log.purge`.

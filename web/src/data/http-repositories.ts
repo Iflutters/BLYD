@@ -20,6 +20,9 @@ import { toDocPage, toDocSpace, toDocTreePage, toMilestone, toPlan, toPlanFile, 
 import type { JournalEntryDto, PlanColumnDto, PlanDto, PlanFileDto, PlanGroupDto, PlanIssueDto, PlanItemDto, PlanLinkDto, PlanReportDto, PlanResourceDto, PlanStatusDto, PlanUpdateDto } from './dtos'
 import { toJournalEntry, toPlanColumn, toPlanIssue, toPlanReport } from './mappers'
 import type { ColumnTypePreview } from '@/domain/plan-columns'
+import type { PasswordPolicyDto, PlatformInfoDto, PlatformSettingsDto } from './dtos'
+import { fromPlatformValues, toPasswordPolicy, toPlatformInfo, toPlatformSettings } from './mappers'
+import type { PlatformRepository } from '@/domain/repositories'
 import type { IssueInput, JournalInput } from '@/domain/plan-management'
 import type { PlanBulkInput, PlanBulkResult, PlanGroupInput, PlanImportResult, PlanImportRow, PlanItemInput } from '@/domain/plan'
 import type { DocPageDto, DocSpaceDto, DocTreePageDto } from './dtos'
@@ -114,6 +117,46 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
         new_password: newPassword,
       })
       return { otherSessionsRevoked: data.other_sessions_revoked }
+    },
+    async passwordPolicy() {
+      const { data } = await api.get<PasswordPolicyDto>('/auth/password-policy')
+      return toPasswordPolicy(data)
+    },
+  }
+}
+
+export function createHttpPlatformRepository(api: ApiClient): PlatformRepository {
+  const branding = (slot: string) => `/settings/platform/branding/${encodeURIComponent(slot)}`
+  return {
+    async getInfo() {
+      const { data } = await api.get<PlatformInfoDto>('/platform')
+      return toPlatformInfo(data)
+    },
+    async getSettings() {
+      const { data } = await api.get<PlatformSettingsDto>('/settings/platform')
+      return toPlatformSettings(data)
+    },
+    async updateSettings(patch) {
+      const { data } = await api.patch<PlatformSettingsDto>('/settings/platform', fromPlatformValues(patch))
+      return toPlatformSettings(data)
+    },
+    async previewRetention(months) {
+      const { data } = await api.patch<{ audit_to_delete: number }>('/settings/platform', { audit_retention_months: months, dry_run: true })
+      return { auditToDelete: data.audit_to_delete }
+    },
+    async uploadBranding(slot, file) {
+      const form = new FormData()
+      form.append('file', file)
+      const { data } = await api.postForm<PlatformSettingsDto>(branding(slot), form)
+      return toPlatformSettings(data)
+    },
+    async removeBranding(slot) {
+      const { data } = await api.del<PlatformSettingsDto>(branding(slot))
+      return toPlatformSettings(data)
+    },
+    async runRetention() {
+      const { data } = await api.post<{ removed: number }>('/settings/platform/purge-audit')
+      return { removed: data.removed }
     },
   }
 }
@@ -401,6 +444,7 @@ export function createHttpRepositories(api: ApiClient): Repositories {
     plan: createHttpPlanRepository(api),
     docs: createHttpDocsRepository(api),
     sprints: createHttpSprintRepository(api),
+    platform: createHttpPlatformRepository(api),
   }
 }
 

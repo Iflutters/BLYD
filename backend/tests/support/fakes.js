@@ -80,6 +80,8 @@ function createFakeStore() {
     docFiles: [],
     relations: [],
     loginAttempts: [],
+    /** Configurador geral (registro único). */
+    platformSettings: { values: {}, files: {}, updatedAt: null },
     /** Tarefas por status/prioridade; os testes ajustam para simular uso. */
     lookupTaskCounts: {},
   }
@@ -242,6 +244,39 @@ function createFakeRepositories(store) {
       items = items.slice().sort((a, b) => b.createdAt - a.createdAt)
       return { items: items.slice(query.pagination.offset, query.pagination.offset + query.pagination.perPage), total: items.length }
     },
+    countBefore: (date) => store.audit.filter((e) => e.createdAt < date).length,
+    purgeBefore: (date) => {
+      const before = store.audit.length
+      const kept = store.audit.filter((e) => e.createdAt >= date)
+      store.audit.length = 0
+      kept.forEach((e) => store.audit.push(e))
+      return before - kept.length
+    },
+  }
+
+  let platformStamp = 0
+  const touchPlatform = () => {
+    store.platformSettings.updatedAt = new Date(Date.UTC(2026, 9, 1, 0, 0, ++platformStamp))
+  }
+  const platformSettingsRepository = {
+    get: () => ({
+      values: Object.assign({}, store.platformSettings.values),
+      files: Object.assign({}, store.platformSettings.files),
+      updatedAt: store.platformSettings.updatedAt,
+    }),
+    saveValues: (values) => {
+      store.platformSettings.values = Object.assign({}, values)
+      touchPlatform()
+    },
+    setFile: (slot, data) => {
+      store.platformSettings.files[slot] = { name: data.name, mime: data.mime, size: data.size }
+      touchPlatform()
+    },
+    clearFile: (slot) => {
+      delete store.platformSettings.files[slot]
+      touchPlatform()
+    },
+    fileKeyOf: (slot) => `platform/${slot}`,
   }
 
   const SORT_FIELDS = { name: 'name', key: 'key', created: 'createdAt', due_date: 'dueDate', status: 'status', priority: 'priority' }
@@ -1090,6 +1125,7 @@ function createFakeRepositories(store) {
     taskRepository,
     relationRepository,
     loginAttemptRepository,
+    platformSettingsRepository,
     sprintRepository,
     milestoneRepository,
     projectGroupRepository,

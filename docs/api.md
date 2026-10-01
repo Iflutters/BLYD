@@ -285,6 +285,19 @@ Regra `block`: trocar o status (edição, massa) para uma etiqueta que **inicia*
 
 Conteúdo: JSON do editor (TipTap/ProseMirror). Blocos aceitos: `paragraph`, `heading` (1–4), `blockquote`, `bulletList`, `orderedList`, `listItem`, `taskList`/`taskItem` (`checked`), `codeBlock` (`language`), `horizontalRule`, `hardBreak`, `image` (`src` de `/api/v1/docs/files/{id}`, `alt`, `title`, `width` 25/50/75/100), `table`/`tableRow`/`tableHeader`/`tableCell` (`colspan`, `rowspan`, `colwidth`), `callout` (`tone` info/success/warning/danger), `tableOfContents`. Marcações: `bold`, `italic`, `underline`, `strike`, `code`, `highlight`, `link` (`href` http(s)/mailto/`/docs/…`/arquivo). O resto é removido; erros de conteúdo em `content`: `invalid_content`, `too_deep`, `too_large`, `too_long`.
 
+## Endpoints — Configurador geral
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/platform` | **público**: `{ name, logo_light_url, logo_dark_url, favicon_url }` (endereços com `?v=` que muda a cada troca) |
+| GET | `/platform/branding/{slot}` | **público**: `logo_light`, `logo_dark` ou `favicon`; `nosniff` + CSP sandbox; 404 sem imagem |
+| GET | `/settings/platform` | `platform.manage`: `{ values, defaults, limits, retention_options, branding: { slot: { name, mime, size } \| null }, updated_at }` |
+| PATCH | `/settings/platform` | `platform.manage`, parcial: `audit_retention_months` (1, 3, 6, 12, 24, 0 = sempre), `lockout_threshold` (3–20), `lockout_base_minutes` (1–60), `lockout_max_minutes` (≥ inicial; `below_base`), `password_min_length` (8–64), `password_require_mixed_case`, `password_require_symbol`, `platform_name` (até 40). Erros por campo: `too_small`, `too_large`, `invalid_type`, `invalid_option`, `required`, `too_long`, `unknown_field`. `dry_run: true` → `{ dry_run, audit_to_delete }` sem gravar |
+| POST/DELETE | `/settings/platform/branding/{slot}` | `platform.manage`: multipart `file` (PNG, JPG, WebP, SVG sem conteúdo ativo; ICO só no `favicon`; até 1 MB) → configurações; erros em `file`: `required`, `empty_file`, `file_too_large`, `unsupported_type`, `type_mismatch`, `unsafe_svg`; `slot`: `invalid_slot` / remover |
+| POST | `/settings/platform/purge-audit` | `platform.manage`: aplica a retenção agora → `{ removed }` (ou `{ removed: 0, skipped: true }` com "manter sempre") |
+| GET | `/auth/password-policy` | quem está logado: `{ min_length, max_length, require_letters_numbers, require_mixed_case, require_symbol }` |
+
+Senhas (`POST /users`, `POST /users/{id}/password`, `POST /auth/password`) seguem a política: além de `too_short`, `too_long` e `weak_password`, podem voltar `needs_mixed_case` e `needs_symbol`. O bloqueio de login (`ACCOUNT_LOCKED`) segue as tentativas e os tempos configurados. Auditoria: `platform_settings.update` (antes/depois), `platform_settings.branding_update/branding_remove` e `audit_log.purge` (rotina diária às 03:45 ou "Limpar agora").
+
 ## Exemplo
 ```bash
 curl -c jar -X POST http://127.0.0.1:8090/api/v1/auth/login \

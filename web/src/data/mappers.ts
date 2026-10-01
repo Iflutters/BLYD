@@ -1,6 +1,8 @@
 import { DEPENDENCY_RULES, PLAN_STATUS_CATEGORIES, PROGRESS_SOURCES, type Plan, type PlanLink, type PlanGroup, type PlanGroupSummary, type PlanItem, type PlanResource, type PlanStatus } from '@/domain/plan'
 import type { PlanFile, PlanUpdate } from '@/domain/plan-updates'
 import type { JournalEntryDto, PlanColumnDto, PlanFileDto, PlanIssueDto, PlanReportDto, PlanUpdateDto } from './dtos'
+import type { PasswordPolicyDto, PlatformInfoDto, PlatformSettingsDto, PlatformValuesDto } from './dtos'
+import { BRANDING_SLOTS, type PasswordPolicy, type PlatformInfo, type PlatformSettings, type PlatformSettingsValues } from '@/domain/platform'
 import { COLUMN_TYPES, type PlanColumn } from '@/domain/plan-columns'
 import { HEALTH_FACTORS, ISSUE_STATES, type HealthFactorKey, type HealthLevel, type JournalEntry, type PlanIssue, type PlanReport } from '@/domain/plan-management'
 import type { PlanDto, PlanGroupDto, PlanGroupSummaryDto, PlanItemDto, PlanLinkDto, PlanResourceDto, PlanStatusDto } from './dtos'
@@ -758,5 +760,71 @@ export function toPlanColumn(dto: PlanColumnDto): PlanColumn {
       ...(type === 'number' && settings.unit ? { unit: settings.unit } : {}),
     },
     position: dto.position ?? 0,
+  }
+}
+
+// ---------------------------------------------------------------- Configurador geral
+
+export function toPlatformInfo(dto: PlatformInfoDto): PlatformInfo {
+  return { name: dto.name || 'KAMBAN', logoLightUrl: dto.logo_light_url ?? null, logoDarkUrl: dto.logo_dark_url ?? null, faviconUrl: dto.favicon_url ?? null }
+}
+
+function toPlatformValues(dto: PlatformValuesDto): PlatformSettingsValues {
+  return {
+    auditRetentionMonths: dto.audit_retention_months,
+    lockoutThreshold: dto.lockout_threshold,
+    lockoutBaseMinutes: dto.lockout_base_minutes,
+    lockoutMaxMinutes: dto.lockout_max_minutes,
+    passwordMinLength: dto.password_min_length,
+    passwordRequireMixedCase: dto.password_require_mixed_case,
+    passwordRequireSymbol: dto.password_require_symbol,
+    platformName: dto.platform_name,
+  }
+}
+
+/** Valores do formulário -> corpo do PATCH (só o que veio). */
+export function fromPlatformValues(values: Partial<PlatformSettingsValues>): Partial<PlatformValuesDto> {
+  const keys: Record<keyof PlatformSettingsValues, keyof PlatformValuesDto> = {
+    auditRetentionMonths: 'audit_retention_months',
+    lockoutThreshold: 'lockout_threshold',
+    lockoutBaseMinutes: 'lockout_base_minutes',
+    lockoutMaxMinutes: 'lockout_max_minutes',
+    passwordMinLength: 'password_min_length',
+    passwordRequireMixedCase: 'password_require_mixed_case',
+    passwordRequireSymbol: 'password_require_symbol',
+    platformName: 'platform_name',
+  }
+  const out: Partial<PlatformValuesDto> = {}
+  ;(Object.keys(values) as (keyof PlatformSettingsValues)[]).forEach((key) => {
+    if (values[key] !== undefined) Object.assign(out, { [keys[key]]: values[key] })
+  })
+  return out
+}
+
+export function toPlatformSettings(dto: PlatformSettingsDto): PlatformSettings {
+  const branding = Object.fromEntries(BRANDING_SLOTS.map((slot) => [slot, dto.branding?.[slot] ?? null])) as PlatformSettings['branding']
+  return {
+    values: toPlatformValues(dto.values),
+    defaults: toPlatformValues(dto.defaults),
+    limits: {
+      lockoutThreshold: dto.limits.lockout_threshold,
+      lockoutBaseMinutes: dto.limits.lockout_base_minutes,
+      lockoutMaxMinutes: dto.limits.lockout_max_minutes,
+      passwordMinLength: dto.limits.password_min_length,
+      platformNameMax: dto.limits.platform_name.max,
+    },
+    retentionOptions: dto.retention_options,
+    branding,
+    updatedAt: dto.updated_at ? new Date(dto.updated_at) : null,
+  }
+}
+
+export function toPasswordPolicy(dto: PasswordPolicyDto): PasswordPolicy {
+  return {
+    minLength: dto.min_length,
+    maxLength: dto.max_length,
+    requireLettersNumbers: dto.require_letters_numbers,
+    requireMixedCase: dto.require_mixed_case,
+    requireSymbol: dto.require_symbol,
   }
 }

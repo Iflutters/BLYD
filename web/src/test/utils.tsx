@@ -7,6 +7,7 @@ import type { Page } from '@/domain/pagination'
 import type { PermissionCode } from '@/domain/permissions'
 import type { Repositories } from '@/domain/repositories'
 import type { ContentLocale, TypeTexts } from '@/domain/task-config'
+import { DEFAULT_PASSWORD_POLICY, DEFAULT_PLATFORM_INFO } from '@/domain/platform'
 import { RepositoriesContext } from '@/presentation/common/repositories-context'
 import { AppTooltipProvider } from '@/presentation/components'
 
@@ -72,6 +73,7 @@ export function fakeRepositories(overrides: {
   milestones?: Partial<Repositories['milestones']>
   plan?: Partial<Repositories['plan']>
   docs?: Partial<Repositories['docs']>
+  platform?: Partial<Repositories['platform']>
 } = {}): Repositories {
   const emptyPage: Page<User> = { items: [], page: 1, perPage: 20, total: 0, totalPages: 0 }
   return {
@@ -83,6 +85,7 @@ export function fakeRepositories(overrides: {
       revokeSession: notImplemented,
       revokeOtherSessions: notImplemented,
       changePassword: notImplemented,
+      passwordPolicy: () => Promise.resolve(DEFAULT_PASSWORD_POLICY),
       ...overrides.auth,
     },
     users: {
@@ -309,6 +312,16 @@ export function fakeRepositories(overrides: {
       remove: notImplemented,
       reorder: notImplemented,
       ...overrides.sprints,
+    },
+    platform: {
+      getInfo: () => Promise.resolve(DEFAULT_PLATFORM_INFO),
+      getSettings: notImplemented,
+      updateSettings: notImplemented,
+      previewRetention: notImplemented,
+      uploadBranding: notImplemented,
+      removeBranding: notImplemented,
+      runRetention: notImplemented,
+      ...overrides.platform,
     },
   }
 }

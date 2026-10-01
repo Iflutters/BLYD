@@ -106,7 +106,9 @@ function handle(e, action, options) {
 
     const token = readCookie(e, container.config.cookie.name)
     const auth = container.auth.authenticate(token)
-    if (token && !auth.principal) clearSessionCookie(e, container.config)
+    // rotas públicas não mexem na sessão: a identidade da plataforma carrega junto com o /auth/me, e
+    // limpar o cookie aqui faria o /auth/me perder o motivo "sessão expirada" (vira "sem sessão")
+    if (token && !auth.principal && opts.auth !== false) clearSessionCookie(e, container.config)
     if (opts.auth !== false && !auth.principal) throw appError(token ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED')
 
     const ctx = {

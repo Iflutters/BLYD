@@ -11,6 +11,7 @@ const rbac = require('../domain/rbac')
 const { PERMISSIONS } = require('../domain/permissions')
 const { buildAuditEntry, truncate, MAX_USER_AGENT } = require('./audit')
 const { toUserDto, toRoleDto, toSessionDto } = require('./presenters')
+const { currentPasswordPolicy, currentLockoutPolicy } = require('./platform-settings')
 
 const passwordInput = rules.custom((value) => {
   if (typeof value !== 'string') return 'invalid_type'
@@ -25,9 +26,12 @@ const LOGIN_SCHEMA = {
 
 const EMPTY = Object.freeze({ principal: null, session: null, reason: null })
 
-const CHANGE_PASSWORD_SCHEMA = {
-  current_password: [rules.required(), passwordInput],
-  new_password: [rules.required(), rules.custom((value) => userDomain.passwordIssue(value))],
+/** A senha nova segue a política vigente do Configurador geral. */
+function changePasswordSchema(policy) {
+  return {
+    current_password: [rules.required(), passwordInput],
+    new_password: [rules.required(), rules.custom((value) => userDomain.passwordIssue(value, policy))],
+  }
 }
 
 function createAuthService(deps) {
@@ -47,7 +51,8 @@ function createAuthService(deps) {
 
     // bloqueio progressivo por conta: vale igual para e-mails inexistentes (não revela contas)
     const failures = deps.loginAttemptRepository.listSince(key, new Date(now.getTime() - lockout.WINDOW_MINUTES * 60000))
-    const until = lockout.lockedUntil(failures.length, failures.length ? new Date(Math.max.apply(null, failures.map((d) => d.getTime()))) : null)
+    const lastFailure = failures.length ? new Date(Math.max.apply(null, failures.map((d) => d.getTime()))) : null
+    const until = lockout.lockedUntil(failures.length, lastFailure, currentLockoutPolicy(deps))
     if (until && until > now) {
       if (user) {
         deps.auditRepository.record(
@@ -210,7 +215,7 @@ function createAuthService(deps) {
    */
   function changePassword(ctx, input) {
     rbac.assertAuthenticated(ctx.principal)
-    const data = assertValid(input, CHANGE_PASSWORD_SCHEMA)
+    const data = assertValid(input, changePasswordSchema(currentPasswordPolicy(deps)))
     const userId = ctx.principal.userId
     if (!deps.userRepository.verifyPassword(userId, data.current_password)) {
       throw appError('VALIDATION_ERROR', undefined, { fields: { current_password: 'incorrect' } })

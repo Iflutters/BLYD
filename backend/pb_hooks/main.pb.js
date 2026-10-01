@@ -290,6 +290,18 @@ routerAdd('POST', '/api/v1/notifications/due-reminders', (e) => require(`${__hoo
 // lembretes de prazo todo dia às 08:00 (horário do servidor)
 cronAdd('kamban_due_reminders', '0 8 * * *', () => require(`${__hooks}/src/http/routes.js`).runDueReminders())
 cronAdd('kamban_login_attempts_cleanup', '30 3 * * *', () => require(`${__hooks}/src/http/routes.js`).purgeLoginAttempts())
+// retenção do histórico de auditoria (Configurador geral) todo dia às 03:45
+cronAdd('kamban_audit_retention', '45 3 * * *', () => require(`${__hooks}/src/http/routes.js`).purgeAuditLogs())
+
+// Configurador geral: identidade pública (login, título e ícone) e configurações (platform.manage)
+routerAdd('GET', '/api/v1/platform', (e) => require(`${__hooks}/src/http/routes.js`).platformInfo(e))
+routerAdd('GET', '/api/v1/platform/branding/{slot}', (e) => require(`${__hooks}/src/http/routes.js`).platformBranding(e))
+routerAdd('GET', '/api/v1/settings/platform', (e) => require(`${__hooks}/src/http/routes.js`).getPlatformSettings(e))
+routerAdd('PATCH', '/api/v1/settings/platform', (e) => require(`${__hooks}/src/http/routes.js`).updatePlatformSettings(e), JSON_BODY_LIMIT)
+routerAdd('POST', '/api/v1/settings/platform/branding/{slot}', (e) => require(`${__hooks}/src/http/routes.js`).uploadPlatformBranding(e), $apis.bodyLimit(2 * 1024 * 1024))
+routerAdd('DELETE', '/api/v1/settings/platform/branding/{slot}', (e) => require(`${__hooks}/src/http/routes.js`).removePlatformBranding(e))
+routerAdd('POST', '/api/v1/settings/platform/purge-audit', (e) => require(`${__hooks}/src/http/routes.js`).runAuditRetention(e))
+routerAdd('GET', '/api/v1/auth/password-policy', (e) => require(`${__hooks}/src/http/routes.js`).passwordPolicy(e))
 
 // tags
 routerAdd('GET', '/api/v1/tags', (e) => require(`${__hooks}/src/http/routes.js`).listTags(e))

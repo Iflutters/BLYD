@@ -8,7 +8,9 @@ import { isAppError } from '@/core/errors/app-error'
 import { loginSchema, type LoginInput } from '@/domain/validation'
 import { AppButton, AppCheckbox, AppTextField } from '@/presentation/components'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
-import { BrandMark } from '@/presentation/navigation/Sidebar'
+import { BrandMark, DefaultBrandIcon } from '@/presentation/navigation/Sidebar'
+import { usePlatformInfo } from '@/presentation/common/use-platform'
+import { logoFor } from '@/domain/platform'
 import { PreferencesQuickBar } from '@/features/preferences/PreferencesQuickBar'
 import { safeRedirect, useLogin } from './session'
 import { useSessionStore } from './session-store'
@@ -20,6 +22,9 @@ export function LoginPage() {
   const login = useLogin()
   const errorMessage = useErrorMessage()
   const endReason = useSessionStore((s) => s.endReason)
+  const platform = usePlatformInfo()
+  // o painel lateral tem fundo da marca (escuro): usa a versão escura do logo
+  const heroLogo = logoFor(platform, 'dark')
 
   const {
     register,
@@ -34,9 +39,12 @@ export function LoginPage() {
   })
 
   useEffect(() => {
-    document.title = `${t('auth.title')} · KAMBAN`
     setFocus('email')
-  }, [t, setFocus])
+  }, [setFocus])
+
+  useEffect(() => {
+    document.title = `${t('auth.title')} · ${platform.name}`
+  }, [t, platform.name])
 
   const onSubmit = handleSubmit((values) =>
     login.mutate(values, {
@@ -56,20 +64,22 @@ export function LoginPage() {
           className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_1px,transparent_1px)] [background-size:28px_28px]"
         />
         <div className="relative flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-            <svg viewBox="0 0 32 32" className="size-5" aria-hidden>
-              <rect x="6" y="7" width="5" height="18" rx="1.5" fill="#fff" />
-              <rect x="13.5" y="7" width="5" height="12" rx="1.5" fill="#fff" opacity=".85" />
-              <rect x="21" y="7" width="5" height="8" rx="1.5" fill="#fff" opacity=".7" />
-            </svg>
-          </div>
-          <span className="text-lg font-semibold tracking-tight">KAMBAN</span>
+          {heroLogo ? (
+            <img src={heroLogo} alt="" className="size-9 rounded-lg object-contain" />
+          ) : (
+            <div className="flex size-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
+              <DefaultBrandIcon className="size-5" />
+            </div>
+          )}
+          <span className="text-lg font-semibold tracking-tight">{platform.name}</span>
         </div>
         <div className="relative max-w-md">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight">{t('auth.heroTitle')}</h2>
           <p className="mt-3 text-base text-white/80">{t('auth.heroSubtitle')}</p>
         </div>
-        <p className="relative text-sm text-white/60">© {new Date().getFullYear()} KAMBAN</p>
+        <p className="relative text-sm text-white/60">
+          © {new Date().getFullYear()} {platform.name}
+        </p>
       </aside>
 
       <main className="relative flex flex-col items-center justify-center px-4 py-10 sm:px-6">

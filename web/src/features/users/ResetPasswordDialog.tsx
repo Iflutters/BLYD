@@ -1,22 +1,26 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { isAppError } from '@/core/errors/app-error'
 import type { User } from '@/domain/entities'
-import { resetPasswordSchema, type ResetPasswordInput } from '@/domain/validation'
+import { resetPasswordSchemaFor, type ResetPasswordInput } from '@/domain/validation'
 import { AppButton, AppDialog, AppTextField, notify } from '@/presentation/components'
 import { useRepositories } from '@/presentation/common/repositories-context'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
+import { usePasswordHint, usePasswordPolicy } from '@/features/auth/use-password-policy'
 
 /** Redefinição de senha de outro usuário (users.edit). Encerra as sessões dele. */
 export function ResetPasswordDialog({ user, onOpenChange }: { user: User | null; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation()
   const { users } = useRepositories()
   const errorMessage = useErrorMessage()
+  const policy = usePasswordPolicy()
+  const passwordHint = usePasswordHint(policy)
+  const schema = useMemo(() => resetPasswordSchemaFor(policy), [policy])
   const { register, handleSubmit, reset, setError, formState } = useForm<ResetPasswordInput>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver: zodResolver(schema),
     defaultValues: { password: '', confirmPassword: '' },
   })
 
@@ -62,7 +66,7 @@ export function ResetPasswordDialog({ user, onOpenChange }: { user: User | null;
           revealable
           required
           autoComplete="new-password"
-          hint={t('users.passwordHint')}
+          hint={passwordHint}
           error={formState.errors.password?.message}
           {...register('password')}
         />

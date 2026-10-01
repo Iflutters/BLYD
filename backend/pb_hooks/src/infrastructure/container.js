@@ -31,6 +31,7 @@ const { createPlanManagementService } = require('../application/plan-management'
 const { createPlanColumnsService } = require('../application/plan-columns')
 const { createDocSpaceService } = require('../application/doc-spaces')
 const { createDocPageService } = require('../application/doc-pages')
+const { createPlatformSettingsService } = require('../application/platform-settings')
 const contentLocale = require('../domain/content-locale')
 const config = require('./config')
 
@@ -102,6 +103,7 @@ function createContainer(app, options) {
     planColumns: createPlanColumnsService(deps),
     docSpaces: createDocSpaceService(deps),
     docPages: createDocPageService(deps),
+    platformSettings: createPlatformSettingsService(deps),
   }
 }
 

@@ -532,6 +532,74 @@ function purgeLoginAttempts() {
   return removed
 }
 
+// ---------------------------------------------------------------- Configurador geral
+
+/** Público: nome e endereços da identidade (tela de login, título e ícone da aba). */
+function platformInfo(e) {
+  return handle(e, ({ services }) => ({ data: services.platformSettings.publicInfo() }), PUBLIC)
+}
+
+/** Público: logo/ícone. Arquivo protegido servido com nosniff e CSP sandbox (SVG sem nada ativo). */
+function platformBranding(e) {
+  return handle(
+    e,
+    ({ services, param }) => {
+      const file = services.platformSettings.brandingFile(param('slot'))
+      e.response.header().set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+      e.response.header().set('X-Content-Type-Options', 'nosniff')
+      e.response.header().set('Cache-Control', 'public, max-age=86400')
+      const fsys = $app.newFilesystem()
+      try {
+        fsys.serve(e.response, e.request, file.key, file.name)
+      } finally {
+        fsys.close()
+      }
+      return { handled: true }
+    },
+    PUBLIC,
+  )
+}
+
+const getPlatformSettings = configAction('platformSettings', (s, ctx) => s.getSettings(ctx))
+const updatePlatformSettings = configAction('platformSettings', (s, ctx, r) => s.updateSettings(ctx, r.body()))
+const removePlatformBranding = (e) => handle(e, ({ ctx, services, param }) => ({ data: services.platformSettings.removeBranding(ctx, param('slot')) }))
+const passwordPolicy = configAction('platformSettings', (s, ctx) => s.passwordPolicy(ctx))
+const runAuditRetention = configAction('platformSettings', (s, ctx) => s.runRetentionNow(ctx))
+
+/** Multipart com um arquivo em `file`; lê o conteúdo inteiro (até o limite) para conferir o tipo e o SVG. */
+function uploadPlatformBranding(e) {
+  return handle(e, ({ ctx, services, param }) => {
+    const { BRANDING_MAX_BYTES } = require(`${__hooks}/src/domain/platform-settings.js`)
+    let uploaded = []
+    try {
+      uploaded = e.findUploadedFiles('file') || []
+    } catch (_) {
+      uploaded = []
+    }
+    const file = uploaded[0]
+    let upload = null
+    if (file) {
+      const reader = file.reader.open()
+      let bytes = []
+      try {
+        bytes = toBytes(reader, BRANDING_MAX_BYTES + 1)
+      } finally {
+        reader.close()
+      }
+      upload = { name: file.originalName, size: file.size, bytes, handle: file }
+    }
+    return { data: services.platformSettings.uploadBranding(ctx, param('slot'), upload) }
+  })
+}
+
+/** Rotina diária (cron): retenção do histórico de auditoria. */
+function purgeAuditLogs() {
+  const { createContainer } = require(`${__hooks}/src/infrastructure/container.js`)
+  const result = createContainer($app).platformSettings.purgeAuditLogs()
+  $app.logger().info('kamban: retenção do histórico', 'removed', result.removed)
+  return result
+}
+
 // ---------------------------------------------------------------- misc
 
 function notFound(e) {
@@ -711,6 +779,15 @@ module.exports = {
   readAllNotifications,
   runDueReminders,
   purgeLoginAttempts,
+  purgeAuditLogs,
+  platformInfo,
+  platformBranding,
+  getPlatformSettings,
+  updatePlatformSettings,
+  uploadPlatformBranding,
+  removePlatformBranding,
+  passwordPolicy,
+  runAuditRetention,
   runDueRemindersNow,
   uploadTaskAttachments,
   attachmentFile,

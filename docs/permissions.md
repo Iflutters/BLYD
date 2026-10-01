@@ -17,7 +17,7 @@
 | reports | `reports.view` |
 | audit | `audit.view` (desde a migration 1790000002) |
 | docs | `docs.view`, `docs.edit`, `docs.manage` (expansão Onda 2, migration 1790000019) |
-| settings | `settings.manage`, `permissions.manage` |
+| settings | `settings.manage`, `permissions.manage`, `platform.manage` (Configurador geral, migration 1790000027) |
 
 ## Matriz inicial (seed)
 | Permissão | SUPER_ADMIN | ADMIN | MANAGER | MEMBER | VIEWER |
@@ -36,6 +36,7 @@
 | reports.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | audit.view | ✓ | ✓ | | | |
 | settings.manage / permissions.manage | ✓ | ✓ | | | |
+| platform.manage | ✓ | ✓ | | | |
 | docs.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | docs.edit | ✓ | ✓ | ✓ | ✓ | |
 | docs.manage | ✓ | ✓ | ✓ | | |
@@ -156,3 +157,8 @@ Permissão global **e** regra do espaço (`domain/docs.js` → `spaceAccess`):
 | Ler espaço/página publicada, arquivos, versões, busca | `docs.view` **e** (espaço da empresa **ou** acesso ao projeto do espaço) — caso contrário 404 |
 | Ver rascunhos; criar, editar, publicar, mover, excluir páginas; enviar arquivos; restaurar versão | `docs.edit` **e** (espaço da empresa **ou** colaborador do projeto — leitor do projeto não) |
 | Criar, configurar e excluir espaço | `docs.manage` **e** (espaço da empresa **ou** gestor/dono do projeto) |
+
+## Configurador geral
+- `platform.manage` cobre a **segurança e a identidade da plataforma** (bloqueio de login, política de senha, retenção do histórico, nome, logo e ícone) — separada de `settings.manage`, que cobre a configuração das tarefas (tipos, campos, status, tags) e pode ser delegada a quem cuida do processo.
+- Concedida por padrão só ao Admin (migration 1790000027, idempotente). As regras anti-escalonamento valem como em toda permissão: só concede quem a possui.
+- A identidade (`GET /platform` e as imagens) é pública; `GET /auth/password-policy` exige só estar logado.

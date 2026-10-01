@@ -17,11 +17,17 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
 
-/** Retorna o código do problema da senha ou null quando aceitável. */
-function passwordIssue(password) {
-  if (typeof password !== 'string' || password.length < PASSWORD_MIN) return 'too_short'
+/**
+ * Retorna o código do problema da senha ou null quando aceitável. `policy` vem do Configurador geral
+ * (domain/platform-settings.passwordPolicy); sem ela, a regra padrão (10 caracteres, letras e números).
+ */
+function passwordIssue(password, policy) {
+  const min = policy ? policy.min_length : PASSWORD_MIN
+  if (typeof password !== 'string' || password.length < min) return 'too_short'
   if (password.length > PASSWORD_MAX) return 'too_long'
   if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return 'weak_password'
+  if (policy && policy.require_mixed_case && (!/[a-z]/.test(password) || !/[A-Z]/.test(password))) return 'needs_mixed_case'
+  if (policy && policy.require_symbol && !/[^A-Za-z0-9]/.test(password)) return 'needs_symbol'
   return null
 }
 

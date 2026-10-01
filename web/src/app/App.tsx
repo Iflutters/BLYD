@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router/dom'
 import { RepositoriesContext } from '@/presentation/common/repositories-context'
 import { AppToaster, AppTooltipProvider } from '@/presentation/components'
 import { useThemeSync } from '@/presentation/common/use-theme'
+import { PlatformHead } from '@/presentation/common/use-platform'
 import { queryClient, repositories } from './container'
 import { createAppRouter } from './router'
 
@@ -15,6 +16,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <RepositoriesContext.Provider value={repositories}>
         <AppTooltipProvider>
+          <PlatformHead />
           <RouterProvider router={router} />
           <AppToaster />
         </AppTooltipProvider>

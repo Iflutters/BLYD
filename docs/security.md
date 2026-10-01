@@ -69,3 +69,9 @@ Regras do PocketBase (seed): login 10/min por IP; `/api/v1/` 600/min; `/api/` 30
 - **Bloqueio de conta** (`tests/unit/application-lockout.test.js`, `tests/api/lockout.test.js`).
 - **Dependências:** `npm audit` sem vulnerabilidades na raiz, em `web/` e em `backend/` (2026-09-30).
 - **Navegador** ([testing.md](testing.md#ponta-a-ponta-fase-9)): fluxos do MVP, leitor sem edição, sessão encerrada em outro lugar e varredura de acessibilidade.
+
+## Configurador geral
+- **Bloqueio de login e política de senha configuráveis** com limites que não deixam desligar a proteção (mínimo de 3 tentativas; senha de 8+ caracteres sempre com letras e números; teto do bloqueio ≥ tempo inicial). A política de senha vale em criação, redefinição e troca; o bcrypt continua limitando a 72 caracteres.
+- **Imagens da identidade** (logo/ícone): até 1 MB, tipo conferido pelo conteúdo (PNG, JPEG, WebP, ICO); **SVG** só sem conteúdo ativo — recusado se tiver `<script>`, atributos `on*`, `foreignObject`/`iframe`/`embed`/`object`, `DOCTYPE`/`ENTITY`, `javascript:`, `@import` ou referências externas (só âncoras `#` e `data:image/`). Servidas com `X-Content-Type-Options: nosniff` e `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` (segunda barreira se aberto direto no navegador); na tela entram por `<img>`, que não executa script.
+- **Rotas públicas novas:** só `GET /api/v1/platform` (nome e endereços) e as imagens — sem dados de configuração. Rotas públicas **não limpam** o cookie de uma sessão inválida (só as protegidas, que respondem `SESSION_EXPIRED`): a identidade carrega junto com o `/auth/me`, e limpar antes faria a tela perder o aviso "Sua sessão expirou". A varredura de segurança (`security-sweep.test.js`) as trata como públicas; todo o resto continua exigindo sessão.
+- **Retenção do histórico:** limpeza diária com registro da própria limpeza; encurtar o prazo exige confirmação na tela com a contagem do que sairá.

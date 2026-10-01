@@ -48,6 +48,7 @@ import type {
   UserSummary,
 } from './projects'
 import type { Language } from '@/core/i18n'
+import type { BrandingSlot, PasswordPolicy, PlatformInfo, PlatformSettings, PlatformSettingsValues } from './platform'
 import type { ThemePreference } from '@/core/theme/theme'
 
 /**
@@ -71,6 +72,22 @@ export interface AuthRepository {
   /** Encerra todas as sessões do usuário, exceto a atual. */
   revokeOtherSessions(): Promise<{ revoked: number }>
   changePassword(currentPassword: string, newPassword: string): Promise<{ otherSessionsRevoked: number }>
+  /** Exigências vigentes para senhas (Configurador geral). */
+  passwordPolicy(): Promise<PasswordPolicy>
+}
+
+/** Configurador geral: identidade pública e configurações da plataforma (platform.manage). */
+export interface PlatformRepository {
+  /** Público (sem login): nome, logo e ícone. */
+  getInfo(): Promise<PlatformInfo>
+  getSettings(): Promise<PlatformSettings>
+  updateSettings(patch: Partial<PlatformSettingsValues>): Promise<PlatformSettings>
+  /** Quantos registros do histórico a nova retenção apagaria (não grava). */
+  previewRetention(months: number): Promise<{ auditToDelete: number }>
+  uploadBranding(slot: BrandingSlot, file: File): Promise<PlatformSettings>
+  removeBranding(slot: BrandingSlot): Promise<PlatformSettings>
+  /** Aplica a retenção agora (mesma regra da rotina diária). */
+  runRetention(): Promise<{ removed: number }>
 }
 
 export interface CreateUserData {
@@ -443,4 +460,5 @@ export interface Repositories {
   plan: PlanRepository
   docs: DocsRepository
   sprints: SprintRepository
+  platform: PlatformRepository
 }

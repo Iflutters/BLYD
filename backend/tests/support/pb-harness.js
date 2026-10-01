@@ -26,8 +26,17 @@ function freePort() {
   })
 }
 
-function pbArgs(dataDir) {
-  return [`--dir=${dataDir}`, `--hooksDir=${path.join(ROOT, 'pb_hooks')}`, `--migrationsDir=${path.join(ROOT, 'pb_migrations')}`]
+function pbArgs(dataDir, migrationsDir) {
+  return [`--dir=${dataDir}`, `--hooksDir=${path.join(ROOT, 'pb_hooks')}`, `--migrationsDir=${migrationsDir || path.join(ROOT, 'pb_migrations')}`]
+}
+
+/** Cópia das migrations reais + as do teste (`[{ name, content }]`), para semear o que a API não cria. */
+function migrationsWith(extra) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kamban-migrations-'))
+  const source = path.join(ROOT, 'pb_migrations')
+  fs.readdirSync(source).forEach((name) => fs.copyFileSync(path.join(source, name), path.join(dir, name)))
+  extra.forEach((m) => fs.writeFileSync(path.join(dir, m.name), m.content))
+  return dir
 }
 
 async function waitForHealth(baseUrl, timeoutMs) {
@@ -44,14 +53,19 @@ async function waitForHealth(baseUrl, timeoutMs) {
   throw new Error('PocketBase não respondeu a tempo')
 }
 
-/** `options.publicDir`: pasta do build do front para servir junto (testes de ponta a ponta). */
+/**
+ * `options.publicDir`: pasta do build do front para servir junto (testes de ponta a ponta).
+ * `options.extraMigrations`: migrations só do teste, rodadas depois das reais (ex.: dados antigos).
+ */
 async function startPocketBase(extraEnv, options) {
   if (!fs.existsSync(BIN)) throw new Error(`Binário do PocketBase não encontrado em ${BIN}`)
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kamban-api-'))
   const env = Object.assign({}, process.env, { KAMBAN_ENV: 'test' }, extraEnv || {})
+  const migrationsDir = options && options.extraMigrations ? migrationsWith(options.extraMigrations) : undefined
+  const args = () => pbArgs(dataDir, migrationsDir)
 
-  execFileSync(BIN, ['migrate', 'up'].concat(pbArgs(dataDir)), { env, stdio: 'pipe' })
-  execFileSync(BIN, ['kamban-admin'].concat(pbArgs(dataDir)), {
+  execFileSync(BIN, ['migrate', 'up'].concat(args()), { env, stdio: 'pipe' })
+  execFileSync(BIN, ['kamban-admin'].concat(args()), {
     env: Object.assign({}, env, {
       KAMBAN_ADMIN_EMAIL: ADMIN.email,
       KAMBAN_ADMIN_PASSWORD: ADMIN.password,
@@ -59,11 +73,11 @@ async function startPocketBase(extraEnv, options) {
     }),
     stdio: 'pipe',
   })
-  execFileSync(BIN, ['superuser', 'upsert', SUPERUSER.email, SUPERUSER.password].concat(pbArgs(dataDir)), { env, stdio: 'pipe' })
+  execFileSync(BIN, ['superuser', 'upsert', SUPERUSER.email, SUPERUSER.password].concat(args()), { env, stdio: 'pipe' })
 
   const port = await freePort()
   const baseUrl = `http://127.0.0.1:${port}`
-  const serveArgs = ['serve', `--http=127.0.0.1:${port}`].concat(pbArgs(dataDir))
+  const serveArgs = ['serve', `--http=127.0.0.1:${port}`].concat(args())
   if (options && options.publicDir) serveArgs.push(`--publicDir=${options.publicDir}`)
   const child = spawn(BIN, serveArgs, { env, stdio: 'pipe' })
   let output = ''

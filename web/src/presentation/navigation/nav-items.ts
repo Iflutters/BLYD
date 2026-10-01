@@ -58,8 +58,9 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: 'nav.settings',
     to: '/settings',
     icon: Settings,
-    anyOf: ['settings.manage', 'permissions.manage', 'audit.view'],
+    anyOf: ['platform.manage', 'settings.manage', 'permissions.manage', 'audit.view'],
     children: [
+      { id: 'general', labelKey: 'nav.general', to: '/settings/general', anyOf: ['platform.manage'] },
       { id: 'task-types', labelKey: 'nav.taskTypes', to: '/settings/task-types', anyOf: ['settings.manage'] },
       { id: 'custom-fields', labelKey: 'nav.customFields', to: '/settings/custom-fields', anyOf: ['settings.manage'] },
       { id: 'statuses', labelKey: 'nav.statuses', to: '/settings/statuses', anyOf: ['settings.manage'] },

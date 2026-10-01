@@ -9,15 +9,22 @@ const rbac = require('../domain/rbac')
 const userDomain = require('../domain/user')
 const { buildAuditEntry, diff } = require('./audit')
 const { toUserDto } = require('./presenters')
+const { currentPasswordPolicy } = require('./platform-settings')
 
-const password = rules.custom((value) => userDomain.passwordIssue(value))
+/** Senha conferida pela política vigente do Configurador geral. */
+function passwordRule(deps) {
+  const policy = currentPasswordPolicy(deps)
+  return rules.custom((value) => userDomain.passwordIssue(value, policy))
+}
 
-const CREATE_SCHEMA = {
-  name: [rules.required(), rules.maxLength(120)],
-  email: [rules.required(), rules.email()],
-  password: [rules.required(), password],
-  role_id: [rules.required(), rules.maxLength(40)],
-  locale: [rules.oneOf(userDomain.LOCALES)],
+function createSchema(deps) {
+  return {
+    name: [rules.required(), rules.maxLength(120)],
+    email: [rules.required(), rules.email()],
+    password: [rules.required(), passwordRule(deps)],
+    role_id: [rules.required(), rules.maxLength(40)],
+    locale: [rules.oneOf(userDomain.LOCALES)],
+  }
 }
 
 const UPDATE_SCHEMA = {
@@ -103,7 +110,7 @@ function createUserService(deps) {
 
   function createUser(ctx, input) {
     rbac.assertCan(ctx.principal, 'users.create')
-    const data = fromPublic(assertValid(input, CREATE_SCHEMA))
+    const data = fromPublic(assertValid(input, createSchema(deps)))
     const role = findAssignableRole(ctx.principal, data.roleId)
     const email = userDomain.normalizeEmail(data.email)
     if (deps.userRepository.emailExists(email)) throw appError('EMAIL_ALREADY_IN_USE')
@@ -213,7 +220,7 @@ function createUserService(deps) {
     const target = findUserOrFail(id)
     if (target.id === ctx.principal.userId) throw appError('USE_CHANGE_PASSWORD')
     userDomain.assertCanEdit(ctx.principal, { id: target.id, roleCode: roleCodeOf(target) })
-    const data = assertValid(input, { password: [rules.required(), password] })
+    const data = assertValid(input, { password: [rules.required(), passwordRule(deps)] })
 
     deps.unitOfWork.run((repos) => {
       repos.userRepository.update(target.id, { password: data.password })

@@ -31,6 +31,7 @@ export const PERMISSION_CODES = [
   'audit.view',
   'settings.manage',
   'permissions.manage',
+  'platform.manage',
 ] as const
 
 export type PermissionCode = (typeof PERMISSION_CODES)[number]

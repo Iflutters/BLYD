@@ -1,6 +1,6 @@
 /**
  * Varredura de segurança (Fase 9): percorre TODAS as rotas registradas em main.pb.js.
- * - sem sessão, só health, openapi.json e login respondem; o resto é 401;
+ * - sem sessão, só health, openapi.json, login e a identidade da plataforma respondem; o resto é 401;
  * - com sessão, toda mutação sem o header CSRF é recusada (403 CSRF_CHECK_FAILED);
  * - a API genérica do PocketBase não entrega registro de nenhuma coleção a um usuário comum;
  * - respostas da API saem com os cabeçalhos de segurança.
@@ -19,7 +19,8 @@ const RULES = [
   { label: '/api/', audience: '', duration: 10, maxRequests: 50000 },
 ]
 
-const PUBLIC = ['GET /api/v1/health', 'GET /api/v1/openapi.json', 'POST /api/v1/auth/login']
+// identidade da plataforma (Configurador geral): a tela de login e a aba do navegador precisam dela sem sessão
+const PUBLIC = ['GET /api/v1/health', 'GET /api/v1/openapi.json', 'POST /api/v1/auth/login', 'GET /api/v1/platform', 'GET /api/v1/platform/branding/{slot}']
 const MUTATIONS = ['POST', 'PUT', 'PATCH', 'DELETE']
 
 function registeredRoutes() {

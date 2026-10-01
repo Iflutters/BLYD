@@ -124,7 +124,9 @@ A ordem 1 → 2 pode ser invertida sem impacto (os módulos são independentes a
 - Timeline: **linha de base** (planejado × realizado), **reprogramação em cascata** pelas dependências (com prévia antes de aplicar), caminho crítico, exportar imagem/PDF.
 - Documentação: comparar versões lado a lado com destaque, importar Word/Markdown, permissões por página, tradução de páginas.
 
-## Configurador geral da plataforma (pedido do usuário em 2026-09-30)
+## Configurador geral da plataforma (pedido do usuário em 2026-09-30) ✅
+
+> **Concluído em 2026-10-01** (regras em [regras-de-negocio.md](regras-de-negocio.md) §15; ADR-034). Diferença do plano: a permissão é a nova `platform.manage` (a `settings.manage` já existia e cobre a configuração das tarefas).
 
 > Independente das ondas (pode entrar entre qualquer uma delas). Hoje esses valores estão **fixos no código**: bloqueio após
 > 5 falhas de login (5 min, dobrando até 60 min — `domain/lockout.js`), senha com mínimo de 10 caracteres e letras + números
