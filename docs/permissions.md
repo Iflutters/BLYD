@@ -122,6 +122,11 @@ Módulo **Gerenciamento de projetos** no catálogo: `plan.view`, `plan.edit`, `p
 | Mover (arrastar), duplicar, seleção em massa, dependências e importar elementos | `plan.edit` **e** dono, gestor ou membro do projeto (ou `projects.view_all`), projeto não arquivado |
 | Painel do elemento: publicar e responder atualizações | ver o quadro (acesso ao projeto + `plan.view`, inclusive leitor), projeto não arquivado; editar só o autor; excluir o autor ou o gestor (`plan.manage`) |
 | Painel do elemento: colar/anexar imagem ou arquivo na atualização | quem publica (ver o quadro, projeto aberto — inclusive leitor); depois, só o autor; excluir: o autor ou o gestor; baixar: quem vê o quadro |
+| Visões Cronograma, Kanban, Gestão e Relatórios (ver) | ver o quadro (acesso ao projeto + `plan.view`, inclusive leitor) |
+| Datas no Cronograma, status no Kanban, registrar no diário, abrir/atualizar problema | `plan.edit` **e** colaborador, projeto não arquivado |
+| Editar/excluir registro do diário | o autor (com `plan.edit`) ou o gestor (`plan.manage`) |
+| Excluir problema | quem abriu (com `plan.edit`) ou o gestor (`plan.manage`) |
+| Salvar/limpar a linha de base do Cronograma | `plan.manage` **e** gestor/dono |
 | Grupos (criar, renomear, subgrupo, mover/arrastar, duplicar, excluir); etiquetas de status; excluir etiqueta de recurso; regra de dependências; criar grupos e status na importação | `plan.manage` **e** gestor/dono do projeto (ou `projects.view_all`), projeto não arquivado |
 
 Registro de projeto invisível responde 404 (`PROJECT_NOT_FOUND`, `GROUP_NOT_FOUND`, `PLAN_*_NOT_FOUND`). Detalhes funcionais em [regras-de-negocio.md](regras-de-negocio.md#14-quadro-de-gerenciamento-do-projeto-gerenciamento-de-projetos--fase-gp-1).

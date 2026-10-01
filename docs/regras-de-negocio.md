@@ -384,6 +384,9 @@ Sobre os elementos do grupo (sem subelementos): **barra de distribuição dos st
 | Editar atualização | o autor |
 | Excluir atualização ou arquivo de outra pessoa | gestor ou dono + `plan.manage` (a sua: quem publicou/enviou) |
 | Colar/anexar imagem ou arquivo | quem publica a atualização (inclusive leitor); depois, só o autor |
+| Ver Cronograma, Kanban, Gestão e Relatórios | quem vê o quadro (inclusive leitor) |
+| Mudar datas no Cronograma e status no Kanban; registrar no diário; abrir e atualizar problemas | dono, gestor ou membro do projeto + `plan.edit` |
+| Editar/excluir registro do diário de outra pessoa; excluir problema aberto por outra pessoa; salvar ou limpar a linha de base | gestor ou dono + `plan.manage` (o seu registro/problema: quem criou) |
 | Projeto arquivado | somente leitura |
 
 ### Histórico
@@ -434,5 +437,41 @@ Sobre os elementos do grupo (sem subelementos): **barra de distribuição dos st
 - **Detalhes**: resumo dos campos (status, cronograma, recursos ou responsável/data, esforço, duração, progresso, subelementos e dependências). A edição continua nas células do quadro.
 - Projeto arquivado: o painel fica só para leitura.
 
+### Visões do quadro (GP-4)
+A aba Gerenciamento tem as visões **Quadro principal · Cronograma · Kanban · Gestão · Relatórios** (a escolhida fica no endereço, `?view=`). Todas leem os mesmos elementos: mudar o status no Kanban ou as datas no Cronograma é mudar o elemento do quadro. O painel do elemento abre de qualquer visão.
+
+**Cronograma**
+- Gantt dos elementos (não dos subelementos) por grupo, na ordem do quadro; subgrupo com o título da fase ("2.0 Planejamento | 2.1 Plano do Projeto"); o cabeçalho do grupo mostra o período dele. Barra na cor do grupo, com o progresso; atrasado (fim antes de hoje e não encerrado) fica destacado; seta das dependências "bloqueia", tracejada quando o elemento começa antes do fim do que o bloqueia.
+- Escala dias, semanas, meses ou trimestres (lembrada por pessoa), linha de hoje, botão **Hoje** e **Ajustar** (escolhe a escala mais detalhada em que o período inteiro cabe na tela).
+- Arrastar a barra muda o cronograma; puxar a ponta muda início ou fim; pelo teclado, setas (Shift = fim, Alt = início). Elemento sem datas aparece em **Sem cronograma**: arrastar para o dia ou "Hoje" agenda (dura pelo esforço estimado, 8 h por dia, mínimo 1 dia). Leitor só vê.
+- **Linha de base**: o gestor salva a foto do cronograma atual dos elementos (substituir pede confirmação) e pode limpar. Com linha de base, um traço fino sob cada barra mostra o planejado (dá para ocultar) e o nome da barra diz quantos dias o fim andou ("fim 4 dias depois da linha de base").
+- **Exportar**: planilha CSV (um elemento por linha, na ordem dos grupos) com grupo, elemento, status, início, fim, duração, esforço, progresso e linha de base; separador e datas no formato do idioma.
+- Ao lado: **Bateria** (distribuição das etiquetas de status de todo o quadro e o % na categoria "feito", ex.: "79,7% Feito") e **Esforço estimado (h)** (soma do quadro).
+
+**Kanban**
+- Uma coluna por etiqueta de status, na ordem do quadro, com a quantidade ("Feito / 47"), e **Em branco** por último; os cards são os elementos (grupo, nome, cronograma, recursos, progresso e atualizações). Busca pelo nome.
+- Arrastar o card para outra coluna (ou "Mover para…" no menu do card, pelo teclado) muda o status do elemento, com a regra de dependências do quadro (com "impedir", o card não sai e o aviso diz de quem depende). Clicar no card abre o painel. Leitor só vê.
+
+**Gestão**
+- **Diário do projeto**: registros datados (data + texto, até 5.000 caracteres), do dia mais recente para o mais antigo, com quem registrou. Quem edita o quadro registra; o autor ou o gestor edita e exclui.
+- **Gestão dos problemas**: problemas numerados por projeto (#1, #2…; o número não é reaproveitado nem depois de excluir), com data, descrição (até 2.000), responsável (quem participa do projeto) e situação **Em andamento**, **Pendente** (padrão) ou **Resolvido**. Resolver guarda o dia (voltar para aberto limpa). Quem edita o quadro abre e atualiza (a situação muda direto na lista); quem abriu ou o gestor exclui. Problemas em aberto pesam na saúde do projeto.
+
+**Relatórios** (sobre os elementos; cancelados ficam fora das contas; "hoje" no fuso de quem vê)
+- **Resumo**: elementos, feitos, pendentes, atrasados, parados (etiqueta da categoria parado/bloqueado ou dependência pendente) e progresso (ponderado pelo esforço, como no rodapé).
+- **Cronograma dos pendentes**: no prazo, atrasados e sem datas.
+- **Esforço**: estimado, realizado (o do elemento ou, sem ele, a soma dos subelementos), restante (estimado − realizado, mínimo 0) e desvio dos feitos (realizado − estimado, em horas e %).
+- **Recursos**: elementos (pendentes) e esforço de cada recurso — elemento com dois recursos conta nos dois; "Sem recurso" por último. **Grupos**: feitos/total, progresso, esforço estimado e realizado e atrasados.
+- **Saúde do projeto**: o **pior** dos fatores com dados (Saudável, Atenção, Crítico), sempre mostrando cada fator e o seu valor:
+
+| Fator | Valor | Saudável | Atenção | Crítico |
+|---|---|---|---|---|
+| Prazos | % dos pendentes com data que estão atrasados | 0% | até 20% | acima de 20% |
+| Progresso × planejado | pontos de progresso abaixo do esperado pelo tempo decorrido de cada elemento (ponderado pelo esforço) | até 10 | até 25 | acima de 25 |
+| Parados e bloqueados | % dos pendentes parados ou com dependência pendente | 0% | até 10% | acima de 10% |
+| Esforço | % do realizado acima do estimado nos feitos | até 10% | até 25% | acima de 25% |
+| Problemas em aberto | problemas não resolvidos na Gestão | 0 | 1–2 | 3 ou mais |
+
+Fator sem dados (ex.: nenhum elemento com cronograma) aparece como "Sem dados" e não pesa.
+
 ### Próximas fases
-GP-4 visões Cronograma, Kanban, Gestão e relatórios · GP-5 colunas personalizadas.
+GP-5 colunas personalizadas.

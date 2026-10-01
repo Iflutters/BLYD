@@ -438,3 +438,7 @@ export function kanbanColumns(plan: Plan, query = ''): KanbanColumn[] {
   columns.push({ status: null, items: items.filter((i) => !i.statusId || !known.has(i.statusId)) })
   return columns
 }
+
+/** Visões do quadro (GP-4): todas leem os mesmos elementos. */
+export const PLAN_VIEWS = ['board', 'timeline', 'kanban', 'management', 'reports'] as const
+export type PlanView = (typeof PLAN_VIEWS)[number]

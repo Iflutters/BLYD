@@ -18,6 +18,8 @@ import {
   type PlanFilters,
   type PlanGroupBy,
   type PlanSort,
+  type PlanView,
+  PLAN_VIEWS,
 } from '@/domain/plan-view'
 import { AppBoardColumnsMenu, AppBoardTable, AppButton, AppConfirmDialog, AppEmptyState, AppErrorState, AppSkeleton, notify, useBoardColumns, type AppDropdownItem } from '@/presentation/components'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
@@ -35,7 +37,7 @@ import { ImportDialog } from './ImportDialog'
 import { ItemPanel } from './ItemPanel'
 import { PANEL_TABS, type PanelTab } from '@/domain/plan-updates'
 import { usePlan, usePlanMutations, type PlanMutations } from './queries'
-import { PLAN_VIEWS, PlanViewNav, type PlanView } from './PlanViews'
+import { PlanViewNav } from './PlanViews'
 import { PlanTimeline } from './PlanTimeline'
 import { PlanKanban } from './PlanKanban'
 import { PlanManagement } from './PlanManagement'

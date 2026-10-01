@@ -672,6 +672,30 @@ function build() {
       '/plan/items/{id}/history': {
         get: op('Histórico do elemento (quem vê o quadro)', ['plan'], { 200: ok('Histórico', { type: 'array', items: { type: 'object' } }) }, { parameters: [idParam] }),
       },
+      // quadro — GP-4 (visões e gestão)
+      '/projects/{id}/plan/baseline': {
+        put: op('Salva a linha de base do Cronograma (gestor): foto do cronograma atual dos elementos → { saved_at, items }', ['plan'], { 200: ok('Linha de base', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+        delete: op('Limpa a linha de base (gestor)', ['plan'], { 200: ok('Limpa', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/projects/{id}/plan/journal': {
+        get: op('Diário do projeto (quem vê o quadro): { entries: [JournalEntry], capabilities: { create } } — do dia mais recente', ['plan'], { 200: ok('Diário', { type: 'object' }) }, { parameters: [idParam] }),
+        post: op('Registra no diário (plan.edit + colaborador): { entry_date* (AAAA-MM-DD), content* (≤ 5.000) }', ['plan'], { 201: ok('Registro', ref('JournalEntry')) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/plan/journal/{id}': {
+        patch: op('Edita o registro (autor ou gestor): { entry_date, content }', ['plan'], { 200: ok('Registro', ref('JournalEntry')), 404: errorResponse('PLAN_JOURNAL_NOT_FOUND') }, { parameters: [idParam, csrfHeader] }),
+        delete: op('Exclui o registro (autor ou gestor)', ['plan'], { 200: ok('Excluído', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/projects/{id}/plan/issues': {
+        get: op('Gestão dos problemas (quem vê o quadro): { issues: [PlanIssue], capabilities: { create } }', ['plan'], { 200: ok('Problemas', { type: 'object' }) }, { parameters: [idParam] }),
+        post: op('Abre problema (plan.edit + colaborador): { opened_on*, description* (≤ 2.000), state (in_progress | pending | resolved; padrão pending), owner_id (participante) } — número por projeto que não se repete', ['plan'], { 201: ok('Problema', ref('PlanIssue')) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/plan/issues/{id}': {
+        patch: op('Atualiza o problema (quem edita o quadro); resolved guarda resolved_on', ['plan'], { 200: ok('Problema', ref('PlanIssue')), 404: errorResponse('PLAN_ISSUE_NOT_FOUND') }, { parameters: [idParam, csrfHeader] }),
+        delete: op('Exclui o problema (quem abriu ou o gestor)', ['plan'], { 200: ok('Excluído', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/projects/{id}/plan/report': {
+        get: op('Relatório do quadro (quem vê o quadro): resumo, cronograma, esforço, recursos, grupos e saúde do projeto (pior fator, com os fatores); tz_offset em minutos (−840..840)', ['plan'], { 200: ok('Relatório', { type: 'object' }), 400: errorResponse('VALIDATION_ERROR') }, { parameters: [idParam, { name: 'tz_offset', in: 'query', schema: { type: 'integer' } }] }),
+      },
       '/plan/resources/{id}': {
         patch: op('Renomeia/muda a cor (plan.edit)', ['plan'], { 200: ok('Etiqueta', { type: 'object' }), 404: errorResponse('PLAN_RESOURCE_NOT_FOUND') }, { parameters: [idParam, csrfHeader] }),
         delete: op('Exclui (plan.manage); sai dos elementos', ['plan'], { 200: ok('Excluída', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
@@ -1014,6 +1038,8 @@ function build() {
             blocked: { type: 'boolean', description: 'depende de elemento ainda aberto' },
             updates: { type: 'integer', description: 'atualizações (não excluídas) — contador da linha' },
             files: { type: 'integer' },
+            baseline_start: { type: ['string', 'null'], description: 'linha de base do Cronograma (AAAA-MM-DD)' },
+            baseline_end: { type: ['string', 'null'] },
           },
         },
         PlanUpdate: {
@@ -1032,6 +1058,14 @@ function build() {
             files: { type: 'array', items: ref('PlanFile'), description: 'imagens/arquivos colados ou anexados (vazio quando excluída)' },
             replies: { type: 'array', items: { type: 'object' } },
           },
+        },
+        JournalEntry: {
+          type: 'object',
+          properties: { id: { type: 'string' }, entry_date: { type: 'string', format: 'date' }, content: { type: 'string' }, author: { oneOf: [ref('UserSummary'), { type: 'null' }] }, created_at: { type: 'string', format: 'date-time' }, capabilities: { type: 'object' } },
+        },
+        PlanIssue: {
+          type: 'object',
+          properties: { id: { type: 'string' }, number: { type: 'integer' }, opened_on: { type: 'string', format: 'date' }, description: { type: 'string' }, state: { type: 'string', enum: ['in_progress', 'pending', 'resolved'] }, owner: { oneOf: [ref('UserSummary'), { type: 'null' }] }, resolved_on: { type: ['string', 'null'], format: 'date' }, capabilities: { type: 'object' } },
         },
         PlanFile: {
           type: 'object',

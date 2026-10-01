@@ -56,6 +56,10 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
     ).body.data
     await app.admin.post(`/projects/${seed.project.id}/plan/items`, { parent_id: kickoff.id, name: 'Preparar pauta', owner_id: seed.member.id, due_date: '2020-01-05', estimated_hours: 1, progress: 50 })
     await app.admin.post(`/projects/${seed.project.id}/plan/items`, { group_id: plano.id, name: 'Elaborar plano', duration_days: 3 })
+    // gestão: um registro no diário e um problema (a tela de gestão e o relatório com dados)
+    await app.admin.post(`/projects/${seed.project.id}/plan/journal`, { entry_date: '2020-01-06', content: 'Reunião de abertura do projeto.' })
+    await app.admin.post(`/projects/${seed.project.id}/plan/issues`, { opened_on: '2020-01-07', description: 'Cliente sem acesso à VPN', owner_id: seed.member.id })
+    await app.admin.put(`/projects/${seed.project.id}/plan/baseline`, {})
     // documentação: espaço com uma página rica publicada e uma subpágina em rascunho
     const space = (await app.admin.post('/docs/spaces', { key: 'MANUAL', name: 'Manuais', description: 'Guias de uso.', visibility: 'company' })).body.data
     const docPage = (await app.admin.post(`/docs/spaces/${space.id}/pages`, { title: 'Cadastro de clientes' })).body.data
@@ -86,6 +90,10 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       ['projeto', `/projects/${p}`],
       ['projeto — tarefas', `/projects/${p}?tab=tasks`],
       ['projeto — gerenciamento', `/projects/${p}?tab=plan`],
+      ['projeto — cronograma', `/projects/${p}?tab=plan&view=timeline`],
+      ['projeto — kanban do quadro', `/projects/${p}?tab=plan&view=kanban`],
+      ['projeto — gestão', `/projects/${p}?tab=plan&view=management`],
+      ['projeto — relatórios do quadro', `/projects/${p}?tab=plan&view=reports`],
       ['tarefas', '/tasks'],
       ['tarefa', `/tasks/${a.id}`],
       ['tarefa — comentários', `/tasks/${a.id}?tab=comments`],

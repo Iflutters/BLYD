@@ -188,7 +188,9 @@
     "PLAN_LINK_NOT_FOUND": "Dependency not found.",
     "PLAN_DEPENDENCY_PENDING": "This item has a pending dependency.",
     "PLAN_UPDATE_NOT_FOUND": "Update not found.",
-    "PLAN_FILE_NOT_FOUND": "File not found."
+    "PLAN_FILE_NOT_FOUND": "File not found.",
+    "PLAN_JOURNAL_NOT_FOUND": "Journal entry not found.",
+    "PLAN_ISSUE_NOT_FOUND": "Issue not found."
   },
   "nav": {
     "main": "Main navigation",
@@ -600,7 +602,14 @@
       "linked_item": "Linked item",
       "dependency_rule": "Dependency rule",
       "update": "Update",
-      "files": "Files"
+      "files": "Files",
+      "entry_date": "Date",
+      "content": "Entry",
+      "issue": "Issue",
+      "opened_on": "Date",
+      "issue_state": "Status",
+      "issue_owner": "Owner",
+      "baseline_items": "Items in the baseline"
     },
     "actions": {
       "auth.login": "Signed in",
@@ -700,7 +709,15 @@
       "plan_item.update_edited": "Update edited",
       "plan_item.update_deleted": "Update deleted",
       "plan_item.file_added": "File uploaded",
-      "plan_item.file_deleted": "File deleted"
+      "plan_item.file_deleted": "File deleted",
+      "plan_journal.created": "Journal entry",
+      "plan_journal.updated": "Journal entry edited",
+      "plan_journal.deleted": "Journal entry deleted",
+      "plan_issue.created": "Issue recorded",
+      "plan_issue.updated": "Issue updated",
+      "plan_issue.deleted": "Issue deleted",
+      "plan_settings.baseline_saved": "Baseline saved",
+      "plan_settings.baseline_cleared": "Baseline cleared"
     }
   },
   "projects": {
@@ -2479,6 +2496,191 @@
       "filesToSend": "Images and files of the update",
       "deleteFileDescription": "The file leaves the update. The record stays in the item history.",
       "fileDeleted": "File \"{{name}}\" deleted."
+    },
+    "views": {
+      "label": "Board views",
+      "board": "Main table",
+      "timeline": "Schedule",
+      "kanban": "Kanban",
+      "management": "Management",
+      "reports": "Reports"
+    },
+    "timeline": {
+      "label": "{{name}} schedule",
+      "empty": "No item with a schedule yet",
+      "emptyHint": "Set the schedule in the board Schedule column or drag an \"Unscheduled\" item to a day.",
+      "fit": "Fit",
+      "showBaseline": "Baseline",
+      "baseline": "Baseline",
+      "saveBaseline": "Save baseline",
+      "replaceBaseline": "Replace baseline",
+      "clearBaseline": "Clear baseline",
+      "baselineAt": "baseline from {{date}}",
+      "baselineSaved": "Baseline saved with the current schedule.",
+      "baselineCleared": "Baseline cleared.",
+      "replaceTitle": "Replace the baseline?",
+      "replaceDescription": "The current schedule becomes the new comparison base; the previous one is discarded (the record stays in the project history).",
+      "clearTitle": "Clear the baseline?",
+      "clearDescription": "The Schedule stops showing the comparison with the plan. The record stays in the project history.",
+      "export": "Export",
+      "fileName": "schedule",
+      "group": "Group",
+      "start": "Start",
+      "end": "End",
+      "baselineStart": "Baseline start",
+      "baselineEnd": "Baseline end",
+      "moved": "\"{{name}}\" schedule: {{period}}.",
+      "slipLate_one": "ends {{count}} day after the baseline",
+      "slipLate_other": "ends {{count}} days after the baseline",
+      "slipEarly_one": "ends {{count}} day before the baseline",
+      "slipEarly_other": "ends {{count}} days before the baseline",
+      "battery": "Battery",
+      "done": "Done",
+      "effort": "Estimated effort (h)",
+      "effortHint": "Sum of the estimated effort of the board items.",
+      "unscheduled": "Unscheduled",
+      "unscheduledHint": "Drag to a day on the Gantt or use \"Today\".",
+      "unscheduledReadOnly": "Items without dates yet.",
+      "today": "Today",
+      "scheduleToday": "Schedule \"{{name}}\" from today"
+    },
+    "kanban": {
+      "summary_one": "{{count}} item",
+      "summary_other": "{{count}} items",
+      "column": "{{name}}: {{count}}",
+      "count_one": "{{count}} item",
+      "count_other": "{{count}} items",
+      "empty": "No items",
+      "open": "Open {{name}}",
+      "actions": "{{name}} actions",
+      "moveTo": "Move to \"{{status}}\"",
+      "moved": "\"{{name}}\" is now \"{{status}}\"."
+    },
+    "management": {
+      "journal": {
+        "title": "Project journal",
+        "hint": "Dated records of what happened: meetings, decisions, approvals, deliveries.",
+        "create": "New entry",
+        "createTitle": "New journal entry",
+        "editTitle": "Edit entry",
+        "date": "Date",
+        "content": "Entry",
+        "author": "Recorded by",
+        "placeholder": "E.g.: Project kickoff meeting with the sponsor.",
+        "search": "Search the journal…",
+        "empty": "No entries yet",
+        "emptyHint": "Record meetings, decisions and project milestones.",
+        "created": "Entry added to the journal.",
+        "updated": "Entry updated.",
+        "deleted": "Entry deleted.",
+        "deleteTitle": "Delete the entry?",
+        "deleteDescription": "The entry leaves the journal. It stays in the project history."
+      },
+      "issues": {
+        "title": "Issue management",
+        "hint": "Project issues and blockers, numbered, with owner and status.",
+        "create": "New issue",
+        "createTitle": "New issue",
+        "editTitle": "Issue #{{number}}",
+        "openedOn": "Date",
+        "description": "Description",
+        "owner": "Owner",
+        "noOwner": "No owner",
+        "state": "Status",
+        "stateOf": "Status of issue #{{number}}",
+        "resolvedOn": "Resolved on",
+        "states": {
+          "in_progress": "In progress",
+          "pending": "Pending",
+          "resolved": "Resolved"
+        },
+        "openCount_one": "{{count}} open",
+        "openCount_other": "{{count}} open",
+        "placeholder": "E.g.: Client still has no VPN access.",
+        "search": "Search issues…",
+        "empty": "No issues recorded",
+        "emptyHint": "Record blockers to follow them until resolved.",
+        "created": "Issue #{{number}} recorded.",
+        "updated": "Issue #{{number}} updated.",
+        "stateChanged": "Issue #{{number}}: {{state}}.",
+        "deleted": "Issue #{{number}} deleted.",
+        "deleteTitle": "Delete issue #{{number}}?",
+        "deleteDescription": "The issue leaves the list (the number is not reused). It stays in the project history."
+      }
+    },
+    "report": {
+      "loadError": "Could not load the report.",
+      "hours": "{{value}} h",
+      "health": {
+        "title": "Project health",
+        "hint": "It is the worst of the factors below (those without data do not count).",
+        "levels": {
+          "ok": "Healthy",
+          "attention": "Attention",
+          "critical": "Critical",
+          "none": "No data"
+        },
+        "factors": {
+          "schedule": "Deadlines",
+          "progress": "Progress × plan",
+          "stuck": "Stuck and blocked",
+          "effort": "Effort",
+          "issues": "Open issues"
+        },
+        "detail": {
+          "schedule": "{{value}}% of the open items with dates are overdue ({{count}} of {{of}}).",
+          "progress": "Planned {{planned}}% · done {{actual}}% ({{value}} points behind).",
+          "stuck": "{{count}} of {{of}} open items stuck or with a pending dependency ({{value}}%).",
+          "effort": "Actual {{value}}% above the estimate on done items ({{hours}} h).",
+          "issues_one": "{{count}} open issue in Management.",
+          "issues_other": "{{count}} open issues in Management."
+        },
+        "noData": {
+          "schedule": "No open item with dates.",
+          "progress": "No item with a schedule.",
+          "stuck": "No open item.",
+          "effort": "No done items with estimate and actual.",
+          "issues": "No issues."
+        }
+      },
+      "summary": {
+        "title": "Summary",
+        "total": "Items",
+        "canceled_one": "+ {{count}} canceled",
+        "canceled_other": "+ {{count}} canceled",
+        "done": "Done",
+        "open": "Pending",
+        "overdue": "Overdue",
+        "stuck": "Stuck"
+      },
+      "schedule": {
+        "title": "Schedule of pending items",
+        "onTime": "On time",
+        "overdue": "Overdue",
+        "unscheduled": "No dates"
+      },
+      "effort": {
+        "title": "Effort",
+        "estimated": "Estimated",
+        "actual": "Actual",
+        "remaining": "Remaining",
+        "deviation": "Deviation",
+        "deviationHint": "{{hours}} h on done items",
+        "noDeviation": "No done items with estimate and actual"
+      },
+      "resources": {
+        "title": "Resources",
+        "items_one": "{{count}} item",
+        "items_other": "{{count}} items",
+        "detail": "{{open}} pending · {{hours}}",
+        "empty": "No item with a resource."
+      },
+      "groups": {
+        "title": "Groups",
+        "group": "Group",
+        "items": "Done/total",
+        "empty": "No groups yet."
+      }
     }
   },
   "board": {

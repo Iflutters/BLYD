@@ -216,3 +216,8 @@ A migration `1790000021` também concede `plan.view/edit/manage` aos perfis padr
 
 ### Imagens na atualização — migration `1790000024_plan_update_files.js`
 - `plan_item_files.update_id` → plan_item_updates (cascade) + índice: o arquivo pertence à atualização em que foi colado/anexado (a aba Arquivos do painel saiu). Arquivos enviados antes pela aba ficam guardados, sem atualização.
+
+### GP-4 — migration `1790000025_plan_management.js`
+- `plan_settings`: `baseline` (JSON `{ saved_at, items: { id: { start, end } } }`, linha de base do Cronograma) e `issue_seq` (sequência dos problemas: o número não se repete).
+- `plan_journal`: `project_id` (cascade), `entry_date` (dia), `content` (≤ 5.000), `author_id`. Índice `(project_id, entry_date)`.
+- `plan_issues`: `project_id` (cascade), `number` (único por projeto), `opened_on`, `description` (≤ 2.000), `state` (`in_progress` | `pending` | `resolved`), `owner_id`, `resolved_on`, `created_by`. Índice único `(project_id, number)`.

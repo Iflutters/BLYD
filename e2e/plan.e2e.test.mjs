@@ -3,7 +3,8 @@
  * grupo e subgrupo numerados, elemento criado na linha "+ Adicionar elemento", edição direta nas
  * células (status, cronograma, recursos, esforço), subelementos com progresso calculado, totais do
  * rodapé, colunas (ocultar, arrastar) e recolher lembrados, mover, duplicar e excluir grupo; a aba
- * Tarefas continua sendo a lista de tarefas; o leitor só vê.
+ * Tarefas continua sendo a lista de tarefas; o leitor só vê. GP-2 (interação), GP-3 (painel do elemento) e
+ * GP-4 (Cronograma, Kanban, Gestão e Relatórios) em testes próprios.
  */
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
@@ -401,6 +402,82 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     const inbox = (await api(mario.page, 'GET', '/notifications')).json.data
     assert.equal(inbox[0].type, 'plan_reply')
     assert.equal(inbox[0].plan_item.id, item.id)
+    assert.deepEqual(mario.errors, [])
+    assert.deepEqual(admin.errors, [])
+  })
+
+  it('GP-4: Cronograma (agendar, linha de base, exportar), Kanban (arrastar muda o status), Gestão (diário e problema) e Relatórios com a saúde', async () => {
+    const admin = await signIn(ADMIN.email, ADMIN.password, { viewport: { width: 1600, height: 900 } })
+    const project = (await api(admin.page, 'POST', '/projects', { name: 'Visões GP4', key: 'VIS' })).json.data
+    const p = project.id
+    await api(admin.page, 'POST', `/projects/${p}/members`, { user_id: seed.member.id, role: 'member' })
+    const group = (await api(admin.page, 'POST', `/projects/${p}/groups`, { name: 'Iniciação' })).json.data
+    const now = new Date()
+    const day = (offset) => {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset)
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    }
+    const kickoff = (await api(admin.page, 'POST', `/projects/${p}/plan/items`, { group_id: group.id, name: 'Reunião de kickoff', start_date: day(-3), end_date: day(-1), estimated_hours: 2 })).json.data
+    await api(admin.page, 'POST', `/projects/${p}/plan/items`, { group_id: group.id, name: 'Plano de comunicação', estimated_hours: 8 })
+
+    // Cronograma: membro agenda o elemento sem datas; o gestor salva a linha de base; exporta
+    const mario = await signIn('mario@kamban.test', PASSWORD, { viewport: { width: 1600, height: 900 } })
+    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await mario.page.getByRole('navigation', { name: 'Visões do quadro' }).getByRole('link', { name: 'Cronograma' }).click()
+    await mario.page.getByRole('group', { name: 'Cronograma de Visões GP4' }).waitFor()
+    await mario.page.getByRole('button', { name: /^Reunião de kickoff, / }).waitFor()
+    await mario.page.getByRole('button', { name: 'Agendar "Plano de comunicação" a partir de hoje' }).click()
+    await mario.page.getByRole('button', { name: /^Plano de comunicação, / }).waitFor()
+    assert.equal(await mario.page.getByRole('button', { name: 'Linha de base' }).count(), 0)
+
+    await admin.page.goto(`${app.baseUrl}/projects/${p}?tab=plan&view=timeline`)
+    await admin.page.getByRole('button', { name: 'Linha de base' }).click()
+    await admin.page.getByRole('menuitem', { name: 'Salvar linha de base' }).click()
+    await admin.page.getByText('Linha de base salva com o cronograma atual.').first().waitFor()
+    await admin.page.getByTestId(`timeline-baseline-${kickoff.id}`).waitFor()
+    const [download] = await Promise.all([admin.page.waitForEvent('download'), admin.page.getByRole('button', { name: 'Exportar' }).click()])
+    assert.equal(download.suggestedFilename(), 'cronograma-VIS.csv')
+
+    // Kanban: arrastar o card para "Feito" muda o status do elemento
+    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan&view=kanban`)
+    const blank = mario.page.getByRole('region', { name: 'Em branco: 2' })
+    await blank.waitFor()
+    const card = blank.getByRole('button', { name: 'Abrir Reunião de kickoff' })
+    const target = mario.page.getByRole('region', { name: 'Feito: 0' })
+    // as últimas colunas ficam à direita (o quadro rola na horizontal): traz origem e destino para a vista
+    await card.scrollIntoViewIfNeeded()
+    await target.scrollIntoViewIfNeeded()
+    const from = await card.boundingBox()
+    const to = await target.boundingBox()
+    await mario.page.mouse.move(from.x + 20, from.y + 10)
+    await mario.page.mouse.down()
+    await mario.page.mouse.move(from.x + 30, from.y + 22, { steps: 4 })
+    await mario.page.mouse.move(to.x + to.width / 2, to.y + 120, { steps: 18 })
+    await mario.page.waitForTimeout(150)
+    await mario.page.mouse.up()
+    await mario.page.getByRole('region', { name: 'Feito: 1' }).waitFor()
+    const board = (await api(mario.page, 'GET', `/projects/${p}/plan`)).json.data
+    const feito = board.statuses.find((x) => x.category === 'done')
+    assert.equal(board.items.find((i) => i.id === kickoff.id).status_id, feito.id)
+
+    // Gestão: diário e problema
+    await mario.page.getByRole('navigation', { name: 'Visões do quadro' }).getByRole('link', { name: 'Gestão' }).click()
+    await mario.page.getByRole('button', { name: 'Novo registro' }).click()
+    const journal = mario.page.getByRole('dialog', { name: 'Novo registro no diário' })
+    await journal.getByRole('textbox', { name: /^Registro/ }).fill('Reunião de abertura do projeto.')
+    await journal.getByRole('button', { name: 'Novo registro' }).click()
+    await mario.page.getByRole('table', { name: 'Diário do projeto' }).getByText('Reunião de abertura do projeto.').waitFor()
+    await mario.page.getByRole('button', { name: 'Novo problema' }).click()
+    const issue = mario.page.getByRole('dialog', { name: 'Novo problema' })
+    await issue.getByRole('textbox', { name: /^Descrição/ }).fill('Cliente sem acesso à VPN')
+    await issue.getByRole('button', { name: 'Novo problema' }).click()
+    await mario.page.getByRole('table', { name: 'Gestão dos problemas' }).getByText('Cliente sem acesso à VPN').waitFor()
+
+    // Relatórios: saúde com os fatores (o problema em aberto pesa)
+    await mario.page.getByRole('navigation', { name: 'Visões do quadro' }).getByRole('link', { name: 'Relatórios' }).click()
+    const health = mario.page.getByRole('region', { name: 'Saúde do projeto' })
+    await health.getByText('1 problema em aberto na Gestão.').waitFor()
+    await health.getByText('Problemas em aberto').waitFor()
     assert.deepEqual(mario.errors, [])
     assert.deepEqual(admin.errors, [])
   })

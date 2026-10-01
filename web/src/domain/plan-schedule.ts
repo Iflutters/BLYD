@@ -7,6 +7,9 @@ import { formatNumber, statusSegments, type Plan, type PlanGroupSummary, type Pl
 import { groupTitle } from './plan-view'
 import { PX_PER_DAY, TIMELINE_ZOOMS, dayFromIso, timelineRange, type DaySpan, type TimelineZoom } from './timeline'
 
+/** Marca de UTF-8 no início do CSV (o Excel abre os acentos certos). */
+const BOM = String.fromCharCode(0xfeff)
+
 function spanOf(start: string | null, end: string | null): DaySpan | null {
   const first = start ?? end
   const last = end ?? start
@@ -92,5 +95,5 @@ export function scheduleCsv(plan: Plan, locale: string, labels: ScheduleCsvLabel
       ]
     })
   const head = [labels.group, labels.name, labels.status, labels.start, labels.end, labels.duration, labels.estimated, labels.progress, labels.baselineStart, labels.baselineEnd]
-  return `﻿${[head, ...rows].map((row) => row.map(escape).join(delimiter)).join('\r\n')}\r\n`
+  return `${BOM}${[head, ...rows].map((row) => row.map(escape).join(delimiter)).join('\r\n')}\r\n`
 }

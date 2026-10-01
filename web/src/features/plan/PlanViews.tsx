@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChartColumn, ChartGantt, ClipboardList, SquareKanban, Table2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/core/utils/cn'
-
-/** Visões do quadro (GP-4): todas leem os mesmos elementos. */
-export const PLAN_VIEWS = ['board', 'timeline', 'kanban', 'management', 'reports'] as const
-export type PlanView = (typeof PLAN_VIEWS)[number]
+import { PLAN_VIEWS, type PlanView } from '@/domain/plan-view'
 
 const ICONS: Record<PlanView, ReactNode> = {
   board: <Table2 />,

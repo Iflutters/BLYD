@@ -188,7 +188,9 @@
     "PLAN_LINK_NOT_FOUND": "Dependencia no encontrada.",
     "PLAN_DEPENDENCY_PENDING": "Este elemento tiene una dependencia pendiente.",
     "PLAN_UPDATE_NOT_FOUND": "Actualización no encontrada.",
-    "PLAN_FILE_NOT_FOUND": "Archivo no encontrado."
+    "PLAN_FILE_NOT_FOUND": "Archivo no encontrado.",
+    "PLAN_JOURNAL_NOT_FOUND": "Registro del diario no encontrado.",
+    "PLAN_ISSUE_NOT_FOUND": "Problema no encontrado."
   },
   "nav": {
     "main": "Navegación principal",
@@ -600,7 +602,14 @@
       "linked_item": "Elemento vinculado",
       "dependency_rule": "Regla de dependencias",
       "update": "Actualización",
-      "files": "Archivos"
+      "files": "Archivos",
+      "entry_date": "Fecha",
+      "content": "Registro",
+      "issue": "Problema",
+      "opened_on": "Fecha",
+      "issue_state": "Situación",
+      "issue_owner": "Responsable",
+      "baseline_items": "Elementos en la línea base"
     },
     "actions": {
       "auth.login": "Inició sesión",
@@ -700,7 +709,15 @@
       "plan_item.update_edited": "Actualización editada",
       "plan_item.update_deleted": "Actualización eliminada",
       "plan_item.file_added": "Archivo enviado",
-      "plan_item.file_deleted": "Archivo eliminado"
+      "plan_item.file_deleted": "Archivo eliminado",
+      "plan_journal.created": "Registro en el diario",
+      "plan_journal.updated": "Registro del diario editado",
+      "plan_journal.deleted": "Registro del diario eliminado",
+      "plan_issue.created": "Problema registrado",
+      "plan_issue.updated": "Problema actualizado",
+      "plan_issue.deleted": "Problema eliminado",
+      "plan_settings.baseline_saved": "Línea base guardada",
+      "plan_settings.baseline_cleared": "Línea base borrada"
     }
   },
   "projects": {
@@ -2479,6 +2496,191 @@
       "filesToSend": "Imágenes y archivos de la actualización",
       "deleteFileDescription": "El archivo sale de la actualización. El registro queda en el historial del elemento.",
       "fileDeleted": "Archivo \"{{name}}\" eliminado."
+    },
+    "views": {
+      "label": "Vistas del tablero",
+      "board": "Tabla principal",
+      "timeline": "Cronograma",
+      "kanban": "Kanban",
+      "management": "Gestión",
+      "reports": "Informes"
+    },
+    "timeline": {
+      "label": "Cronograma de {{name}}",
+      "empty": "Todavía no hay elementos con cronograma",
+      "emptyHint": "Define el cronograma en la columna Cronograma del tablero o arrastra un elemento \"Sin cronograma\" al día.",
+      "fit": "Ajustar",
+      "showBaseline": "Línea base",
+      "baseline": "Línea base",
+      "saveBaseline": "Guardar línea base",
+      "replaceBaseline": "Reemplazar línea base",
+      "clearBaseline": "Borrar línea base",
+      "baselineAt": "línea base del {{date}}",
+      "baselineSaved": "Línea base guardada con el cronograma actual.",
+      "baselineCleared": "Línea base borrada.",
+      "replaceTitle": "¿Reemplazar la línea base?",
+      "replaceDescription": "El cronograma actual pasa a ser la nueva base de comparación; la anterior se descarta (el registro queda en el historial del proyecto).",
+      "clearTitle": "¿Borrar la línea base?",
+      "clearDescription": "El Cronograma deja de mostrar la comparación con lo planificado. El registro queda en el historial del proyecto.",
+      "export": "Exportar",
+      "fileName": "cronograma",
+      "group": "Grupo",
+      "start": "Inicio",
+      "end": "Fin",
+      "baselineStart": "Base inicio",
+      "baselineEnd": "Base fin",
+      "moved": "Cronograma de \"{{name}}\": {{period}}.",
+      "slipLate_one": "termina {{count}} día después de la línea base",
+      "slipLate_other": "termina {{count}} días después de la línea base",
+      "slipEarly_one": "termina {{count}} día antes de la línea base",
+      "slipEarly_other": "termina {{count}} días antes de la línea base",
+      "battery": "Batería",
+      "done": "Listo",
+      "effort": "Esfuerzo estimado (h)",
+      "effortHint": "Suma del esfuerzo estimado de los elementos del tablero.",
+      "unscheduled": "Sin cronograma",
+      "unscheduledHint": "Arrastra al día en el Gantt o usa \"Hoy\".",
+      "unscheduledReadOnly": "Elementos todavía sin fechas.",
+      "today": "Hoy",
+      "scheduleToday": "Programar \"{{name}}\" desde hoy"
+    },
+    "kanban": {
+      "summary_one": "{{count}} elemento",
+      "summary_other": "{{count}} elementos",
+      "column": "{{name}}: {{count}}",
+      "count_one": "{{count}} elemento",
+      "count_other": "{{count}} elementos",
+      "empty": "Ningún elemento",
+      "open": "Abrir {{name}}",
+      "actions": "Acciones de {{name}}",
+      "moveTo": "Mover a \"{{status}}\"",
+      "moved": "\"{{name}}\" ahora está en \"{{status}}\"."
+    },
+    "management": {
+      "journal": {
+        "title": "Diario del proyecto",
+        "hint": "Registros fechados de lo que pasó: reuniones, decisiones, aprobaciones, entregas.",
+        "create": "Nuevo registro",
+        "createTitle": "Nuevo registro en el diario",
+        "editTitle": "Editar registro",
+        "date": "Fecha",
+        "content": "Registro",
+        "author": "Quién registró",
+        "placeholder": "Ej.: Reunión de apertura del proyecto con el patrocinador.",
+        "search": "Buscar en el diario…",
+        "empty": "Todavía no hay registros",
+        "emptyHint": "Registra reuniones, decisiones e hitos del proyecto.",
+        "created": "Registro agregado al diario.",
+        "updated": "Registro actualizado.",
+        "deleted": "Registro eliminado.",
+        "deleteTitle": "¿Eliminar el registro?",
+        "deleteDescription": "El registro sale del diario. Queda en el historial del proyecto."
+      },
+      "issues": {
+        "title": "Gestión de problemas",
+        "hint": "Problemas e impedimentos del proyecto, numerados, con responsable y situación.",
+        "create": "Nuevo problema",
+        "createTitle": "Nuevo problema",
+        "editTitle": "Problema #{{number}}",
+        "openedOn": "Fecha",
+        "description": "Descripción",
+        "owner": "Responsable",
+        "noOwner": "Sin responsable",
+        "state": "Situación",
+        "stateOf": "Situación del problema #{{number}}",
+        "resolvedOn": "Resuelto el",
+        "states": {
+          "in_progress": "En curso",
+          "pending": "Pendiente",
+          "resolved": "Resuelto"
+        },
+        "openCount_one": "{{count}} abierto",
+        "openCount_other": "{{count}} abiertos",
+        "placeholder": "Ej.: El cliente todavía no tiene acceso a la VPN.",
+        "search": "Buscar problemas…",
+        "empty": "No hay problemas registrados",
+        "emptyHint": "Registra impedimentos para seguirlos hasta resolverlos.",
+        "created": "Problema #{{number}} registrado.",
+        "updated": "Problema #{{number}} actualizado.",
+        "stateChanged": "Problema #{{number}}: {{state}}.",
+        "deleted": "Problema #{{number}} eliminado.",
+        "deleteTitle": "¿Eliminar el problema #{{number}}?",
+        "deleteDescription": "El problema sale de la lista (el número no se reutiliza). Queda en el historial del proyecto."
+      }
+    },
+    "report": {
+      "loadError": "No se pudo cargar el informe.",
+      "hours": "{{value}} h",
+      "health": {
+        "title": "Salud del proyecto",
+        "hint": "Es el peor de los factores de abajo (los que no tienen datos no cuentan).",
+        "levels": {
+          "ok": "Saludable",
+          "attention": "Atención",
+          "critical": "Crítico",
+          "none": "Sin datos"
+        },
+        "factors": {
+          "schedule": "Plazos",
+          "progress": "Avance × planificado",
+          "stuck": "Detenidos y bloqueados",
+          "effort": "Esfuerzo",
+          "issues": "Problemas abiertos"
+        },
+        "detail": {
+          "schedule": "El {{value}}% de los abiertos con fecha está atrasado ({{count}} de {{of}}).",
+          "progress": "Planificado {{planned}}% · hecho {{actual}}% ({{value}} puntos por debajo).",
+          "stuck": "{{count}} de {{of}} abiertos detenidos o con dependencia pendiente ({{value}}%).",
+          "effort": "Real {{value}}% por encima de lo estimado en los listos ({{hours}} h).",
+          "issues_one": "{{count}} problema abierto en Gestión.",
+          "issues_other": "{{count}} problemas abiertos en Gestión."
+        },
+        "noData": {
+          "schedule": "Ningún elemento abierto con fecha.",
+          "progress": "Ningún elemento con cronograma.",
+          "stuck": "Ningún elemento abierto.",
+          "effort": "Sin elementos listos con esfuerzo y real.",
+          "issues": "Sin problemas."
+        }
+      },
+      "summary": {
+        "title": "Resumen",
+        "total": "Elementos",
+        "canceled_one": "+ {{count}} cancelado",
+        "canceled_other": "+ {{count}} cancelados",
+        "done": "Listos",
+        "open": "Pendientes",
+        "overdue": "Atrasados",
+        "stuck": "Detenidos"
+      },
+      "schedule": {
+        "title": "Cronograma de los pendientes",
+        "onTime": "En plazo",
+        "overdue": "Atrasados",
+        "unscheduled": "Sin fechas"
+      },
+      "effort": {
+        "title": "Esfuerzo",
+        "estimated": "Estimado",
+        "actual": "Real",
+        "remaining": "Restante",
+        "deviation": "Desvío",
+        "deviationHint": "{{hours}} h en los elementos listos",
+        "noDeviation": "Sin elementos listos con esfuerzo y real"
+      },
+      "resources": {
+        "title": "Recursos",
+        "items_one": "{{count}} elemento",
+        "items_other": "{{count}} elementos",
+        "detail": "{{open}} pendientes · {{hours}}",
+        "empty": "Ningún elemento con recurso."
+      },
+      "groups": {
+        "title": "Grupos",
+        "group": "Grupo",
+        "items": "Listos/total",
+        "empty": "Todavía no hay grupos."
+      }
     }
   },
   "board": {

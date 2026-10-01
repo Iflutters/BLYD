@@ -99,6 +99,14 @@ export const AUDIT_ACTIONS = [
   'plan_item.file_added',
   'plan_item.file_deleted',
   'plan_settings.updated',
+  'plan_settings.baseline_saved',
+  'plan_settings.baseline_cleared',
+  'plan_journal.created',
+  'plan_journal.updated',
+  'plan_journal.deleted',
+  'plan_issue.created',
+  'plan_issue.updated',
+  'plan_issue.deleted',
   'plan_status.created',
   'plan_status.updated',
   'plan_status.deleted',
@@ -134,9 +142,10 @@ function formatValue(t: TFunction, field: string, value: unknown, resolve?: (fie
   if (field === 'color') return t(`colors.${text}`, { defaultValue: text })
   if (field === 'link_type') return t(`plan.linkTypes.${text}`, { defaultValue: text })
   if (field === 'dependency_rule') return t(`plan.dependencyRule.${text}`, { defaultValue: text })
+  if (field === 'issue_state') return t(`plan.management.issues.states.${text}`, { defaultValue: text })
   if (field === 'category') return t(`workflow.categories.${text}`, { defaultValue: t(`plan.categories.${text}`, { defaultValue: text }) })
   if (field === 'visibility') return t(`docs.visibility.${text}`, { defaultValue: text })
-  if ((field === 'start_date' || field === 'due_date' || field === 'end_date') && /^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10).split('-').reverse().join('/')
+  if ((field === 'start_date' || field === 'due_date' || field === 'end_date' || field === 'entry_date' || field === 'opened_on') && /^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10).split('-').reverse().join('/')
   if (field === 'locale') return t(`language.${String(value)}`, { defaultValue: String(value) })
   if (field === 'theme') return t(`theme.${String(value)}`, { defaultValue: String(value) })
   return resolve?.(field, String(value)) ?? String(value)

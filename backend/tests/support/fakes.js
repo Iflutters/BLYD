@@ -681,11 +681,11 @@ function createFakeRepositories(store) {
     findByKey: (key) => store.docSpaces.find((s) => s.key === key) || null,
     list: () => store.docSpaces.slice().sort((a, b) => a.name.localeCompare(b.name)),
     create: (data) => {
-      const space = Object.assign({ id: nextDocId('space'), createdAt: planStamp(), updatedAt: planStamp() }, data)
+      const space = Object.assign({ id: nextDocId('space'), createdAt: stamp(), updatedAt: stamp() }, data)
       store.docSpaces.push(space)
       return space
     },
-    update: (id, patch) => Object.assign(docSpaceRepository.findById(id), patch, { updatedAt: planStamp() }),
+    update: (id, patch) => Object.assign(docSpaceRepository.findById(id), patch, { updatedAt: stamp() }),
     delete: (id) => {
       const pageIds = store.docPages.filter((p) => p.spaceId === id).map((p) => p.id)
       docPageRepository.deleteMany(pageIds)
@@ -703,11 +703,11 @@ function createFakeRepositories(store) {
       return out
     },
     create: (data) => {
-      const page = Object.assign({ id: nextDocId('page'), createdAt: planStamp(), updatedAt: planStamp() }, data)
+      const page = Object.assign({ id: nextDocId('page'), createdAt: stamp(), updatedAt: stamp() }, data)
       store.docPages.push(page)
       return page
     },
-    update: (id, patch) => Object.assign(docPageRepository.findById(id), patch, { updatedAt: planStamp() }),
+    update: (id, patch) => Object.assign(docPageRepository.findById(id), patch, { updatedAt: stamp() }),
     deleteMany: (ids) => {
       store.docPages = store.docPages.filter((p) => !ids.includes(p.id))
       store.docVersions = store.docVersions.filter((v) => !ids.includes(v.pageId))
@@ -730,7 +730,7 @@ function createFakeRepositories(store) {
   }
   const docPageVersionRepository = {
     create: (data) => {
-      const version = Object.assign({ id: nextDocId('vers'), createdAt: planStamp() }, data)
+      const version = Object.assign({ id: nextDocId('vers'), createdAt: stamp() }, data)
       store.docVersions.push(version)
       return version
     },
@@ -739,7 +739,7 @@ function createFakeRepositories(store) {
   }
   const docFileRepository = {
     create: (data) => {
-      const file = Object.assign({ id: nextDocId('file0'), createdAt: planStamp() }, data)
+      const file = Object.assign({ id: nextDocId('file0'), createdAt: stamp() }, data)
       delete file.handle
       store.docFiles.push(file)
       return file

@@ -104,7 +104,7 @@ export function PlanTimeline({ plan, onOpen }: { plan: Plan; onOpen: (itemId: st
       `${item.progress.value}%`,
       overdue ? t('timeline.overdue') : '',
       conflicted.has(item.id) ? t('timeline.conflictHint') : '',
-      hasBaseline && slip ? t('plan.timeline.slip', { count: slip }) : '',
+      hasBaseline && slip ? t(slip > 0 ? 'plan.timeline.slipLate' : 'plan.timeline.slipEarly', { count: Math.abs(slip) }) : '',
     ]
       .filter(Boolean)
       .join(', ')

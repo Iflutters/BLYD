@@ -231,6 +231,24 @@ Cada elemento do quadro traz `updates` (atualizações não excluídas — conta
 
 Notificações (`GET /notifications`) passam a trazer `task` **ou** `plan_item` (`{ id, project_id, name, project_name }`); tipos novos `plan_mention` e `plan_reply`. Auditoria: `plan_item.update_added/update_edited/update_deleted` e `plan_item.file_added/file_deleted` no elemento.
 
+### GP-4 — visões e gestão
+`GET /projects/{id}/plan` passa a trazer `summary` (totais do quadro inteiro: Bateria e Esforço do Cronograma), `settings.baseline_at` e, em cada elemento, `baseline_start`/`baseline_end`.
+
+| Método | Rota | Descrição |
+|---|---|---|
+| PUT | `/projects/{id}/plan/baseline` | o gestor salva a linha de base (cronograma atual dos elementos): `{ saved_at, items }` |
+| DELETE | `/projects/{id}/plan/baseline` | o gestor limpa a linha de base |
+| GET | `/projects/{id}/plan/journal` | diário (quem vê o quadro): `{ entries: [{ id, entry_date, content, author, capabilities: { edit, delete } }], capabilities: { create } }`, do dia mais recente |
+| POST | `/projects/{id}/plan/journal` | registra (`plan.edit` + colaborador): `{ entry_date* (AAAA-MM-DD), content* (≤ 5.000) }` |
+| PATCH/DELETE | `/plan/journal/{id}` | o autor ou o gestor; 404 `PLAN_JOURNAL_NOT_FOUND` |
+| GET | `/projects/{id}/plan/issues` | problemas: `{ issues: [{ id, number, opened_on, description, state, owner, resolved_on, created_by, capabilities }], capabilities: { create } }` |
+| POST | `/projects/{id}/plan/issues` | abre (`plan.edit` + colaborador): `{ opened_on*, description* (≤ 2.000), state (in_progress \| pending \| resolved; padrão pending), owner_id (participante → senão `owner_id: not_member`) }` |
+| PATCH | `/plan/issues/{id}` | atualiza (quem edita o quadro); `resolved` guarda `resolved_on` |
+| DELETE | `/plan/issues/{id}` | quem abriu ou o gestor; 404 `PLAN_ISSUE_NOT_FOUND` |
+| GET | `/projects/{id}/plan/report?tz_offset=` | relatório (quem vê o quadro; `tz_offset` em minutos, −840..840): `{ today, summary, schedule, effort, resources, groups, health: { level, factors: [{ key, level, value, … }] } }` — ver regras §14 |
+
+Auditoria no projeto: `plan_journal.created/updated/deleted`, `plan_issue.created/updated/deleted`, `plan_settings.baseline_saved/baseline_cleared`.
+
 Regra `block`: trocar o status (edição, massa) para uma etiqueta que **inicia** (Em andamento/Em revisão, vindo de A fazer/Bloqueado/em branco) ou **conclui** um elemento que depende de outro ainda aberto → 409 `PLAN_DEPENDENCY_PENDING` com `details.items` (nomes). Auditoria: `plan_item.duplicated/linked/unlinked` no elemento; `plan_item.imported` e `plan_settings.updated` no projeto.
 
 ## Endpoints — Expansão Onda 2 (Documentação)
