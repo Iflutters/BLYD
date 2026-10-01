@@ -97,11 +97,11 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       ['projetos', '/projects'],
       ['projeto', `/projects/${p}`],
       ['projeto — tarefas', `/projects/${p}?tab=tasks`],
-      ['projeto — gerenciamento', `/projects/${p}?tab=plan`],
-      ['projeto — cronograma', `/projects/${p}?tab=plan&view=timeline`],
-      ['projeto — kanban do quadro', `/projects/${p}?tab=plan&view=kanban`],
-      ['projeto — gestão', `/projects/${p}?tab=plan&view=management`],
-      ['projeto — relatórios do quadro', `/projects/${p}?tab=plan&view=reports`],
+      ['gestão de projetos', `/project-management/${p}`],
+      ['gestão — cronograma', `/project-management/${p}?view=timeline`],
+      ['gestão — kanban', `/project-management/${p}?view=kanban`],
+      ['gestão — diário e problemas', `/project-management/${p}?view=management`],
+      ['gestão — relatórios', `/project-management/${p}?view=reports`],
       ['tarefas', '/tasks'],
       ['tarefa', `/tasks/${a.id}`],
       ['tarefa — comentários', `/tasks/${a.id}?tab=comments`],
@@ -183,7 +183,7 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       await page.keyboard.press('Escape')
 
       // quadro de gerenciamento: painel de filtros, barra da seleção em massa e importação
-      await page.goto(`${app.baseUrl}${pages.find(([label]) => label === 'projeto — gerenciamento')[1]}`)
+      await page.goto(`${app.baseUrl}${pages.find(([label]) => label === 'gestão de projetos')[1]}`)
       await page.getByRole('table', { name: '1.0 Iniciação', exact: true }).waitFor()
       await page.getByRole('button', { name: 'Filtro', exact: true }).click()
       await page.getByRole('dialog', { name: 'Filtros do quadro' }).waitFor()

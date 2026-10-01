@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { FileUp, FolderPlus, GitBranch, LayoutList, Plus, Tags, Users, X } from 'lucide-react'
 import { readJson, safeStorage, writeJson } from '@/core/storage/safe-storage'
-import type { Project } from '@/domain/projects'
 import { statusSegments, type Plan, type PlanBulkInput, type PlanGroup, type PlanItem, type PlanItemInput } from '@/domain/plan'
 import {
   EMPTY_FILTERS,
@@ -54,13 +53,13 @@ function localToday(): string {
 }
 
 /**
- * Aba "Gerenciamento" da página do projeto: visões do mesmo quadro (Quadro principal, Cronograma,
- * Kanban, Gestão e Relatórios — GP-4). A visão e o painel do elemento ficam no endereço
+ * Gestão de projetos (menu lateral, à parte das tarefas): visões do mesmo quadro (Quadro principal,
+ * Cronograma, Kanban, Gestão e Relatórios). A visão e o painel do elemento ficam no endereço
  * (`?view=&item=&panel=`): dá para compartilhar o link, e as notificações abrem direto no painel.
  */
-export function ProjectBoard({ project }: { project: Project }) {
+export function ProjectBoard({ projectId }: { projectId: string }) {
   const { t } = useTranslation()
-  const query = usePlan(project.id)
+  const query = usePlan(projectId)
   if (query.isPending)
     return (
       <div className="flex flex-col gap-3" aria-busy="true" aria-label={t('common.loading')}>

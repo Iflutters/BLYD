@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  BriefcaseBusiness,
   ChartGantt,
   CheckSquare,
   FolderKanban,
@@ -43,6 +44,8 @@ export const NAV_ITEMS: NavItem[] = [
       { id: 'projects-archived', labelKey: 'nav.projectsArchived', to: '/projects/archived' },
     ],
   },
+  // gestão do projeto (quadro de fases e elementos, à parte das tarefas)
+  { id: 'management', labelKey: 'nav.management', to: '/project-management', icon: BriefcaseBusiness, anyOf: ['plan.view'] },
   { id: 'planning', labelKey: 'nav.planning', to: '/planning', icon: ListTodo, anyOf: ['tasks.view'] },
   { id: 'kanban', labelKey: 'nav.kanban', to: '/kanban', icon: KanbanSquare, anyOf: ['kanban.view'] },
   { id: 'timeline', labelKey: 'nav.timeline', to: '/timeline', icon: ChartGantt, anyOf: ['tasks.view'] },

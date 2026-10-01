@@ -315,7 +315,7 @@ Cada tipo de tarefa define, campo a campo, **quando** ele precisa estar preenchi
 
 ## 14. Quadro de gerenciamento do projeto (Gerenciamento de Projetos — fase GP-1)
 
-> Diretriz própria: [diretriz_feature_gerenciamento_projetos.md](diretriz_feature_gerenciamento_projetos.md). O quadro fica na aba **Gerenciamento** do projeto (endereço `?tab=plan`), no estilo Monday.
+> Diretriz própria: [diretriz_feature_gerenciamento_projetos.md](diretriz_feature_gerenciamento_projetos.md). O quadro fica em **Gestão de projetos**, item próprio do menu lateral (`/project-management/:projeto`, com o seletor de projeto e lembrando o último aberto), no estilo Monday — à parte das tarefas, para ficar clara a diferença (desde 2026-10-01; antes era a aba "Gerenciamento" do projeto, e os links antigos `?tab=plan` levam para lá). A visão geral do projeto tem o atalho "Abrir a gestão do projeto".
 
 ### Módulo à parte das tarefas
 - O quadro organiza a **gestão do projeto** — fases e atividades como reuniões, alinhamentos, entregas e aprovações — com **status, recursos, cronograma, esforço, duração e progresso próprios**.
@@ -442,7 +442,7 @@ Sobre os elementos do grupo (sem subelementos): **barra de distribuição dos st
 - Projeto arquivado: o painel fica só para leitura.
 
 ### Visões do quadro (GP-4)
-A aba Gerenciamento tem as visões **Quadro principal · Cronograma · Kanban · Gestão · Relatórios** (a escolhida fica no endereço, `?view=`). Todas leem os mesmos elementos: mudar o status no Kanban ou as datas no Cronograma é mudar o elemento do quadro. O painel do elemento abre de qualquer visão.
+A Gestão de projetos tem as visões **Quadro principal · Cronograma · Kanban · Gestão · Relatórios** (a escolhida fica no endereço, `?view=`). Todas leem os mesmos elementos: mudar o status no Kanban ou as datas no Cronograma é mudar o elemento do quadro. O painel do elemento abre de qualquer visão.
 
 **Cronograma**
 - Gantt dos elementos (não dos subelementos) por grupo, na ordem do quadro; subgrupo com o título da fase ("2.0 Planejamento | 2.1 Plano do Projeto"); o cabeçalho do grupo mostra o período dele. Barra na cor do grupo, com o progresso; atrasado (fim antes de hoje e não encerrado) fica destacado; seta das dependências "bloqueia", tracejada quando o elemento começa antes do fim do que o bloqueia.

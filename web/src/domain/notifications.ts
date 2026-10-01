@@ -25,7 +25,8 @@ export function notificationTab(type: NotificationType): 'comments' | 'details' 
 
 /** Endereço que a notificação abre: a tarefa (na aba certa) ou o painel do elemento no quadro. */
 export function notificationLink(notification: AppNotification): string | null {
-  if (notification.planItem) return `/projects/${encodeURIComponent(notification.planItem.projectId)}?tab=plan&item=${encodeURIComponent(notification.planItem.id)}`
+  // elemento do quadro: abre o painel dele na Gestão de projetos
+  if (notification.planItem) return `/project-management/${encodeURIComponent(notification.planItem.projectId)}?item=${encodeURIComponent(notification.planItem.id)}`
   if (!notification.task) return null
   return `/tasks/${notification.task.id}${notificationTab(notification.type) === 'comments' ? '?tab=comments' : ''}`
 }

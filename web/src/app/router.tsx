@@ -54,6 +54,14 @@ export const routes: RouteObject[] = [
         ],
       },
       {
+        // Gestão de projetos: item próprio do menu (à parte das tarefas)
+        element: <PermissionGate permission="plan.view" />,
+        children: [
+          { path: 'project-management', ...page(() => import('@/features/plan/ProjectManagementPage').then((m) => ({ default: m.ProjectManagementPage }))) },
+          { path: 'project-management/:projectId', ...page(() => import('@/features/plan/ProjectManagementPage').then((m) => ({ default: m.ProjectManagementPage }))) },
+        ],
+      },
+      {
         element: <PermissionGate permission="kanban.view" />,
         children: [
           { path: 'kanban', ...page(() => import('@/features/kanban/KanbanPage').then((m) => ({ default: m.KanbanPage }))) },

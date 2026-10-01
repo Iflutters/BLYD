@@ -220,7 +220,8 @@
     "audit": "Audit",
     "planning": "Planning",
     "timeline": "Timeline",
-    "docs": "Documentation"
+    "docs": "Documentation",
+    "management": "Project management"
   },
   "commandPalette": {
     "title": "Command palette",
@@ -841,8 +842,7 @@
       "members": "Members ({{count}})",
       "history": "History",
       "settings": "Settings",
-      "tasks": "Tasks",
-      "plan": "Management"
+      "tasks": "Tasks"
     },
     "archivedNotice": "This project is archived and read-only. Unarchive it to edit again.",
     "details": "Details",
@@ -2782,5 +2782,13 @@
     "columnsHidden_one": "Columns ({{count}} hidden)",
     "columnsHidden_other": "Columns ({{count}} hidden)",
     "filterColumn": "Filter"
+  },
+  "management": {
+    "title": "Project management",
+    "description": "Phases, management activities, schedule and health of each project — apart from the day-to-day tasks.",
+    "pickTitle": "Choose a project",
+    "pickHint": "Project management works per project: choose which one to open.",
+    "notFound": "Project not found",
+    "open": "Open project management"
   }
 }

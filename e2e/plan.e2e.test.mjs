@@ -46,7 +46,9 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     const { page, errors } = await signIn(ADMIN.email, ADMIN.password, { viewport: { width: 1600, height: 900 } })
     const p = seed.project.id
     const board = async () => (await api(page, 'GET', `/projects/${p}/plan`)).json.data
+    // endereço antigo (aba do projeto) leva à Gestão de projetos, item próprio do menu
     await page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await page.waitForURL(`**/project-management/${p}`)
     await page.getByRole('heading', { name: 'O quadro ainda não tem grupos.' }).waitFor()
 
     // primeiro grupo pela tela
@@ -189,14 +191,21 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     data = await board()
     assert.deepEqual(data.groups.map((g) => `${g.number} ${g.name}`), ['1.0 Iniciação', '1.1 Kickoff interno'])
 
-    // a aba Tarefas continua sendo a lista de tarefas do projeto
+    // a página do projeto não tem mais a aba de gestão; a aba Tarefas continua sendo a lista de tarefas
+    await page.goto(`${app.baseUrl}/projects/${p}`)
+    await page.getByRole('tab', { name: 'Tarefas' }).waitFor()
+    assert.equal(await page.getByRole('tab', { name: 'Gerenciamento' }).count(), 0)
     await page.getByRole('tab', { name: 'Tarefas' }).click()
     await page.getByRole('button', { name: 'Nova tarefa' }).first().waitFor()
+    // o menu lateral abre a Gestão de projetos no último projeto usado
+    await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Gestão de projetos' }).click()
+    await page.waitForURL(`**/project-management/${p}`)
+    await page.getByRole('table', { name: '1.0 Iniciação', exact: true }).waitFor()
     assert.deepEqual(errors, [])
 
     // leitor: vê o quadro, sem criar/editar
     const viewer = await signIn('lia@kamban.test', PASSWORD, { viewport: { width: 1366, height: 900 } })
-    await viewer.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await viewer.page.goto(`${app.baseUrl}/project-management/${p}`)
     await viewer.page.getByRole('table', { name: '1.0 Iniciação', exact: true }).getByText('Reunião de kickoff').waitFor()
     assert.equal(await viewer.page.getByRole('button', { name: 'Criar elemento' }).count(), 0)
     assert.equal(await viewer.page.getByRole('textbox', { name: /Adicionar elemento/ }).count(), 0)
@@ -227,7 +236,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
         .sort((x, y) => x.position - y.position)
         .map((i) => i.name)
 
-    await page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await page.goto(`${app.baseUrl}/project-management/${p}`)
     const exeTable = page.getByRole('table', { name: '1.0 Execução', exact: true })
     await exeTable.waitFor()
 
@@ -359,7 +368,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
 
     // membro: abre o painel pela linha, publica mencionando o administrador e colando um print (Ctrl+V)
     const mario = await signIn('mario@kamban.test', PASSWORD, { viewport: { width: 1600, height: 900 } })
-    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await mario.page.goto(`${app.baseUrl}/project-management/${p}`)
     const table = mario.page.getByRole('table', { name: '1.0 Iniciação', exact: true })
     await table.getByRole('button', { name: 'Abrir as atualizações de Reunião de kickoff' }).click({ force: true })
     const panel = mario.page.getByRole('dialog', { name: 'Reunião de kickoff' })
@@ -393,7 +402,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     await admin.page.getByText('Mário Membro mencionou você em “Reunião de kickoff”').click()
     const adminPanel = admin.page.getByRole('dialog', { name: 'Reunião de kickoff' })
     await adminPanel.getByText('confira.', { exact: false }).waitFor()
-    assert.match(admin.page.url(), /tab=plan&item=/)
+    assert.match(admin.page.url(), /\/project-management\/[^?]+\?item=/)
     await adminPanel.getByRole('button', { name: 'Responder' }).click()
     const reply = adminPanel.getByRole('combobox', { name: /Responder a Mário Membro/ })
     await reply.fill('Obrigado, vou revisar.')
@@ -422,7 +431,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
 
     // Cronograma: membro agenda o elemento sem datas; o gestor salva a linha de base; exporta
     const mario = await signIn('mario@kamban.test', PASSWORD, { viewport: { width: 1600, height: 900 } })
-    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await mario.page.goto(`${app.baseUrl}/project-management/${p}`)
     await mario.page.getByRole('navigation', { name: 'Visões do quadro' }).getByRole('link', { name: 'Cronograma' }).click()
     await mario.page.getByRole('group', { name: 'Cronograma de Visões GP4' }).waitFor()
     await mario.page.getByRole('button', { name: /^Reunião de kickoff, / }).waitFor()
@@ -430,7 +439,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     await mario.page.getByRole('button', { name: /^Plano de comunicação, / }).waitFor()
     assert.equal(await mario.page.getByRole('button', { name: 'Linha de base' }).count(), 0)
 
-    await admin.page.goto(`${app.baseUrl}/projects/${p}?tab=plan&view=timeline`)
+    await admin.page.goto(`${app.baseUrl}/project-management/${p}?view=timeline`)
     await admin.page.getByRole('button', { name: 'Linha de base' }).click()
     await admin.page.getByRole('menuitem', { name: 'Salvar linha de base' }).click()
     await admin.page.getByText('Linha de base salva com o cronograma atual.').first().waitFor()
@@ -439,7 +448,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     assert.equal(download.suggestedFilename(), 'cronograma-VIS.csv')
 
     // Kanban: arrastar o card para "Feito" muda o status do elemento
-    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan&view=kanban`)
+    await mario.page.goto(`${app.baseUrl}/project-management/${p}?view=kanban`)
     const blank = mario.page.getByRole('region', { name: 'Em branco: 2' })
     await blank.waitFor()
     const card = blank.getByRole('button', { name: 'Abrir Reunião de kickoff' })
@@ -503,7 +512,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     await api(admin.page, 'POST', `/projects/${p}/plan/items`, { group_id: group.id, name: 'Licenças' })
 
     // gestor: "+" no fim do cabeçalho → coluna Número com unidade
-    await admin.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await admin.page.goto(`${app.baseUrl}/project-management/${p}`)
     const table = admin.page.getByRole('table', { name: '1.0 Execução', exact: true })
     await table.getByRole('button', { name: 'Adicionar coluna' }).click()
     const dialog = admin.page.getByRole('dialog', { name: 'Nova coluna' })
@@ -515,7 +524,7 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
 
     // membro: preenche as células; o rodapé soma
     const mario = await signIn('mario@kamban.test', PASSWORD, { viewport: { width: 1600, height: 900 } })
-    await mario.page.goto(`${app.baseUrl}/projects/${p}?tab=plan`)
+    await mario.page.goto(`${app.baseUrl}/project-management/${p}`)
     const board = mario.page.getByRole('table', { name: '1.0 Execução', exact: true })
     assert.equal(await board.getByRole('button', { name: 'Adicionar coluna' }).count(), 0)
     for (const [name, value] of [

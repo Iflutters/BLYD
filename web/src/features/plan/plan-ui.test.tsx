@@ -123,7 +123,7 @@ function setup(plan: Partial<PlanRepository> = {}, data: Plan = makePlan(), init
     plan: { get: () => Promise.resolve(data), ...plan },
     projects: { listMembers: () => Promise.resolve(members) },
   })
-  return renderRoutes([{ path: '/', element: <ProjectBoard project={project} /> }], { repositories, initialPath })
+  return renderRoutes([{ path: '/', element: <ProjectBoard projectId={project.id} /> }], { repositories, initialPath })
 }
 
 describe('Quadro do projeto (Gerenciamento)', () => {

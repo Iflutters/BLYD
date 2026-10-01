@@ -2,6 +2,7 @@
 
 > Revisada em 2026-09-30 a partir das telas de referência (Monday.com) enviadas pelo usuário.
 > Substitui a versão anterior, que dava a entender que as **tarefas** seriam os itens do plano. **Não são.**
+> Atualização (2026-10-01, pedido do usuário): o módulo saiu da aba do projeto e virou o item **Gestão de projetos** do menu lateral (`/project-management/:projeto`), para deixar clara a diferença em relação às tarefas. Onde este texto fala em "aba Gerenciamento", leia "Gestão de projetos".
 
 ## 1. Objetivo
 
@@ -41,7 +42,7 @@ Status iniciais do quadro (editáveis): **Planejado** (azul), **Em progresso** (
 ## 4. Estrutura do módulo
 
 ```text
-Projeto › aba Gerenciamento
+Menu lateral › Gestão de projetos › (projeto)
 ├── Quadro principal   (tabela por grupo — foco desta diretriz)
 ├── Cronograma         (Gantt dos elementos + indicadores)
 ├── Kanban             (colunas = etiquetas de status)

@@ -220,7 +220,8 @@
     "audit": "Auditoría",
     "planning": "Planificación",
     "timeline": "Cronograma",
-    "docs": "Documentación"
+    "docs": "Documentación",
+    "management": "Gestión de proyectos"
   },
   "commandPalette": {
     "title": "Paleta de comandos",
@@ -841,8 +842,7 @@
       "members": "Miembros ({{count}})",
       "history": "Historial",
       "settings": "Configuración",
-      "tasks": "Tareas",
-      "plan": "Gestión"
+      "tasks": "Tareas"
     },
     "archivedNotice": "Este proyecto está archivado y es de solo lectura. Desarchívelo para volver a editarlo.",
     "details": "Detalles",
@@ -2782,5 +2782,13 @@
     "columnsHidden_one": "Columnas ({{count}} oculta)",
     "columnsHidden_other": "Columnas ({{count}} ocultas)",
     "filterColumn": "Filtrar"
+  },
+  "management": {
+    "title": "Gestión de proyectos",
+    "description": "Fases, actividades de gestión, cronograma y salud de cada proyecto — aparte de las tareas del día a día.",
+    "pickTitle": "Elige un proyecto",
+    "pickHint": "La gestión de proyectos es por proyecto: elige cuál abrir.",
+    "notFound": "Proyecto no encontrado",
+    "open": "Abrir la gestión del proyecto"
   }
 }

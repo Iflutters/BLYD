@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Archive, ArchiveRestore, ArrowLeft, Copy, FolderSearch, KanbanSquare, ListTodo, Pencil, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, ArrowLeft, BriefcaseBusiness, Copy, FolderSearch, KanbanSquare, ListTodo, Pencil, Trash2 } from 'lucide-react'
 import { isAppError } from '@/core/errors/app-error'
 import { cn } from '@/core/utils/cn'
 import { formatDateTime, formatDay } from '@/core/utils/format'
@@ -25,7 +25,7 @@ import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { AuditTimeline } from '@/features/audit/AuditTimeline'
 import { useCan } from '@/features/auth/session'
 import { ProjectTasksPanel } from '@/features/tasks/ProjectTasksPanel'
-import { ProjectBoard } from '@/features/plan/ProjectBoard'
+import { managementLink } from '@/features/plan/paths'
 import { PROJECT_ICON_COMPONENTS, coverHeroStyle } from './project-theme'
 import { ProjectAvatar, ProjectPriorityLabel, ProjectStatusBadge } from './project-visuals'
 import { ProjectFormDialog } from './ProjectFormDialog'
@@ -78,10 +78,14 @@ function ProjectDetail({ project }: { project: Project }) {
   const caps = project.capabilities
   const canViewTasks = useCan('tasks.view')
   const canViewPlan = useCan('plan.view')
-  // a aba Timeline saiu (o cronograma do projeto é o do Gerenciamento): links antigos abrem o Cronograma
+  // a gestão do projeto virou item próprio do menu: links antigos (?tab=plan, ?tab=timeline) vão para lá
+  const legacyTab = params.get('tab')
+  const legacyPlan = canViewPlan && (legacyTab === 'plan' || legacyTab === 'timeline')
   useEffect(() => {
-    if (params.get('tab') === 'timeline') setParams(canViewPlan ? { tab: 'plan', view: 'timeline' } : {}, { replace: true })
-  }, [params, setParams, canViewPlan])
+    if (legacyTab === 'plan' || legacyTab === 'timeline') {
+      if (!canViewPlan) setParams({}, { replace: true })
+    }
+  }, [legacyTab, canViewPlan, setParams])
 
   function setArchived(value: boolean) {
     const mutation = value ? lifecycle.archive : lifecycle.unarchive
@@ -98,7 +102,6 @@ function ProjectDetail({ project }: { project: Project }) {
     { value: 'overview', label: t('projects.tabs.overview'), content: <Overview project={project} /> },
     ...(canViewTasks ? [{ value: 'tasks', label: t('projects.tabs.tasks'), content: <ProjectTasksPanel project={project} /> }] : []),
     // quadro de gestão do projeto (Gerenciamento de Projetos — módulo à parte das tarefas)
-    ...(canViewPlan ? [{ value: 'plan', label: t('projects.tabs.plan'), content: <ProjectBoard project={project} /> }] : []),
     { value: 'members', label: t('projects.tabs.members', { count: project.memberCount }), content: <ProjectMembersPanel project={project} /> },
     { value: 'history', label: t('projects.tabs.history'), content: <ProjectHistory projectId={project.id} /> },
   ]
@@ -108,6 +111,13 @@ function ProjectDetail({ project }: { project: Project }) {
       label: t('projects.tabs.settings'),
       content: <ProjectSettings project={project} onArchive={setArchived} onDelete={() => setDeleting(true)} />,
     })
+  }
+
+  if (legacyPlan) {
+    const next = new URLSearchParams(params)
+    next.delete('tab')
+    if (legacyTab === 'timeline') next.set('view', 'timeline')
+    return <Navigate to={managementLink(project.id, next)} replace />
   }
 
   return (
@@ -212,9 +222,11 @@ function Overview({ project }: { project: Project }) {
   const overdue = isOverdue(project)
   const canViewBoard = useCan('kanban.view')
   const canViewTasks = useCan('tasks.view')
+  const canViewPlan = useCan('plan.view')
   const modules: Array<{ icon: ReactNode; label: string; phase?: number; to?: string; cta?: string }> = [
     ...(canViewTasks ? [{ icon: <ListTodo />, label: t('nav.planning'), to: `/planning/${project.id}`, cta: t('backlog.openBacklog') }] : []),
     ...(canViewBoard ? [{ icon: <KanbanSquare />, label: t('nav.kanban'), to: `/kanban/${project.id}`, cta: t('kanban.openBoard') }] : []),
+    ...(canViewPlan ? [{ icon: <BriefcaseBusiness />, label: t('nav.management'), to: managementLink(project.id), cta: t('management.open') }] : []),
   ]
   return (
     <div className="grid gap-4 lg:grid-cols-3">
