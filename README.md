@@ -39,7 +39,10 @@ Os dois ficam no mesmo **projeto** (mesmos membros e permissões), mas não se m
 - **Auditoria** consultável de toda mutação relevante; histórico em cada tarefa, elemento e projeto.
 - **Relatórios** com indicadores clicáveis; dashboard pessoal.
 - Sessão segura (cookie HttpOnly, proteção CSRF, CSP, bloqueio progressivo de login, sessões ativas).
-- **API REST documentada** (`/api/v1`, OpenAPI) — a mesma que a interface usa.
+- **API REST documentada** (`/api/v1`, OpenAPI) — a mesma que a interface usa —, com **tokens de API** pessoais (`Authorization: Bearer`) para scripts e integrações.
+- **Configurador geral:** nome, logo e ícone da plataforma, política de senha, bloqueio de login e retenção do histórico.
+- **E-mail:** "Esqueci minha senha", convite de usuário e notificações por e-mail (SMTP com fila e novas tentativas).
+- **Webhooks** assinados (HMAC) para avisar outros sistemas a cada evento, com novas tentativas e histórico de entregas.
 - Tema claro e escuro, celular e desktop, acessibilidade verificada (axe) em todas as telas, command palette (Ctrl/⌘+K).
 
 <table>
@@ -92,10 +95,8 @@ Abra http://localhost:5173.
 
 ## Próximos passos
 
-1. **Configurador geral:** nome, logo e favicon da plataforma; política de senha; bloqueio de login; retenção do histórico.
-2. **Integrações:** e-mail (recuperar senha, convites, notificações), tokens de API e webhooks.
-3. **Tempo real:** quadros e comentários atualizados sem recarregar.
-4. **Login corporativo:** OAuth/OIDC (Google, Microsoft) e, depois, LDAP.
+1. **Tempo real:** quadros e comentários atualizados sem recarregar.
+2. **Login corporativo:** OAuth/OIDC (Google, Microsoft) e, depois, LDAP.
 
 Ideias e prioridades são discutidas nas issues — veja [CONTRIBUTING.md](CONTRIBUTING.md).
 

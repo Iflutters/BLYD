@@ -22,7 +22,8 @@
     "copied": "Copied to clipboard",
     "skipToContent": "Skip to content",
     "notifications": "Notifications",
-    "clearDate": "Clear date"
+    "clearDate": "Clear date",
+    "refresh": "Refresh"
   },
   "states": {
     "errorTitle": "Something went wrong",
@@ -113,7 +114,9 @@
     "needs_symbol": "Include a symbol (e.g. ! @ # $)",
     "below_base": "Can't be less than the initial time",
     "unsafe_svg": "SVG with active content (scripts, events or external links) is not allowed",
-    "invalid_slot": "Invalid image slot"
+    "invalid_slot": "Invalid image slot",
+    "insecure_url": "Use an https:// address",
+    "blocked_host": "This address is not allowed (cloud metadata or the machine itself)"
   },
   "errors": {
     "VALIDATION_ERROR": "Check the highlighted fields.",
@@ -201,7 +204,13 @@
     "EMAIL_NOT_CONFIGURED": "Email delivery is not configured. Ask an administrator (Settings → Integrations).",
     "EMAIL_SEND_FAILED": "The mail server refused or did not answer.",
     "RESET_TOKEN_INVALID": "This link is no longer valid: it expired or was already used. Request a new one.",
-    "USER_ALREADY_ACTIVE": "This person has already signed in; there is no invitation to resend."
+    "USER_ALREADY_ACTIVE": "This person has already signed in; there is no invitation to resend.",
+    "API_TOKEN_INVALID": "Invalid, expired or revoked API token.",
+    "API_TOKEN_NOT_FOUND": "API token not found.",
+    "API_TOKEN_LIMIT": "You already have 20 active tokens. Revoke one before creating another.",
+    "TOKEN_NOT_ALLOWED": "This action can only be done in the browser, not with an API token.",
+    "WEBHOOK_NOT_FOUND": "Webhook not found.",
+    "WEBHOOK_DELIVERY_NOT_FOUND": "Delivery not found."
   },
   "nav": {
     "main": "Main navigation",
@@ -525,7 +534,8 @@
       "plan.edit": "Edit board items",
       "plan.manage": "Manage board groups and labels",
       "platform.manage": "Configure the platform (security and branding)",
-      "integrations.manage": "Configure integrations (email, webhooks and tokens)"
+      "integrations.manage": "Configure integrations (email, webhooks and tokens)",
+      "api_tokens.create": "Create own API tokens"
     }
   },
   "audit": {
@@ -566,7 +576,9 @@
       "plan_item": "Board item",
       "platform_settings": "Platform settings",
       "audit_log": "Audit history",
-      "email_settings": "Email settings"
+      "email_settings": "Email settings",
+      "api_token": "API token",
+      "webhook": "Webhook"
     },
     "fields": {
       "name": "Name",
@@ -692,7 +704,13 @@
       "app_url": "Platform address",
       "password_changed": "Password changed",
       "to": "To",
-      "resent": "Resent"
+      "resent": "Resent",
+      "prefix": "Prefix",
+      "expires_at": "Expires",
+      "user_id": "Person",
+      "url": "Address",
+      "events": "Events",
+      "failures": "Failures in a row"
     },
     "actions": {
       "auth.login": "Signed in",
@@ -815,7 +833,14 @@
       "auth.password_reset_requested": "Password reset requested",
       "auth.password_reset": "Password reset via email link",
       "auth.invite_accepted": "Invitation accepted (password created)",
-      "user.invited": "Invitation sent"
+      "user.invited": "Invitation sent",
+      "api_token.created": "API token created",
+      "api_token.revoked": "API token revoked",
+      "webhook.created": "Webhook created",
+      "webhook.updated": "Webhook edited",
+      "webhook.deleted": "Webhook deleted",
+      "webhook.secret_rotated": "Webhook secret changed",
+      "webhook.disabled": "Webhook turned off after repeated failures"
     }
   },
   "projects": {
@@ -2954,9 +2979,11 @@
   },
   "integrations": {
     "title": "Integrations",
-    "description": "Platform email — and, soon, webhooks and API tokens.",
+    "description": "Platform email, webhooks for other systems and API tokens.",
     "tabs": {
-      "email": "Email"
+      "email": "Email",
+      "tokens": "API tokens",
+      "webhooks": "Webhooks"
     },
     "email": {
       "smtpTitle": "Mail server (SMTP)",
@@ -3016,6 +3043,125 @@
         "sent": "Sent",
         "failed": "Failed"
       }
+    },
+    "tokens": {
+      "description": "Everyone's tokens. Revoke those of people who left or of integrations no longer in use.",
+      "empty": "Nobody has created API tokens yet",
+      "revokeDescription": "{{user}}'s token stops working right away. This can't be undone."
+    }
+  },
+  "apiTokens": {
+    "title": "API tokens",
+    "description": "API access without the browser (scripts, BI, integrations). The token acts with your permissions.",
+    "cardDescription": "For scripts and integrations to access the API on your behalf.",
+    "manage": "Manage tokens",
+    "backToAccount": "My account",
+    "create": "New token",
+    "createTitle": "New API token",
+    "createDescription": "Give it a name that reminds you where it will be used.",
+    "createdTitle": "Copy your token now",
+    "createdDescription": "For security it won't be shown again. Keep it in a password vault; if you lose it, revoke it and create another.",
+    "done": "I've copied it",
+    "name": "Name",
+    "nameHint": "E.g. Timesheet, Power BI.",
+    "expires": "Expires in",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "noExpiry": "No expiration",
+    "noExpiryHint": "Without expiration it works until revoked. Prefer an expiration whenever possible.",
+    "value": "Token",
+    "copy": "Copy token",
+    "example": "Usage example",
+    "empty": "No tokens yet",
+    "emptyHint": "Create a token for a script or integration to access the API on your behalf.",
+    "noPermission": "Your role doesn't allow creating API tokens.",
+    "revoke": "Revoke",
+    "revokeTitle": "Revoke the token \"{{name}}\"?",
+    "revokeDescription": "It stops working right away; whatever uses this token loses access to the API. This can't be undone.",
+    "revoked": "Token \"{{name}}\" revoked.",
+    "neverUsed": "Never used",
+    "states": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "columns": {
+      "user": "Person",
+      "name": "Name",
+      "prefix": "Starts with",
+      "state": "Status",
+      "lastUsed": "Last used",
+      "expires": "Expires"
+    },
+    "revokeNamed": "Revoke {{name}}"
+  },
+  "webhooks": {
+    "description": "Notify other systems (ERP, chat, automations) when something happens: the platform sends a signed POST to the address, retrying if it is down.",
+    "create": "New webhook",
+    "createTitle": "New webhook",
+    "editTitle": "Edit webhook",
+    "formDescription": "Choose the receiving address and the events.",
+    "created": "Webhook created.",
+    "updated": "Webhook saved.",
+    "deleted": "Webhook deleted.",
+    "deleteTitle": "Delete the webhook \"{{name}}\"?",
+    "deleteDescription": "Its pending deliveries and delivery history are removed too.",
+    "empty": "No webhooks",
+    "emptyHint": "Create a webhook so another system receives the platform events.",
+    "active": "Active",
+    "inactive": "Off",
+    "failures_one": "{{count}} failure in a row",
+    "failures_other": "{{count}} failures in a row",
+    "never": "Never sent",
+    "noResponse": "no response",
+    "eventsCount_one": "{{count}} event",
+    "eventsCount_other": "{{count}} events",
+    "groupAll": "All of {{group}}",
+    "test": "Send test",
+    "testOk": "Test delivered (HTTP {{status}}).",
+    "testFailed": "The delivery failed: {{reason}}",
+    "rotateSecret": "Generate new secret",
+    "secretTitle": "Signing secret — {{name}}",
+    "secretDescription": "Copy it now: for security it won't be shown again. The receiving system uses it to check the notice came from this platform.",
+    "secret": "Secret",
+    "copySecret": "Copy secret",
+    "verifyTitle": "How to check the signature",
+    "verifyText": "Each delivery carries X-Kamban-Event, X-Kamban-Delivery, X-Kamban-Timestamp and X-Kamban-Signature. Reject notices older than 5 minutes.",
+    "deliveriesTitle": "Deliveries — {{name}}",
+    "deliveriesDescription": "The 50 most recent (deliveries are kept for 30 days).",
+    "noDeliveries": "No deliveries yet",
+    "redeliver": "Resend",
+    "redelivered": "Delivery resent.",
+    "deliveryLine": "{{date}} · HTTP {{status}} · {{attempts}} attempt(s) · {{ms}} ms",
+    "deliveryStatus": {
+      "pending": "Queued",
+      "success": "Delivered",
+      "failed": "Failed"
+    },
+    "columns": {
+      "name": "Name",
+      "url": "Address",
+      "events": "Events",
+      "status": "Status",
+      "lastDelivery": "Last delivery"
+    },
+    "fields": {
+      "name": "Name",
+      "url": "Receiving address",
+      "urlHint": "https:// required. Cloud metadata addresses are blocked.",
+      "active": "Active (send events)",
+      "events": "Events"
+    },
+    "groups": {
+      "project": "Projects",
+      "task": "Tasks",
+      "comment": "Comments",
+      "attachment": "Attachments",
+      "sprint": "Sprints",
+      "milestone": "Milestones",
+      "plan_item": "Board items",
+      "doc_page": "Documentation pages",
+      "user": "Users"
     }
   }
 }

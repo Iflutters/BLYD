@@ -237,3 +237,12 @@ A migration `1790000021` também concede `plan.view/edit/manage` aos perfis padr
 - `auth_tokens` — links de uso único: `user_id` (cascade), `purpose` (reset, invite), `token_hash` (único; o token em si nunca é gravado), `expires_at`, `used_at`.
 - `users.email_notifications_off` — a pessoa desligou as notificações por e-mail.
 - Permissão `integrations.manage` criada e concedida ao Admin.
+
+## Tokens de API (migration 1790000029)
+- `api_tokens`: `user_id` (cascade), `name`, `token_hash` (único — o valor nunca é gravado), `prefix` (início visível, ex.: `kb_pat_ab12`), `expires_at` (vazio = sem prazo), `last_used_at`/`last_used_ip` (gravados no máximo a cada 5 minutos), `revoked_at`.
+- Permissão `api_tokens.create` criada e concedida ao Admin e ao Gestor.
+
+## Webhooks (migration 1790000030)
+- `webhooks`: `name`, `url`, `events` (JSON: eventos do catálogo ou `grupo.*`), `secret` (segredo de assinatura — guardado para assinar; nunca sai na API depois da criação), `active`, `created_by`, `last_status`, `last_delivery_at`, `consecutive_failures`.
+- `webhook_deliveries`: `webhook_id` (cascade), `event`, `payload` (JSON), `status` (pending, success, failed), `attempts`, `response_status`, `response_body` (até 1.000), `error`, `duration_ms`, `next_attempt_at`, `delivered_at`; índices `(status, next_attempt_at, created)` e `(webhook_id, created)`. Encerradas saem depois de 30 dias.
+- O histórico (`auditRepository.record`) enfileira as entregas na mesma transação (`infrastructure/webhook-repositories.js`, `withWebhooks`).

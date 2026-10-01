@@ -83,3 +83,15 @@ Regras do PocketBase (seed): login 10/min por IP; `/api/v1/` 600/min; `/api/` 30
 - **Senha do SMTP:** só escrita — nunca volta na API nem vai para o histórico. Para cifrar as configurações do PocketBase em repouso, suba com `--encryptionEnv=PB_ENCRYPTION_KEY` (32 caracteres).
 - **Fila sem segredos guardados:** o corpo do e-mail (que pode ter um link) é apagado depois de enviado ou desistido; a lista da fila mostra só destinatário, tipo, assunto e situação.
 - **Conteúdo:** todo texto vindo de pessoas é escapado no HTML do e-mail.
+
+## Tokens de API
+- Valor `kb_pat_` + 40 caracteres aleatórios; só o **hash** fica no banco e o valor aparece uma vez. O histórico guarda nome, prefixo e prazo, nunca o valor.
+- `Authorization: Bearer` não usa cookie, então não há CSRF a proteger: o header de CSRF é dispensado só nesse caso, e com o token o cookie é ignorado (não dá para combinar os dois).
+- O token herda as permissões do perfil atual a cada chamada; pessoa desativada, token vencido ou revogado → 401 imediato.
+- Um token vazado não consegue se perpetuar: não cria outros tokens, não troca a senha nem mexe nas sessões (`TOKEN_NOT_ALLOWED`). Revogar está em Minha conta e, para o Admin, em Integrações.
+
+## Webhooks
+- **Só para quem administra** (`integrations.manage`): um webhook recebe eventos de todos os projetos.
+- **SSRF:** endereço https obrigatório em produção; metadados da nuvem (`169.254.0.0/16`, `metadata.google.internal`), link-local e `0.0.0.0` sempre recusados; a própria máquina (`localhost`, `127.*`, `::1`) e http só fora de produção ou com `KAMBAN_WEBHOOKS_ALLOW_INSECURE=true`. Credenciais no endereço são recusadas. Limitação conhecida: um nome de domínio que resolva para um IP interno não é bloqueado (o JSVM não resolve DNS) — por isso o recurso é restrito a administradores. Tempo limite de 10 s por envio.
+- **Autenticidade:** cada envio é assinado com HMAC-SHA256 (`X-Kamban-Signature`) sobre `timestamp.corpo`; o receptor deve conferir a assinatura e recusar timestamps antigos (proteção contra repetição). O segredo aparece uma vez e pode ser trocado a qualquer momento.
+- **Conteúdo:** a carga é o que o histórico já guarda (sem senhas nem tokens).

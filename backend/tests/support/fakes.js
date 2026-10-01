@@ -87,6 +87,8 @@ function createFakeStore() {
     emailOutbox: [],
     authTokens: [],
     apiTokens: [],
+    webhooks: [],
+    webhookDeliveries: [],
     /** Tarefas por status/prioridade; os testes ajustam para simular uso. */
     lookupTaskCounts: {},
   }
@@ -308,6 +310,40 @@ function createFakeRepositories(store) {
       failed: store.emailOutbox.filter((m) => m.status === 'failed').length,
     }),
     listRecent: (limit) => store.emailOutbox.slice().reverse().slice(0, limit),
+  }
+
+  const webhookRepository = {
+    list: () => store.webhooks.slice(),
+    listActive: () => store.webhooks.filter((w) => w.active),
+    findById: (id) => store.webhooks.find((w) => w.id === id) || null,
+    create: (data) => {
+      const webhook = Object.assign({ id: nextId('wh_'), lastStatus: null, lastDeliveryAt: null, consecutiveFailures: 0, createdAt: new Date() }, data)
+      store.webhooks.push(webhook)
+      return webhook
+    },
+    update: (id, patch) => Object.assign(store.webhooks.find((w) => w.id === id), patch),
+    delete: (id) => {
+      store.webhooks = store.webhooks.filter((w) => w.id !== id)
+      store.webhookDeliveries = store.webhookDeliveries.filter((d) => d.webhookId !== id)
+    },
+  }
+
+  let deliveryClock = 0
+  const webhookDeliveryRepository = {
+    create: (data) => {
+      const delivery = Object.assign({ id: nextId('whd_'), status: 'pending', attempts: 0, responseStatus: null, responseBody: '', error: '', deliveredAt: null, createdAt: new Date(Date.UTC(2026, 9, 1, 12, 0, ++deliveryClock)) }, data)
+      store.webhookDeliveries.push(delivery)
+      return delivery
+    },
+    findById: (id) => store.webhookDeliveries.find((d) => d.id === id) || null,
+    listByWebhook: (webhookId, limit) => store.webhookDeliveries.filter((d) => d.webhookId === webhookId).slice().reverse().slice(0, limit),
+    listDue: (now, limit) => store.webhookDeliveries.filter((d) => d.status === 'pending' && (!d.nextAttemptAt || d.nextAttemptAt <= now)).slice(0, limit),
+    update: (id, patch) => Object.assign(store.webhookDeliveries.find((d) => d.id === id), patch),
+    purgeBefore: (date) => {
+      const before = store.webhookDeliveries.length
+      store.webhookDeliveries = store.webhookDeliveries.filter((d) => d.status === 'pending' || (d.deliveredAt || d.createdAt) >= date)
+      return before - store.webhookDeliveries.length
+    },
   }
 
   const apiTokenRepository = {
@@ -1192,6 +1228,8 @@ function createFakeRepositories(store) {
     emailOutboxRepository,
     authTokenRepository,
     apiTokenRepository,
+    webhookRepository,
+    webhookDeliveryRepository,
     sprintRepository,
     milestoneRepository,
     projectGroupRepository,
@@ -1239,6 +1277,27 @@ function createFakeMailer() {
   }
 }
 
+/** Cliente HTTP em memória: guarda as chamadas; `respond(status, body)` ou `fail(motivo)` mudam a resposta. */
+function createFakeHttpClient() {
+  let response = { status: 200, body: 'ok' }
+  let failure = null
+  return {
+    requests: [],
+    respond(status, body) {
+      response = { status, body }
+      failure = null
+    },
+    fail(reason) {
+      failure = reason
+    },
+    post(url, body, headers, timeout) {
+      this.requests.push({ url, body, headers, timeout })
+      if (failure) throw new Error(failure)
+      return response
+    },
+  }
+}
+
 function createFakeDeps(options) {
   const store = createFakeStore()
   const repos = createFakeRepositories(store)
@@ -1250,6 +1309,8 @@ function createFakeDeps(options) {
     sessionPolicy: { ttlHours: 12, rememberTtlDays: 30, idleMinutes: 120, touchIntervalSeconds: 300 },
     unitOfWork: { run: (fn) => fn(repos) },
     mailer: createFakeMailer(),
+    httpClient: createFakeHttpClient(),
+    crypto: { hmacSha256Hex: (secret, data) => `hmac(${secret}|${data})` },
     logger: { info() {}, warn() {}, error() {} },
   })
 }

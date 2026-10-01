@@ -312,6 +312,23 @@ routerAdd('POST', '/api/v1/auth/password-reset/request', (e) => require(`${__hoo
 routerAdd('GET', '/api/v1/auth/password-reset/check', (e) => require(`${__hooks}/src/http/routes.js`).checkPasswordReset(e))
 routerAdd('POST', '/api/v1/auth/password-reset/confirm', (e) => require(`${__hooks}/src/http/routes.js`).confirmPasswordReset(e), JSON_BODY_LIMIT)
 routerAdd('POST', '/api/v1/users/{id}/invite', (e) => require(`${__hooks}/src/http/routes.js`).resendInvite(e))
+// tokens de API pessoais (Minha conta) e de todos (Integrações)
+routerAdd('GET', '/api/v1/auth/tokens', (e) => require(`${__hooks}/src/http/routes.js`).listMyApiTokens(e))
+routerAdd('POST', '/api/v1/auth/tokens', (e) => require(`${__hooks}/src/http/routes.js`).createApiToken(e), JSON_BODY_LIMIT)
+routerAdd('DELETE', '/api/v1/auth/tokens/{id}', (e) => require(`${__hooks}/src/http/routes.js`).revokeApiToken(e))
+routerAdd('GET', '/api/v1/settings/api-tokens', (e) => require(`${__hooks}/src/http/routes.js`).listAllApiTokens(e))
+routerAdd('DELETE', '/api/v1/settings/api-tokens/{id}', (e) => require(`${__hooks}/src/http/routes.js`).revokeApiToken(e))
+// webhooks (Integrações): rotas fixas antes de /{id}; envio a cada minuto
+cronAdd('kamban_webhooks', '* * * * *', () => require(`${__hooks}/src/http/routes.js`).flushWebhooks())
+routerAdd('GET', '/api/v1/settings/webhooks', (e) => require(`${__hooks}/src/http/routes.js`).listWebhooks(e))
+routerAdd('POST', '/api/v1/settings/webhooks', (e) => require(`${__hooks}/src/http/routes.js`).createWebhook(e), JSON_BODY_LIMIT)
+routerAdd('GET', '/api/v1/settings/webhooks/events', (e) => require(`${__hooks}/src/http/routes.js`).webhookEvents(e))
+routerAdd('PATCH', '/api/v1/settings/webhooks/{id}', (e) => require(`${__hooks}/src/http/routes.js`).updateWebhook(e), JSON_BODY_LIMIT)
+routerAdd('DELETE', '/api/v1/settings/webhooks/{id}', (e) => require(`${__hooks}/src/http/routes.js`).deleteWebhook(e))
+routerAdd('POST', '/api/v1/settings/webhooks/{id}/rotate-secret', (e) => require(`${__hooks}/src/http/routes.js`).rotateWebhookSecret(e))
+routerAdd('POST', '/api/v1/settings/webhooks/{id}/test', (e) => require(`${__hooks}/src/http/routes.js`).testWebhook(e))
+routerAdd('GET', '/api/v1/settings/webhooks/{id}/deliveries', (e) => require(`${__hooks}/src/http/routes.js`).webhookDeliveries(e))
+routerAdd('POST', '/api/v1/settings/webhook-deliveries/{id}/redeliver', (e) => require(`${__hooks}/src/http/routes.js`).redeliverWebhook(e))
 routerAdd('GET', '/api/v1/auth/password-policy', (e) => require(`${__hooks}/src/http/routes.js`).passwordPolicy(e))
 
 // tags

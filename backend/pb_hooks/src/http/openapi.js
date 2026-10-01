@@ -124,7 +124,7 @@ function build() {
         'Todas as respostas seguem o envelope { data, meta, error }.',
     },
     servers: [{ url: '/api/v1' }],
-    security: [{ sessionCookie: [] }],
+    security: [{ sessionCookie: [] }, { bearerToken: [] }],
     paths: Object.assign(lookupPaths('/statuses', 'Status', 'Status', 'STATUS'), lookupPaths('/priorities', 'Prioridades', 'Priority', 'PRIORITY'), {
       '/health': { get: op('Health check', ['system'], { 200: ok('Serviço saudável', ref('Health')) }, { security: [] }) },
       '/auth/login': {
@@ -817,6 +817,42 @@ function build() {
       '/users/{id}/invite': {
         post: op('Reenvia o convite (users.create) a quem ainda não entrou; o link anterior deixa de valer; USER_ALREADY_ACTIVE, EMAIL_NOT_CONFIGURED', ['users'], { 200: ok('Convidado', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
       },
+      '/auth/tokens': {
+        get: op('Os meus tokens de API (sem o valor): { id, name, prefix, state, created_at, expires_at, last_used_at, last_used_ip, revoked_at }', ['auth'], { 200: ok('Tokens', { type: 'array', items: { type: 'object' } }) }),
+        post: op('Cria um token (api_tokens.create; só no navegador): { name*, expires_in_days*: 30|90|365|0 } → inclui `token` (o valor, só nesta resposta); API_TOKEN_LIMIT (20 ativos)', ['auth'], { 201: ok('Token', { type: 'object' }) }, { parameters: [csrfHeader] }),
+      },
+      '/auth/tokens/{id}': {
+        delete: op('Revoga um token meu (só no navegador); de outra pessoa = API_TOKEN_NOT_FOUND', ['auth'], { 200: ok('Token', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/settings/api-tokens': {
+        get: op('Tokens de todas as pessoas (integrations.manage), com user', ['integrations'], { 200: ok('Tokens', { type: 'array', items: { type: 'object' } }) }),
+      },
+      '/settings/api-tokens/{id}': {
+        delete: op('Revoga o token de qualquer pessoa (integrations.manage)', ['integrations'], { 200: ok('Token', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/settings/webhooks': {
+        get: op('Webhooks (integrations.manage), sem o segredo', ['integrations'], { 200: ok('Webhooks', { type: 'array', items: { type: 'object' } }) }),
+        post: op('Cria (integrations.manage): { name*, url* (https; http/própria máquina só fora de produção; metadados da nuvem bloqueados), events* (catálogo; "grupo.*"), active } → inclui `secret` (só nesta resposta)', ['integrations'], { 201: ok('Webhook', { type: 'object' }), 400: errorResponse('VALIDATION_ERROR') }, { parameters: [csrfHeader] }),
+      },
+      '/settings/webhooks/events': {
+        get: op('Catálogo de eventos: { events, groups }', ['integrations'], { 200: ok('Catálogo', { type: 'object' }) }),
+      },
+      '/settings/webhooks/{id}': {
+        patch: op('Edita (parcial); religar zera as falhas seguidas; WEBHOOK_NOT_FOUND', ['integrations'], { 200: ok('Webhook', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+        delete: op('Exclui com as entregas', ['integrations'], { 200: ok('Excluído', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/settings/webhooks/{id}/rotate-secret': {
+        post: op('Gera outro segredo → { secret } (o anterior deixa de valer)', ['integrations'], { 200: ok('Segredo', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/settings/webhooks/{id}/test': {
+        post: op('Envia webhook.ping na hora (mesmo desligado) → a entrega com status e resposta', ['integrations'], { 200: ok('Entrega', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
+      '/settings/webhooks/{id}/deliveries': {
+        get: op('As 50 entregas mais recentes', ['integrations'], { 200: ok('Entregas', { type: 'array', items: { type: 'object' } }) }, { parameters: [idParam] }),
+      },
+      '/settings/webhook-deliveries/{id}/redeliver': {
+        post: op('Reenvia agora, do zero; WEBHOOK_DELIVERY_NOT_FOUND', ['integrations'], { 200: ok('Entrega', { type: 'object' }) }, { parameters: [idParam, csrfHeader] }),
+      },
       '/auth/password-policy': {
         get: op('Exigências vigentes para senhas (quem está logado): { min_length, max_length, require_letters_numbers, require_mixed_case, require_symbol }', ['auth'], { 200: ok('Política', { type: 'object' }) }),
       },
@@ -896,7 +932,10 @@ function build() {
       },
     }),
     components: {
-      securitySchemes: { sessionCookie: { type: 'apiKey', in: 'cookie', name: 'kb_session' } },
+      securitySchemes: {
+        sessionCookie: { type: 'apiKey', in: 'cookie', name: 'kb_session' },
+        bearerToken: { type: 'http', scheme: 'bearer', description: 'Token de API pessoal (kb_pat_…), criado em Minha conta → Tokens de API. Sem cookie e sem o header de CSRF.' },
+      },
       schemas: {
         Meta: { type: 'object', properties: { correlationId: { type: 'string' } } },
         PageMeta: {

@@ -3,7 +3,7 @@ import { Controller, useForm, type Control, type FieldPath } from 'react-hook-fo
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Mail, RefreshCw, Save, Send } from 'lucide-react'
+import { KeyRound, Mail, RefreshCw, Save, Send } from 'lucide-react'
 import { isAppError } from '@/core/errors/app-error'
 import { formatDateTime } from '@/core/utils/format'
 import { emailPatch, emailSettingsSchema, type EmailSettingsForm, type EmailSettingsView, type OutboxItem, type OutboxStatus } from '@/domain/email'
@@ -11,6 +11,7 @@ import {
   AppBadge,
   AppButton,
   AppCard,
+  AppConfirmDialog,
   AppDataTable,
   AppEmptyState,
   AppErrorState,
@@ -27,6 +28,9 @@ import { useRepositories } from '@/presentation/common/repositories-context'
 import { useErrorMessage } from '@/presentation/common/use-error-message'
 import { PLATFORM_INFO_QUERY_KEY } from '@/presentation/common/use-platform'
 import { useSession } from '@/features/auth/session'
+import { ALL_TOKENS_KEY, useTokenColumns } from '@/features/account/use-token-columns'
+import type { ApiToken } from '@/domain/api-tokens'
+import { WebhooksTab } from './WebhooksTab'
 
 const EMAIL_KEY = ['integrations', 'email'] as const
 const OUTBOX_KEY = ['integrations', 'email', 'outbox'] as const
@@ -44,7 +48,7 @@ const API_FIELDS: Record<string, FieldPath<EmailSettingsForm>> = {
   app_url: 'appUrl',
 }
 
-/** Configurações → Integrações (integrations.manage): e-mail (SMTP, teste e fila de envio). */
+/** Configurações → Integrações (integrations.manage): e-mail (SMTP, teste e fila), webhooks e tokens de API de todos. */
 export function IntegrationsPage() {
   const { t } = useTranslation()
   const [tab, setTab] = useState('email')
@@ -55,7 +59,11 @@ export function IntegrationsPage() {
         aria-label={t('integrations.title')}
         value={tab}
         onValueChange={setTab}
-        tabs={[{ value: 'email', label: t('integrations.tabs.email'), content: <EmailTab /> }]}
+        tabs={[
+          { value: 'email', label: t('integrations.tabs.email'), content: <EmailTab /> },
+          { value: 'webhooks', label: t('integrations.tabs.webhooks'), content: <WebhooksTab /> },
+          { value: 'tokens', label: t('integrations.tabs.tokens'), content: <AllTokensTab /> },
+        ]}
       />
     </>
   )
@@ -301,5 +309,55 @@ function OutboxCard() {
         </div>
       )}
     </AppCard>
+  )
+}
+
+/** Tokens de API de todas as pessoas: quem criou, uso e revogar (ex.: pessoa que saiu da empresa). */
+function AllTokensTab() {
+  const { t } = useTranslation()
+  const { apiTokens } = useRepositories()
+  const queryClient = useQueryClient()
+  const errorMessage = useErrorMessage()
+  const table = useDataTableState('api-tokens-all', { sort: null })
+  const columns = useTokenColumns(true)
+  const list = useQuery({ queryKey: ALL_TOKENS_KEY, queryFn: () => apiTokens.listAll() })
+  const [revoking, setRevoking] = useState<ApiToken | null>(null)
+  const revoke = useMutation({
+    mutationFn: (token: ApiToken) => apiTokens.revokeAny(token.id),
+    onSuccess: (token) => {
+      setRevoking(null)
+      void queryClient.invalidateQueries({ queryKey: ALL_TOKENS_KEY })
+      notify.success(t('apiTokens.revoked', { name: token.name }))
+    },
+    onError: (error) => notify.error(errorMessage(error)),
+  })
+  if (list.isError) return <AppErrorState onRetry={() => void list.refetch()} />
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      <p className="text-sm text-muted">{t('integrations.tokens.description')}</p>
+      <AppDataTable
+        caption={t('integrations.tabs.tokens')}
+        columns={columns}
+        data={list.data ?? []}
+        total={list.data?.length ?? 0}
+        loading={list.isPending}
+        getRowId={(row) => row.id}
+        table={table}
+        paginated={false}
+        searchable={false}
+        actions={{ onDelete: (row) => setRevoking(row), canDelete: (row) => row.state === 'active', deleteLabel: (row) => t('apiTokens.revokeNamed', { name: row.name }) }}
+        emptyState={<AppEmptyState compact icon={<KeyRound />} title={t('integrations.tokens.empty')} />}
+      />
+      <AppConfirmDialog
+        open={!!revoking}
+        onOpenChange={(open) => !open && setRevoking(null)}
+        title={t('apiTokens.revokeTitle', { name: revoking?.name ?? '' })}
+        description={t('integrations.tokens.revokeDescription', { user: revoking?.user?.name ?? '' })}
+        confirmLabel={t('apiTokens.revoke')}
+        tone="danger"
+        loading={revoke.isPending}
+        onConfirm={() => revoking && revoke.mutate(revoking)}
+      />
+    </div>
   )
 }

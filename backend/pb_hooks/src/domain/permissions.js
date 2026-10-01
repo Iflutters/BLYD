@@ -48,6 +48,8 @@ const PERMISSIONS = Object.freeze([
   { code: 'platform.manage', module: 'settings' },
   // Integrações: e-mail, webhooks e tokens de API de todos (só Admin por padrão)
   { code: 'integrations.manage', module: 'settings' },
+  // tokens de API pessoais (acesso à API sem o navegador)
+  { code: 'api_tokens.create', module: 'settings' },
 ])
 
 const ROLE_CODES = Object.freeze({
@@ -72,6 +74,7 @@ const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
     'reports.view',
     'docs.view', 'docs.edit', 'docs.manage',
     'plan.view', 'plan.edit', 'plan.manage',
+    'api_tokens.create',
   ],
   MEMBER: [
     'projects.view',

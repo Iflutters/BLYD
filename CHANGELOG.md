@@ -5,6 +5,8 @@ Todas as mudanças relevantes do projeto ficam aqui. Formato baseado em [Keep a 
 ## [Não lançado]
 
 ### Adicionado
+- **Webhooks** (Configurações → Integrações → Webhooks): avisos assinados (HMAC-SHA256) para outros sistemas a cada evento do catálogo (tarefas, projetos, comentários, quadro, documentação…), com novas tentativas, desligamento automático, teste e reenvio.
+- **Tokens de API** pessoais (Minha conta → Tokens de API): acesso à API com `Authorization: Bearer`, prazo opcional, valor mostrado uma vez, revogação pela pessoa ou pelo Admin (Integrações).
 - **E-mail** (Configurações → Integrações, permissão `integrations.manage`): servidor SMTP com teste e fila de envio; "Esqueci minha senha" no login; convite de usuário por e-mail (a pessoa cria a própria senha); notificações também por e-mail, que cada pessoa liga ou desliga em Minha conta.
 - **Configurador geral** (Configurações → Geral, permissão `platform.manage`): nome, logo (claro/escuro) e ícone da plataforma; política de senha; bloqueio de login; retenção do histórico de auditoria com limpeza diária, prévia ao encurtar e "Limpar agora".
 - Pacote de publicação open source: licença Apache-2.0, NOTICE, guia de contribuição, código de conduta, política de segurança, integração contínua (GitHub Actions), imagem Docker com docker-compose e dados de demonstração (`npm run demo`).

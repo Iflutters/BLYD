@@ -22,7 +22,12 @@ import { toJournalEntry, toPlanColumn, toPlanIssue, toPlanReport } from './mappe
 import type { ColumnTypePreview } from '@/domain/plan-columns'
 import type { PasswordPolicyDto, PlatformInfoDto, PlatformSettingsDto } from './dtos'
 import { fromPlatformValues, toPasswordPolicy, toPlatformInfo, toPlatformSettings } from './mappers'
-import type { EmailRepository, PlatformRepository } from '@/domain/repositories'
+import type { ApiTokenRepository, EmailRepository, PlatformRepository, WebhookRepository } from '@/domain/repositories'
+import type { WebhookDto, WebhookDeliveryDto } from './dtos'
+import { toWebhook, toWebhookDelivery } from './mappers'
+import type { WebhookCatalog } from '@/domain/webhooks'
+import type { ApiTokenDto } from './dtos'
+import { toApiToken } from './mappers'
 import type { EmailSettingsDto, OutboxSummaryDto, ResetTokenCheckDto } from './dtos'
 import { fromEmailPatch, toEmailSettings, toOutboxSummary, toResetTokenCheck } from './mappers'
 import type { FlushResult } from '@/domain/email'
@@ -135,6 +140,61 @@ export function createHttpAuthRepository(api: ApiClient): AuthRepository {
     async confirmPasswordReset(token, password) {
       const { data } = await api.post<{ purpose: 'reset' | 'invite' }>('/auth/password-reset/confirm', { token, password })
       return { purpose: data.purpose }
+    },
+  }
+}
+
+export function createHttpWebhookRepository(api: ApiClient): WebhookRepository {
+  const path = (id: string) => `/settings/webhooks/${encodeURIComponent(id)}`
+  return {
+    async list() {
+      return (await api.get<WebhookDto[]>('/settings/webhooks')).data.map(toWebhook)
+    },
+    async catalog() {
+      return (await api.get<WebhookCatalog>('/settings/webhooks/events')).data
+    },
+    async create(input) {
+      const { data } = await api.post<WebhookDto>('/settings/webhooks', input)
+      return { ...toWebhook(data), secret: data.secret ?? '' }
+    },
+    async update(id, input) {
+      return toWebhook((await api.patch<WebhookDto>(path(id), input)).data)
+    },
+    async remove(id) {
+      await api.del(path(id))
+    },
+    async rotateSecret(id) {
+      return (await api.post<{ secret: string }>(`${path(id)}/rotate-secret`)).data
+    },
+    async test(id) {
+      return toWebhookDelivery((await api.post<WebhookDeliveryDto>(`${path(id)}/test`)).data)
+    },
+    async deliveries(id) {
+      return (await api.get<WebhookDeliveryDto[]>(`${path(id)}/deliveries`)).data.map(toWebhookDelivery)
+    },
+    async redeliver(deliveryId) {
+      return toWebhookDelivery((await api.post<WebhookDeliveryDto>(`/settings/webhook-deliveries/${encodeURIComponent(deliveryId)}/redeliver`)).data)
+    },
+  }
+}
+
+export function createHttpApiTokenRepository(api: ApiClient): ApiTokenRepository {
+  return {
+    async listMine() {
+      return (await api.get<ApiTokenDto[]>('/auth/tokens')).data.map(toApiToken)
+    },
+    async create(name, expiresInDays) {
+      const { data } = await api.post<ApiTokenDto>('/auth/tokens', { name, expires_in_days: expiresInDays })
+      return { ...toApiToken(data), token: data.token ?? '' }
+    },
+    async revoke(id) {
+      return toApiToken((await api.del<ApiTokenDto>(`/auth/tokens/${encodeURIComponent(id)}`)).data)
+    },
+    async listAll() {
+      return (await api.get<ApiTokenDto[]>('/settings/api-tokens')).data.map(toApiToken)
+    },
+    async revokeAny(id) {
+      return toApiToken((await api.del<ApiTokenDto>(`/settings/api-tokens/${encodeURIComponent(id)}`)).data)
     },
   }
 }
@@ -485,6 +545,8 @@ export function createHttpRepositories(api: ApiClient): Repositories {
     sprints: createHttpSprintRepository(api),
     platform: createHttpPlatformRepository(api),
     email: createHttpEmailRepository(api),
+    apiTokens: createHttpApiTokenRepository(api),
+    webhooks: createHttpWebhookRepository(api),
   }
 }
 

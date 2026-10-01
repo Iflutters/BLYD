@@ -75,6 +75,9 @@ Todos os dados (banco SQLite, anexos, imagens e arquivos da documentação) fica
 - Configure em **Configurações → Integrações → E-mail** (servidor SMTP, remetente e o **endereço público da plataforma**, usado nos links) e use "Enviar e-mail de teste". Os e-mails saem por uma fila em até 1 minuto.
 - Recomendado em produção: subir o PocketBase com `--encryptionEnv=PB_ENCRYPTION_KEY` e definir a variável com 32 caracteres aleatórios — a senha do SMTP (e as demais configurações) ficam cifradas no banco. Guarde a chave: sem ela as configurações não abrem.
 
+## Webhooks
+- Em produção os webhooks só aceitam `https://` e não chamam a própria máquina. Numa intranet sem TLS, libere com `KAMBAN_WEBHOOKS_ALLOW_INSECURE=true` (consciente do risco). Os envios saem por uma rotina a cada minuto; o servidor precisa alcançar os endereços cadastrados.
+
 ## Observabilidade
 - Logs estruturados do PocketBase (painel → Logs), com `correlationId`, método, caminho e status nos erros da API.
 - Toda resposta traz `X-Correlation-Id`; o frontend mostra a referência em estados de erro para o suporte localizar o log.

@@ -33,6 +33,10 @@ Deve crescer depois sem reescrever a arquitetura. Não é só um quadro Kanban: 
 
 **E-mail (2026-10-01) ✅:** Configurações → Integrações (`integrations.manage`): SMTP do próprio PocketBase, fila `email_outbox` (rotina a cada minuto, novas tentativas, corpo apagado após envio), "Esqueci minha senha" e convite por links de uso único (`auth_tokens`, só o hash; sem revelar contas) e notificações também por e-mail (preferência em Minha conta). Regras §16; ADR-035.
 
+**Tokens de API (2026-10-01) ✅:** Minha conta → Tokens de API (`api_tokens.create`, Admin/Gestor): `Authorization: Bearer kb_pat_…` (sem cookie nem CSRF), só o hash guardado, valor mostrado uma vez, permissões do perfil atual a cada chamada, sem criar tokens/trocar senha/sessões com token; Admin revoga em Integrações. Regras §17; ADR-036.
+
+**Webhooks (2026-10-01) ✅:** Integrações → Webhooks (`integrations.manage`): catálogo público de eventos (nomes do histórico; `grupo.*`), entrega criada no próprio `auditRepository.record` (decorador `withWebhooks`), fila `webhook_deliveries` com rotina por minuto, POST assinado (HMAC-SHA256 de `timestamp.corpo`), novas tentativas 1/5/30/120/720 min, desligamento após 20 falhas, SSRF (https; metadados bloqueados; http/loopback só fora de produção). Regras §18; ADR-037.
+
 ## 2. Princípios fundamentais (obrigatórios)
 
 Clean Architecture; SOLID; TDD; componentização; baixo acoplamento; alta coesão; reutilização máxima; separação clara entre domínio, aplicação, infraestrutura e apresentação; segurança desde o início; API-first; responsividade; acessibilidade; UX consistente; código legível e documentado; testes automatizados; **nenhuma regra de negócio importante diretamente na UI**.

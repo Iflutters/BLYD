@@ -50,6 +50,8 @@ import type {
 import type { Language } from '@/core/i18n'
 import type { BrandingSlot, PasswordPolicy, PlatformInfo, PlatformSettings, PlatformSettingsValues } from './platform'
 import type { EmailSettingsPatch, EmailSettingsView, FlushResult, OutboxSummary, ResetTokenCheck } from './email'
+import type { ApiToken, ApiTokenExpiry, CreatedApiToken } from './api-tokens'
+import type { CreatedWebhook, Webhook, WebhookCatalog, WebhookDelivery, WebhookInput } from './webhooks'
 import type { ThemePreference } from '@/core/theme/theme'
 
 /**
@@ -80,6 +82,28 @@ export interface AuthRepository {
   /** Confere o link de senha/convite (e traz as exigências da senha). */
   checkResetToken(token: string): Promise<ResetTokenCheck>
   confirmPasswordReset(token: string, password: string): Promise<{ purpose: 'reset' | 'invite' }>
+}
+
+/** Webhooks (integrations.manage): cadastro, segredo, teste e entregas. */
+export interface WebhookRepository {
+  list(): Promise<Webhook[]>
+  catalog(): Promise<WebhookCatalog>
+  create(input: WebhookInput): Promise<CreatedWebhook>
+  update(id: string, input: Partial<WebhookInput>): Promise<Webhook>
+  remove(id: string): Promise<void>
+  rotateSecret(id: string): Promise<{ secret: string }>
+  test(id: string): Promise<WebhookDelivery>
+  deliveries(id: string): Promise<WebhookDelivery[]>
+  redeliver(deliveryId: string): Promise<WebhookDelivery>
+}
+
+/** Tokens de API: os da pessoa (Minha conta) e, com integrations.manage, os de todos. */
+export interface ApiTokenRepository {
+  listMine(): Promise<ApiToken[]>
+  create(name: string, expiresInDays: ApiTokenExpiry): Promise<CreatedApiToken>
+  revoke(id: string): Promise<ApiToken>
+  listAll(): Promise<ApiToken[]>
+  revokeAny(id: string): Promise<ApiToken>
 }
 
 /** E-mail (integrations.manage): configurações do SMTP, teste e fila de saída. */
@@ -482,4 +506,6 @@ export interface Repositories {
   sprints: SprintRepository
   platform: PlatformRepository
   email: EmailRepository
+  apiTokens: ApiTokenRepository
+  webhooks: WebhookRepository
 }

@@ -118,6 +118,7 @@ describe('E2E — acessibilidade e responsividade', { timeout: 600000 }, () => {
       ['notificações', '/notifications'],
       ['conta', '/account'],
       ['sessões', '/account/sessions'],
+      ['tokens de API', '/account/tokens'],
       ['usuários', '/users'],
       ['configurações gerais', '/settings/general'],
       ['integrações', '/settings/integrations'],

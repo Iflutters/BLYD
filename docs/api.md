@@ -298,6 +298,34 @@ Conteúdo: JSON do editor (TipTap/ProseMirror). Blocos aceitos: `paragraph`, `he
 
 Senhas (`POST /users`, `POST /users/{id}/password`, `POST /auth/password`) seguem a política: além de `too_short`, `too_long` e `weak_password`, podem voltar `needs_mixed_case` e `needs_symbol`. O bloqueio de login (`ACCOUNT_LOCKED`) segue as tentativas e os tempos configurados. Auditoria: `platform_settings.update` (antes/depois), `platform_settings.branding_update/branding_remove` e `audit_log.purge` (rotina diária às 03:45 ou "Limpar agora").
 
+## Tokens de API
+Além do cookie de sessão (navegador), a API aceita **token de API pessoal**: `Authorization: Bearer kb_pat_…` (criado em Minha conta → Tokens de API). Com o token, o cookie é ignorado e o header de CSRF não é exigido. Token inválido, vencido, revogado ou de pessoa desativada → 401 `API_TOKEN_INVALID`. Operações de navegador (criar/revogar tokens, trocar senha, sair, sessões) → 403 `TOKEN_NOT_ALLOWED`.
+
+```bash
+curl -H "Authorization: Bearer kb_pat_..." https://kamban.empresa.com/api/v1/tasks?perPage=50
+```
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET/POST | `/auth/tokens` | os meus tokens (sem o valor) / criar (`api_tokens.create`): `{ name*, expires_in_days*: 30\|90\|365\|0 }` → resposta com `token` (só aqui); `API_TOKEN_LIMIT` (20 ativos) |
+| DELETE | `/auth/tokens/{id}` | revogar um meu; de outra pessoa → 404 `API_TOKEN_NOT_FOUND` |
+| GET/DELETE | `/settings/api-tokens[/{id}]` | `integrations.manage`: todos os tokens (com `user`) / revogar qualquer um |
+
+Auditoria: `api_token.created` (nome, prefixo, prazo — nunca o valor) e `api_token.revoked`.
+
+## Endpoints — Webhooks
+| Método | Rota | Descrição |
+|---|---|---|
+| GET/POST | `/settings/webhooks` | `integrations.manage`: lista (sem o segredo) / cria `{ name*, url*, events*, active }` → resposta com `secret` (só aqui). Erros em `url`: `invalid_url`, `insecure_url`, `blocked_host`, `too_long`; em `events`: `required`, `invalid_option` |
+| GET | `/settings/webhooks/events` | catálogo `{ events, groups }` (assinar `grupo.*` = todos do grupo) |
+| PATCH/DELETE | `/settings/webhooks/{id}` | edita (parcial; religar zera as falhas) / exclui com as entregas; `WEBHOOK_NOT_FOUND` |
+| POST | `/settings/webhooks/{id}/rotate-secret` | novo segredo → `{ secret }` |
+| POST | `/settings/webhooks/{id}/test` | envia `webhook.ping` na hora → a entrega (`status`, `response_status`, `error`, `duration_ms`) |
+| GET | `/settings/webhooks/{id}/deliveries` | 50 entregas mais recentes |
+| POST | `/settings/webhook-deliveries/{id}/redeliver` | reenvia agora, do zero; `WEBHOOK_DELIVERY_NOT_FOUND` |
+
+Corpo de cada `POST`: `{ id, event, occurred_at, actor: { id }, entity: { type, id }, data, previous }`. Cabeçalhos: `X-Kamban-Event`, `X-Kamban-Delivery`, `X-Kamban-Timestamp` (segundos) e `X-Kamban-Signature: sha256=<hex>` = HMAC-SHA256 do texto `"{timestamp}.{corpo}"` com o segredo. Para conferir: recalcule com o corpo **cru** recebido, compare em tempo constante e recuse timestamps com mais de 5 minutos. Auditoria: `webhook.created/updated/deleted/secret_rotated` e `webhook.disabled` (automático). Rotina `kamban_webhooks` a cada minuto.
+
 ## Endpoints — E-mail (integrações)
 | Método | Rota | Descrição |
 |---|---|---|

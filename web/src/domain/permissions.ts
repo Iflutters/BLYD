@@ -33,6 +33,7 @@ export const PERMISSION_CODES = [
   'permissions.manage',
   'platform.manage',
   'integrations.manage',
+  'api_tokens.create',
 ] as const
 
 export type PermissionCode = (typeof PERMISSION_CODES)[number]

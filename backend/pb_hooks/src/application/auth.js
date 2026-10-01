@@ -12,6 +12,7 @@ const { PERMISSIONS } = require('../domain/permissions')
 const { buildAuditEntry, truncate, MAX_USER_AGENT } = require('./audit')
 const { toUserDto, toRoleDto, toSessionDto } = require('./presenters')
 const { currentPasswordPolicy, currentLockoutPolicy } = require('./platform-settings')
+const { assertBrowserSession } = require('./api-tokens')
 
 const passwordInput = rules.custom((value) => {
   if (typeof value !== 'string') return 'invalid_type'
@@ -150,6 +151,7 @@ function createAuthService(deps) {
   }
 
   function logout(ctx) {
+    assertBrowserSession(ctx)
     rbac.assertAuthenticated(ctx.principal)
     deps.unitOfWork.run((repos) => {
       repos.sessionRepository.revoke(ctx.principal.sessionId, deps.clock.now())
@@ -190,6 +192,7 @@ function createAuthService(deps) {
   }
 
   function revokeMySession(ctx, sessionId) {
+    assertBrowserSession(ctx)
     rbac.assertAuthenticated(ctx.principal)
     const session = sessionId ? deps.sessionRepository.findById(sessionId) : null
     // Sessões de outros usuários respondem como inexistentes (proteção contra IDOR/enumeração).
@@ -214,6 +217,7 @@ function createAuthService(deps) {
    * e encerra todas as outras sessões do usuário.
    */
   function changePassword(ctx, input) {
+    assertBrowserSession(ctx)
     rbac.assertAuthenticated(ctx.principal)
     const data = assertValid(input, changePasswordSchema(currentPasswordPolicy(deps)))
     const userId = ctx.principal.userId
@@ -242,6 +246,7 @@ function createAuthService(deps) {
 
   /** Encerra todas as sessões do usuário, exceto a atual. */
   function revokeOtherSessions(ctx) {
+    assertBrowserSession(ctx)
     rbac.assertAuthenticated(ctx.principal)
     const revoked = deps.unitOfWork.run((repos) => {
       const count = repos.sessionRepository.revokeAllForUser(ctx.principal.userId, deps.clock.now(), ctx.principal.sessionId)

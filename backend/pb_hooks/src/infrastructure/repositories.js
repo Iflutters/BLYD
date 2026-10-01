@@ -2227,8 +2227,11 @@ function createRepositories(app) {
   const { createPlatformSettingsRepository } = require('./platform-repositories')
   // e-mail (integrações) em arquivo próprio
   const { createEmailRepositories } = require('./email-repositories')
-  return Object.assign(createDocRepositories(app), createPlanCollabRepositories(app), createPlanManagementRepositories(app), createEmailRepositories(app), {
+  const { createApiTokenRepository } = require('./api-token-repositories')
+  const { createWebhookRepositories, withWebhooks } = require('./webhook-repositories')
+  const repos = Object.assign(createWebhookRepositories(app), createDocRepositories(app), createPlanCollabRepositories(app), createPlanManagementRepositories(app), createEmailRepositories(app), {
     platformSettingsRepository: createPlatformSettingsRepository(app),
+    apiTokenRepository: createApiTokenRepository(app),
     taskRepository: createTaskRepository(app),
     relationRepository: createRelationRepository(app),
     loginAttemptRepository: createLoginAttemptRepository(app),
@@ -2259,6 +2262,9 @@ function createRepositories(app) {
     sessionRepository: createSessionRepository(app),
     auditRepository: createAuditRepository(app),
   })
+  // o histórico também enfileira as entregas dos webhooks que assinam o evento
+  repos.auditRepository = withWebhooks(repos.auditRepository, repos)
+  return repos
 }
 
 module.exports = { createRepositories }

@@ -130,3 +130,15 @@ Pacote de publicação: `tests/api/demo.test.js` roda os **dados de demonstraç�
 - Casos de uso (`application-email.test.js`): permissão, senha fora da resposta e do histórico, e-mail de teste e falha legível, fila (envia, apaga o corpo, tenta de novo, desiste na 5ª), "Esqueci minha senha" (sem revelar contas, 3 por hora, link anterior invalidado, política, sessões encerradas, uso único, prazo), convite (criação sem senha, reenvio, aceite) e notificação por e-mail (quem desligou não recebe).
 - API real com a migration 1790000028 e um **SMTP de teste** (`tests/support/smtp-sink.js`, aceita AUTH e decodifica MIME): autenticação com a senha configurada, link no e-mail e redefinição ponta a ponta, convite, notificação e servidor fora do ar (`api/email.test.js`).
 - Interface (`features/settings/integrations-email.test.tsx`) e E2E (`e2e/email.e2e.test.mjs`: configurar na tela, teste, "Esqueci minha senha" e convite no navegador). Integrações, "Esqueci minha senha" e "Nova senha" entram na varredura de acessibilidade.
+
+## Tokens de API
+- Domínio (`domain-api-token.test.js`): formato, prefixo visível, nome e prazo, situação, "último uso" a cada 5 minutos.
+- Casos de uso (`application-api-tokens.test.js`): permissão, valor só na criação e fora do histórico, autenticação com o perfil atual, vencido/revogado/pessoa desativada, revogar (dono ou integrations.manage), restrições com token, limite de 20.
+- API real com a migration 1790000029 (`api/api-tokens.test.js`): Bearer sem cookie nem CSRF, o token prevalece sobre o cookie, permissões do perfil, `TOKEN_NOT_ALLOWED`, revogar e desativar cortam o acesso, lista do Admin.
+- Interface (`features/account/api-tokens.test.tsx`) e E2E (`e2e/tokens.e2e.test.mjs`: criar na tela, usar com `curl`-like fora do navegador, revogar). A página entra na varredura de acessibilidade.
+
+## Webhooks
+- Domínio (`domain-webhook.test.js`): catálogo e grupos, SSRF (https, metadados, loopback só fora de produção), entrada, novas tentativas, carga e texto assinado.
+- Casos de uso (`application-webhooks.test.js`): permissão, segredo só na criação/troca, só eventos do catálogo e webhooks ativos, envio assinado com os cabeçalhos, novas tentativas e desistência, desligamento após 20 falhas, teste, reenvio, limpeza de 30 dias.
+- API real com a migration 1790000030 e um **receptor HTTP local** (`api/webhooks.test.js`): a tarefa criada vira entrega, o POST chega e o HMAC confere com o `crypto` do Node, teste com o destino em erro, novo segredo, exclusão em cascata.
+- Interface (`features/settings/webhooks.test.tsx`) e E2E (`e2e/webhooks.e2e.test.mjs`: cadastrar na tela, segredo, teste, entrega assinada e axe no formulário e no painel de entregas).

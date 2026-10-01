@@ -13,6 +13,8 @@ function load() {
   return {
     environment,
     isProduction: environment === 'production',
+    // webhooks para http:// e para a própria máquina: só fora de produção (ou KAMBAN_WEBHOOKS_ALLOW_INSECURE=true)
+    allowInsecureWebhooks: environment !== 'production' || env('KAMBAN_WEBHOOKS_ALLOW_INSECURE', 'false') === 'true',
     appVersion: env('KAMBAN_VERSION', '0.1.0'),
     session: {
       ttlHours: env('KAMBAN_SESSION_TTL_HOURS', 12),

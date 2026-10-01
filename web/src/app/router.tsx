@@ -38,6 +38,7 @@ export const routes: RouteObject[] = [
       { path: 'notifications', ...page(() => import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage }))) },
       { path: 'account', ...page(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage }))) },
       { path: 'account/sessions', ...page(() => import('@/features/account/SessionsPage').then((m) => ({ default: m.SessionsPage }))) },
+      { path: 'account/tokens', ...page(() => import('@/features/account/ApiTokensPage').then((m) => ({ default: m.ApiTokensPage }))) },
       {
         element: <PermissionGate permission="projects.view" />,
         children: [

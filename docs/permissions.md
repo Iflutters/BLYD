@@ -17,7 +17,7 @@
 | reports | `reports.view` |
 | audit | `audit.view` (desde a migration 1790000002) |
 | docs | `docs.view`, `docs.edit`, `docs.manage` (expansão Onda 2, migration 1790000019) |
-| settings | `settings.manage`, `permissions.manage`, `platform.manage` (Configurador geral, migration 1790000027), `integrations.manage` (e-mail, webhooks e tokens, migration 1790000028) |
+| settings | `settings.manage`, `permissions.manage`, `platform.manage` (Configurador geral, migration 1790000027), `integrations.manage` (e-mail, webhooks e tokens, migration 1790000028), `api_tokens.create` (migration 1790000029) |
 
 ## Matriz inicial (seed)
 | Permissão | SUPER_ADMIN | ADMIN | MANAGER | MEMBER | VIEWER |
@@ -38,6 +38,7 @@
 | settings.manage / permissions.manage | ✓ | ✓ | | | |
 | platform.manage | ✓ | ✓ | | | |
 | integrations.manage | ✓ | ✓ | | | |
+| api_tokens.create | ✓ | ✓ | ✓ | | |
 | docs.view | ✓ | ✓ | ✓ | ✓ | ✓ |
 | docs.edit | ✓ | ✓ | ✓ | ✓ | |
 | docs.manage | ✓ | ✓ | ✓ | | |
@@ -165,5 +166,9 @@ Permissão global **e** regra do espaço (`domain/docs.js` → `spaceAccess`):
 - A identidade (`GET /platform` e as imagens) é pública; `GET /auth/password-policy` exige só estar logado.
 
 ## Integrações
-- `integrations.manage` cobre o **envio de e-mail** (servidor, teste, fila) e, nas próximas etapas, webhooks e os tokens de API de todos. Concedida por padrão só ao Admin (migration 1790000028).
+- `integrations.manage` cobre o **envio de e-mail** (servidor, teste, fila), os **webhooks** (que recebem eventos de todos os projetos — por isso só para quem administra) e a lista/revogação dos **tokens de API de todos**. Concedida por padrão só ao Admin (migration 1790000028).
 - Reenviar convite exige `users.create`. As rotas de "Esqueci minha senha" são públicas (quem esqueceu não tem sessão), sem revelar contas.
+
+## Tokens de API
+- `api_tokens.create`: criar os próprios tokens (Admin e Gestor por padrão; dá para conceder a outros perfis na matriz). Listar e revogar os próprios não exige permissão — quem perdeu a permissão ainda consegue revogar os que criou.
+- O token não tem permissões próprias: em cada chamada valem as do perfil atual da pessoa (o RBAC é o mesmo da sessão).

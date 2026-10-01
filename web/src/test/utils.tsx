@@ -76,6 +76,8 @@ export function fakeRepositories(overrides: {
   docs?: Partial<Repositories['docs']>
   platform?: Partial<Repositories['platform']>
   email?: Partial<Repositories['email']>
+  apiTokens?: Partial<Repositories['apiTokens']>
+  webhooks?: Partial<Repositories['webhooks']>
 } = {}): Repositories {
   const emptyPage: Page<User> = { items: [], page: 1, perPage: 20, total: 0, totalPages: 0 }
   return {
@@ -336,6 +338,26 @@ export function fakeRepositories(overrides: {
       outbox: notImplemented,
       flush: notImplemented,
       ...overrides.email,
+    },
+    apiTokens: {
+      listMine: () => Promise.resolve([]),
+      create: notImplemented,
+      revoke: notImplemented,
+      listAll: () => Promise.resolve([]),
+      revokeAny: notImplemented,
+      ...overrides.apiTokens,
+    },
+    webhooks: {
+      list: () => Promise.resolve([]),
+      catalog: () => Promise.resolve({ events: [], groups: [] }),
+      create: notImplemented,
+      update: notImplemented,
+      remove: notImplemented,
+      rotateSecret: notImplemented,
+      test: notImplemented,
+      deliveries: () => Promise.resolve([]),
+      redeliver: notImplemented,
+      ...overrides.webhooks,
     },
   }
 }

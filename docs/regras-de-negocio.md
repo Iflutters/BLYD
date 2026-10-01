@@ -515,3 +515,22 @@ Configurado em **Configurações → Integrações → E-mail** por quem tem **C
 - **Convite:** ao criar um usuário com o envio ligado, "Enviar convite por e-mail" já vem marcado e dispensa a senha — a pessoa recebe um link que **vale 7 dias** para criar a dela. "Reenviar convite" (na lista de usuários) existe enquanto a pessoa não entrou; reenviar invalida o link anterior.
 - **Notificações por e-mail:** cada notificação (menção, atribuição, comentário, mudança de status, prazo, menção e resposta no quadro da Gestão) também vai por e-mail, no idioma da pessoa e com o link para o item. Cada pessoa liga ou desliga em **Minha conta** (padrão: ligadas).
 - Tudo fica no histórico: alteração das configurações (sem a senha), e-mail de teste, pedido e uso do link, convite e aceite.
+
+## 17. Tokens de API
+
+Em **Minha conta → Tokens de API**, quem tem **Criar tokens de API próprios** (`api_tokens.create`; por padrão Admin e Gestor) cria tokens para scripts e integrações usarem a API sem o navegador.
+
+- **Criar:** nome (até 80) e prazo — 30, 90 ou 365 dias, ou sem prazo. O valor (`kb_pat_…`) aparece **uma única vez**, com cópia e um exemplo de uso; depois a lista mostra só o início, a situação (ativo, vencido, revogado), o último uso e o prazo. No máximo 20 tokens ativos por pessoa.
+- **Usar:** `Authorization: Bearer kb_pat_…`. O token age como a pessoa, com as **permissões do perfil dela no momento de cada chamada** (mudou o perfil, mudou o que o token pode). Para de valer se vencer, for revogado ou a pessoa for **desativada**.
+- **Limites:** com um token não dá para criar ou revogar tokens, trocar a senha, sair ou encerrar sessões — isso só no navegador.
+- **Revogar:** a própria pessoa (em Minha conta) ou quem tem **Configurar integrações** (Configurações → Integrações → Tokens de API, que mostra os tokens de todos — ex.: de quem saiu da empresa). Revogar vale na hora e fica no histórico; criar também.
+
+## 18. Webhooks
+
+Em **Configurações → Integrações → Webhooks**, quem tem **Configurar integrações** cadastra endereços de outros sistemas que recebem um aviso quando algo acontece.
+
+- **Cadastro:** nome, endereço que recebe e eventos. O endereço precisa ser **https** (em desenvolvimento/teste, ou liberado de propósito na instalação, aceita http e a própria máquina); endereços de **metadados da nuvem** e link-local são sempre recusados; usuário/senha no endereço não. Os eventos vêm de um **catálogo público** (projetos, tarefas, comentários, anexos, sprints, marcos, elementos do quadro, páginas de documentação, usuários) — por evento ou o grupo inteiro ("Tudo de Tarefas"). Ações fora do catálogo (ex.: login) nunca são enviadas.
+- **Envio:** cada ação do catálogo gravada no histórico vira uma entrega para cada webhook ativo que a assina, na mesma operação; uma rotina **a cada minuto** envia um `POST` JSON com `id`, `event`, `occurred_at`, `actor`, `entity`, `data` (o novo) e `previous` (o anterior), e os cabeçalhos `X-Kamban-Event`, `X-Kamban-Delivery`, `X-Kamban-Timestamp` e `X-Kamban-Signature: sha256=<HMAC-SHA256 de "timestamp.corpo" com o segredo>`. Resposta 2xx em até 10 segundos é sucesso.
+- **Falhas:** nova tentativa em 1, 5, 30, 120 e 720 minutos; na 6ª falha a entrega fica como falha. **20 tentativas seguidas com falha desligam o webhook** (fica no histórico); religar zera a contagem. Webhook desligado não recebe entregas novas.
+- **Segredo:** gerado na criação e mostrado **uma única vez**; "Gerar novo segredo" troca na hora (o antigo deixa de valer). Nunca aparece na lista nem no histórico.
+- **Acompanhar:** a lista mostra a situação, as falhas seguidas e a última entrega; "Enviar teste" manda um `webhook.ping` na hora e mostra o resultado; "Visualizar" abre as 50 entregas mais recentes, com a resposta e "Reenviar". Entregas encerradas saem depois de 30 dias.

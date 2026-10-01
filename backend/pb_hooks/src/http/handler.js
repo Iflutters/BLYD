@@ -100,20 +100,28 @@ function handle(e, action, options) {
     // idioma da tela (o app envia Accept-Language): cadastros traduzidos saem nele
     container = createContainer($app, { locale: resolveLocale(header(e, 'Accept-Language')) })
     const method = String(e.request.method).toUpperCase()
-    if (SAFE_METHODS.indexOf(method) < 0 && header(e, CSRF_HEADER) !== CSRF_VALUE) {
-      throw appError('CSRF_CHECK_FAILED')
+    const bearer = /^Bearer\s+(\S+)$/i.exec(header(e, 'Authorization') || '')
+    let auth
+    if (bearer) {
+      // token de API: o cookie é ignorado e o CSRF não se aplica (não há credencial automática do navegador)
+      auth = container.apiTokens.authenticate(bearer[1], e.realIP())
+      if (opts.auth !== false && !auth.principal) throw appError('API_TOKEN_INVALID')
+    } else {
+      if (SAFE_METHODS.indexOf(method) < 0 && header(e, CSRF_HEADER) !== CSRF_VALUE) {
+        throw appError('CSRF_CHECK_FAILED')
+      }
+      const token = readCookie(e, container.config.cookie.name)
+      auth = container.auth.authenticate(token)
+      // rotas públicas não mexem na sessão: a identidade da plataforma carrega junto com o /auth/me, e
+      // limpar o cookie aqui faria o /auth/me perder o motivo "sessão expirada" (vira "sem sessão")
+      if (token && !auth.principal && opts.auth !== false) clearSessionCookie(e, container.config)
+      if (opts.auth !== false && !auth.principal) throw appError(token ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED')
     }
-
-    const token = readCookie(e, container.config.cookie.name)
-    const auth = container.auth.authenticate(token)
-    // rotas públicas não mexem na sessão: a identidade da plataforma carrega junto com o /auth/me, e
-    // limpar o cookie aqui faria o /auth/me perder o motivo "sessão expirada" (vira "sem sessão")
-    if (token && !auth.principal && opts.auth !== false) clearSessionCookie(e, container.config)
-    if (opts.auth !== false && !auth.principal) throw appError(token ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED')
 
     const ctx = {
       principal: auth.principal,
-      session: auth.session,
+      session: bearer ? null : auth.session,
+      authMethod: bearer ? 'token' : 'session',
       ip: e.realIP(),
       userAgent: header(e, 'User-Agent'),
       correlationId,

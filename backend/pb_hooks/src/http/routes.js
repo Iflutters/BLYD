@@ -648,6 +648,42 @@ function confirmPasswordReset(e) {
   return handle(e, ({ ctx, services, body }) => ({ data: services.accountLinks.confirm(body(), ctx) }), PUBLIC)
 }
 
+// ---------------------------------------------------------------- tokens de API
+
+const listMyApiTokens = configAction('apiTokens', (s, ctx) => s.listMine(ctx))
+const createApiToken = configAction('apiTokens', (s, ctx, r) => s.create(ctx, r.body()), 201)
+const revokeApiToken = configAction('apiTokens', (s, ctx, r) => s.revoke(ctx, r.id))
+const listAllApiTokens = configAction('apiTokens', (s, ctx) => s.listAll(ctx))
+
+// ---------------------------------------------------------------- webhooks
+
+const listWebhooks = configAction('webhooks', (s, ctx) => s.list(ctx))
+const webhookEvents = configAction('webhooks', (s, ctx) => s.events(ctx))
+const createWebhook = configAction('webhooks', (s, ctx, r) => s.create(ctx, r.body()), 201)
+const updateWebhook = configAction('webhooks', (s, ctx, r) => s.update(ctx, r.id, r.body()))
+const deleteWebhook = configAction('webhooks', (s, ctx, r) => s.remove(ctx, r.id))
+const rotateWebhookSecret = configAction('webhooks', (s, ctx, r) => s.rotateSecret(ctx, r.id))
+const testWebhook = configAction('webhooks', (s, ctx, r) => s.test(ctx, r.id))
+const webhookDeliveries = configAction('webhooks', (s, ctx, r) => s.deliveries(ctx, r.id))
+const redeliverWebhook = configAction('webhooks', (s, ctx, r) => s.redeliver(ctx, r.id))
+
+/** Rotina por minuto (cron): envia as entregas que venceram (uma execução por vez). */
+function flushWebhooks() {
+  const store = $app.store()
+  const key = 'kamban.webhooks.flush'
+  const since = store.get(key)
+  if (since && Date.now() - since < 10 * 60000) return { busy: true }
+  store.set(key, Date.now())
+  try {
+    const { createContainer } = require(`${__hooks}/src/infrastructure/container.js`)
+    const result = createContainer($app).webhooks.flush()
+    if (result.sent || result.failed || result.retrying) $app.logger().info('kamban: webhooks', 'sent', result.sent, 'failed', result.failed, 'retrying', result.retrying)
+    return result
+  } finally {
+    store.remove(key)
+  }
+}
+
 // ---------------------------------------------------------------- misc
 
 function notFound(e) {
@@ -845,6 +881,20 @@ module.exports = {
   checkPasswordReset,
   confirmPasswordReset,
   resendInvite,
+  listMyApiTokens,
+  createApiToken,
+  revokeApiToken,
+  listAllApiTokens,
+  listWebhooks,
+  webhookEvents,
+  createWebhook,
+  updateWebhook,
+  deleteWebhook,
+  rotateWebhookSecret,
+  testWebhook,
+  webhookDeliveries,
+  redeliverWebhook,
+  flushWebhooks,
   runAuditRetention,
   runDueRemindersNow,
   uploadTaskAttachments,

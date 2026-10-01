@@ -34,6 +34,9 @@ const { createDocPageService } = require('../application/doc-pages')
 const { createPlatformSettingsService } = require('../application/platform-settings')
 const { createEmailService } = require('../application/email')
 const { createAccountLinkService } = require('../application/account-links')
+const { createApiTokenService } = require('../application/api-tokens')
+const { createWebhookService } = require('../application/webhooks')
+const { createHttpClient, createCrypto } = require('./webhook-repositories')
 const { createMailer } = require('./email-repositories')
 const contentLocale = require('../domain/content-locale')
 const config = require('./config')
@@ -73,6 +76,9 @@ function createContainer(app, options) {
     },
     sessionPolicy: settings.session,
     mailer: createMailer(app),
+    httpClient: createHttpClient(),
+    crypto: createCrypto(),
+    allowInsecureWebhooks: settings.allowInsecureWebhooks,
     unitOfWork: createUnitOfWork(app),
   })
 
@@ -110,6 +116,8 @@ function createContainer(app, options) {
     platformSettings: createPlatformSettingsService(deps),
     email: createEmailService(deps),
     accountLinks: createAccountLinkService(deps),
+    apiTokens: createApiTokenService(deps),
+    webhooks: createWebhookService(deps),
   }
 }
 

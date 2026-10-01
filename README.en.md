@@ -41,7 +41,10 @@ Both live in the same **project** (same members and permissions) but stay separa
 - **Audit log** of every relevant change; history on every task, item and project.
 - **Reports** with clickable indicators; personal dashboard.
 - Secure sessions (HttpOnly cookie, CSRF protection, CSP, progressive login lockout, active sessions).
-- **Documented REST API** (`/api/v1`, OpenAPI) — the same one the interface uses.
+- **Documented REST API** (`/api/v1`, OpenAPI) — the same one the interface uses — with personal **API tokens** (`Authorization: Bearer`) for scripts and integrations.
+- **General settings:** platform name, logo and icon, password policy, login lockout and history retention.
+- **Email:** "Forgot my password", user invitations and email notifications (SMTP with a queue and retries).
+- Signed **webhooks** (HMAC) to notify other systems on each event, with retries and delivery history.
 - Light and dark themes, mobile and desktop, accessibility checked (axe) on every screen, command palette (Ctrl/⌘+K).
 
 <table>
@@ -96,10 +99,8 @@ The code, commits and technical docs are written in Portuguese; issues and pull 
 
 ## Roadmap
 
-1. **General settings:** platform name, logo and favicon; password policy; login lockout; history retention.
-2. **Integrations:** email (password recovery, invitations, notifications), API tokens and webhooks.
-3. **Realtime:** boards and comments updated without reloading.
-4. **Corporate login:** OAuth/OIDC (Google, Microsoft), then LDAP.
+1. **Realtime:** boards and comments updated without reloading.
+2. **Corporate login:** OAuth/OIDC (Google, Microsoft), then LDAP.
 
 ## License
 

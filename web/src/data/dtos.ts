@@ -636,3 +636,45 @@ export interface ResetTokenCheckDto {
   name?: string
   policy?: PasswordPolicyDto
 }
+
+export interface ApiTokenDto {
+  id: string
+  name: string
+  prefix: string
+  state: string
+  created_at: string | null
+  expires_at: string | null
+  last_used_at: string | null
+  last_used_ip: string | null
+  revoked_at: string | null
+  user?: UserSummaryDto
+  token?: string
+}
+
+export interface WebhookDto {
+  id: string
+  name: string
+  url: string
+  events: string[]
+  active: boolean
+  last_status: number | null
+  last_delivery_at: string | null
+  consecutive_failures: number
+  created_at: string | null
+  secret?: string
+}
+
+export interface WebhookDeliveryDto {
+  id: string
+  webhook_id: string
+  event: string
+  status: string
+  attempts: number
+  response_status: number | null
+  response_body: string | null
+  error: string | null
+  duration_ms: number | null
+  next_attempt_at: string | null
+  delivered_at: string | null
+  created_at: string | null
+}

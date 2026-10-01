@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { ArrowRight, KeyRound } from 'lucide-react'
+import { useCan } from '@/features/auth/session'
 import { isAppError } from '@/core/errors/app-error'
 import type { CurrentUser } from '@/domain/entities'
 import { changePasswordSchemaFor, type ChangePasswordInput } from '@/domain/validation'
@@ -29,6 +30,7 @@ const PASSWORD_FIELDS: Record<string, keyof ChangePasswordInput> = {
 export function AccountPage() {
   const { t } = useTranslation()
   const { current } = useSession()
+  const canUseTokens = useCan('api_tokens.create')
   if (!current) return null
   return (
     <>
@@ -42,6 +44,13 @@ export function AccountPage() {
             <Link to="/account/sessions">{t('account.manageSessions')}</Link>
           </AppButton>
         </AppCard>
+        {canUseTokens && (
+          <AppCard title={t('apiTokens.title')} description={t('apiTokens.cardDescription')} className="lg:col-span-2">
+            <AppButton asChild variant="secondary" rightIcon={<ArrowRight />}>
+              <Link to="/account/tokens">{t('apiTokens.manage')}</Link>
+            </AppButton>
+          </AppCard>
+        )}
       </div>
     </>
   )

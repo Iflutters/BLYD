@@ -22,7 +22,8 @@
     "copied": "Copiado para a área de transferência",
     "skipToContent": "Pular para o conteúdo",
     "notifications": "Notificações",
-    "clearDate": "Limpar data"
+    "clearDate": "Limpar data",
+    "refresh": "Atualizar"
   },
   "states": {
     "errorTitle": "Algo deu errado",
@@ -113,7 +114,9 @@
     "needs_symbol": "Inclua um símbolo (ex.: ! @ # $)",
     "below_base": "Não pode ser menor que o tempo inicial",
     "unsafe_svg": "SVG com conteúdo ativo (script, eventos ou links externos) não é aceito",
-    "invalid_slot": "Lugar de imagem inválido"
+    "invalid_slot": "Lugar de imagem inválido",
+    "insecure_url": "Use um endereço https://",
+    "blocked_host": "Este endereço não é permitido (metadados da nuvem ou a própria máquina)"
   },
   "errors": {
     "VALIDATION_ERROR": "Verifique os campos destacados.",
@@ -201,7 +204,13 @@
     "EMAIL_NOT_CONFIGURED": "O envio de e-mail não está configurado. Peça ao administrador (Configurações → Integrações).",
     "EMAIL_SEND_FAILED": "O servidor de e-mail recusou ou não respondeu.",
     "RESET_TOKEN_INVALID": "Este link não vale mais: venceu ou já foi usado. Peça outro.",
-    "USER_ALREADY_ACTIVE": "Essa pessoa já entrou na plataforma; não há convite a reenviar."
+    "USER_ALREADY_ACTIVE": "Essa pessoa já entrou na plataforma; não há convite a reenviar.",
+    "API_TOKEN_INVALID": "Token de API inválido, vencido ou revogado.",
+    "API_TOKEN_NOT_FOUND": "Token de API não encontrado.",
+    "API_TOKEN_LIMIT": "Você já tem 20 tokens ativos. Revogue algum antes de criar outro.",
+    "TOKEN_NOT_ALLOWED": "Esta ação só pode ser feita no navegador, não com um token de API.",
+    "WEBHOOK_NOT_FOUND": "Webhook não encontrado.",
+    "WEBHOOK_DELIVERY_NOT_FOUND": "Entrega não encontrada."
   },
   "nav": {
     "main": "Navegação principal",
@@ -525,7 +534,8 @@
       "plan.edit": "Editar elementos do quadro",
       "plan.manage": "Gerenciar grupos e etiquetas do quadro",
       "platform.manage": "Configurar a plataforma (segurança e identidade)",
-      "integrations.manage": "Configurar integrações (e-mail, webhooks e tokens)"
+      "integrations.manage": "Configurar integrações (e-mail, webhooks e tokens)",
+      "api_tokens.create": "Criar tokens de API próprios"
     }
   },
   "audit": {
@@ -566,7 +576,9 @@
       "plan_item": "Elemento do quadro",
       "platform_settings": "Configurações da plataforma",
       "audit_log": "Histórico de auditoria",
-      "email_settings": "Configurações de e-mail"
+      "email_settings": "Configurações de e-mail",
+      "api_token": "Token de API",
+      "webhook": "Webhook"
     },
     "fields": {
       "name": "Nome",
@@ -692,7 +704,13 @@
       "app_url": "Endereço da plataforma",
       "password_changed": "Senha alterada",
       "to": "Para",
-      "resent": "Reenvio"
+      "resent": "Reenvio",
+      "prefix": "Prefixo",
+      "expires_at": "Vence em",
+      "user_id": "Pessoa",
+      "url": "Endereço",
+      "events": "Eventos",
+      "failures": "Falhas seguidas"
     },
     "actions": {
       "auth.login": "Entrou no sistema",
@@ -815,7 +833,14 @@
       "auth.password_reset_requested": "Redefinição de senha pedida",
       "auth.password_reset": "Senha redefinida pelo link do e-mail",
       "auth.invite_accepted": "Convite aceito (senha criada)",
-      "user.invited": "Convite enviado"
+      "user.invited": "Convite enviado",
+      "api_token.created": "Token de API criado",
+      "api_token.revoked": "Token de API revogado",
+      "webhook.created": "Webhook criado",
+      "webhook.updated": "Webhook editado",
+      "webhook.deleted": "Webhook excluído",
+      "webhook.secret_rotated": "Segredo do webhook trocado",
+      "webhook.disabled": "Webhook desligado por falhas seguidas"
     }
   },
   "projects": {
@@ -2954,9 +2979,11 @@
   },
   "integrations": {
     "title": "Integrações",
-    "description": "E-mail da plataforma — e, em breve, webhooks e tokens de API.",
+    "description": "E-mail da plataforma, webhooks para outros sistemas e tokens de API.",
     "tabs": {
-      "email": "E-mail"
+      "email": "E-mail",
+      "tokens": "Tokens de API",
+      "webhooks": "Webhooks"
     },
     "email": {
       "smtpTitle": "Servidor de e-mail (SMTP)",
@@ -3016,6 +3043,125 @@
         "sent": "Enviado",
         "failed": "Falhou"
       }
+    },
+    "tokens": {
+      "description": "Tokens de todas as pessoas. Revogue os de quem saiu da empresa ou de integrações que não são mais usadas.",
+      "empty": "Ninguém criou tokens de API ainda",
+      "revokeDescription": "O token de {{user}} para de funcionar na hora. Não dá para desfazer."
+    }
+  },
+  "apiTokens": {
+    "title": "Tokens de API",
+    "description": "Acesso à API sem o navegador (scripts, BI, integrações). O token age com as suas permissões.",
+    "cardDescription": "Para scripts e integrações acessarem a API em seu nome.",
+    "manage": "Gerenciar tokens",
+    "backToAccount": "Minha conta",
+    "create": "Novo token",
+    "createTitle": "Novo token de API",
+    "createDescription": "Dê um nome que lembre onde ele será usado.",
+    "createdTitle": "Copie o seu token agora",
+    "createdDescription": "Por segurança ele não aparece de novo. Guarde num cofre de senhas; se perder, revogue e crie outro.",
+    "done": "Já copiei",
+    "name": "Nome",
+    "nameHint": "Ex.: Planilha de horas, Power BI.",
+    "expires": "Vence em",
+    "days_one": "{{count}} dia",
+    "days_other": "{{count}} dias",
+    "noExpiry": "Sem prazo",
+    "noExpiryHint": "Sem prazo, ele vale até ser revogado. Prefira um prazo sempre que der.",
+    "value": "Token",
+    "copy": "Copiar token",
+    "example": "Exemplo de uso",
+    "empty": "Nenhum token ainda",
+    "emptyHint": "Crie um token para um script ou integração acessar a API em seu nome.",
+    "noPermission": "Seu perfil não permite criar tokens de API.",
+    "revoke": "Revogar",
+    "revokeTitle": "Revogar o token \"{{name}}\"?",
+    "revokeDescription": "Ele para de funcionar na hora; o que usa este token deixa de acessar a API. Não dá para desfazer.",
+    "revoked": "Token \"{{name}}\" revogado.",
+    "neverUsed": "Nunca usado",
+    "states": {
+      "active": "Ativo",
+      "expired": "Vencido",
+      "revoked": "Revogado"
+    },
+    "columns": {
+      "user": "Pessoa",
+      "name": "Nome",
+      "prefix": "Início",
+      "state": "Situação",
+      "lastUsed": "Último uso",
+      "expires": "Vence em"
+    },
+    "revokeNamed": "Revogar {{name}}"
+  },
+  "webhooks": {
+    "description": "Avise outros sistemas (ERP, chat, automações) quando algo acontecer: a plataforma envia um POST assinado para o endereço, com novas tentativas se ele estiver fora.",
+    "create": "Novo webhook",
+    "createTitle": "Novo webhook",
+    "editTitle": "Editar webhook",
+    "formDescription": "Escolha o endereço que recebe e os eventos.",
+    "created": "Webhook criado.",
+    "updated": "Webhook salvo.",
+    "deleted": "Webhook excluído.",
+    "deleteTitle": "Excluir o webhook \"{{name}}\"?",
+    "deleteDescription": "As entregas pendentes e o histórico de entregas dele também saem.",
+    "empty": "Nenhum webhook",
+    "emptyHint": "Crie um webhook para outro sistema receber os eventos da plataforma.",
+    "active": "Ativo",
+    "inactive": "Desligado",
+    "failures_one": "{{count}} falha seguida",
+    "failures_other": "{{count}} falhas seguidas",
+    "never": "Nunca enviado",
+    "noResponse": "sem resposta",
+    "eventsCount_one": "{{count}} evento",
+    "eventsCount_other": "{{count}} eventos",
+    "groupAll": "Tudo de {{group}}",
+    "test": "Enviar teste",
+    "testOk": "Teste entregue (HTTP {{status}}).",
+    "testFailed": "A entrega falhou: {{reason}}",
+    "rotateSecret": "Gerar novo segredo",
+    "secretTitle": "Segredo de assinatura — {{name}}",
+    "secretDescription": "Copie agora: por segurança ele não aparece de novo. O sistema que recebe usa o segredo para conferir que o aviso veio desta plataforma.",
+    "secret": "Segredo",
+    "copySecret": "Copiar segredo",
+    "verifyTitle": "Como conferir a assinatura",
+    "verifyText": "Cada envio traz X-Kamban-Event, X-Kamban-Delivery, X-Kamban-Timestamp e X-Kamban-Signature. Recuse avisos com mais de 5 minutos.",
+    "deliveriesTitle": "Entregas — {{name}}",
+    "deliveriesDescription": "As 50 mais recentes (as entregas ficam 30 dias).",
+    "noDeliveries": "Nenhuma entrega ainda",
+    "redeliver": "Reenviar",
+    "redelivered": "Entrega reenviada.",
+    "deliveryLine": "{{date}} · HTTP {{status}} · {{attempts}} tentativa(s) · {{ms}} ms",
+    "deliveryStatus": {
+      "pending": "Na fila",
+      "success": "Entregue",
+      "failed": "Falhou"
+    },
+    "columns": {
+      "name": "Nome",
+      "url": "Endereço",
+      "events": "Eventos",
+      "status": "Situação",
+      "lastDelivery": "Última entrega"
+    },
+    "fields": {
+      "name": "Nome",
+      "url": "Endereço que recebe",
+      "urlHint": "https:// obrigatório. Endereços de metadados da nuvem são bloqueados.",
+      "active": "Ativo (enviar os eventos)",
+      "events": "Eventos"
+    },
+    "groups": {
+      "project": "Projetos",
+      "task": "Tarefas",
+      "comment": "Comentários",
+      "attachment": "Anexos",
+      "sprint": "Sprints",
+      "milestone": "Marcos",
+      "plan_item": "Elementos do quadro",
+      "doc_page": "Páginas de documentação",
+      "user": "Usuários"
     }
   }
 }

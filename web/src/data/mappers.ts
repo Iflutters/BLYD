@@ -2,7 +2,10 @@ import { DEPENDENCY_RULES, PLAN_STATUS_CATEGORIES, PROGRESS_SOURCES, type Plan, 
 import type { PlanFile, PlanUpdate } from '@/domain/plan-updates'
 import type { JournalEntryDto, PlanColumnDto, PlanFileDto, PlanIssueDto, PlanReportDto, PlanUpdateDto } from './dtos'
 import type { PasswordPolicyDto, PlatformInfoDto, PlatformSettingsDto, PlatformValuesDto } from './dtos'
-import type { EmailSettingsDto, OutboxSummaryDto, ResetTokenCheckDto } from './dtos'
+import type { EmailSettingsDto, OutboxSummaryDto, ResetTokenCheckDto, ApiTokenDto } from './dtos'
+import type { ApiToken, ApiTokenState } from '@/domain/api-tokens'
+import type { WebhookDto, WebhookDeliveryDto } from './dtos'
+import type { Webhook, WebhookDelivery, WebhookDeliveryStatus } from '@/domain/webhooks'
 import type { EmailSettingsPatch, EmailSettingsView, OutboxKind, OutboxStatus, OutboxSummary, ResetTokenCheck, ResetTokenState } from '@/domain/email'
 import { BRANDING_SLOTS, type PasswordPolicy, type PlatformInfo, type PlatformSettings, type PlatformSettingsValues } from '@/domain/platform'
 import { COLUMN_TYPES, type PlanColumn } from '@/domain/plan-columns'
@@ -886,5 +889,55 @@ export function toResetTokenCheck(dto: ResetTokenCheckDto): ResetTokenCheck {
     purpose: dto.purpose === 'reset' || dto.purpose === 'invite' ? dto.purpose : null,
     name: dto.name ?? null,
     policy: dto.policy ? toPasswordPolicy(dto.policy) : null,
+  }
+}
+
+const API_TOKEN_STATES: ApiTokenState[] = ['active', 'expired', 'revoked']
+
+export function toApiToken(dto: ApiTokenDto): ApiToken {
+  return {
+    id: dto.id,
+    name: dto.name,
+    prefix: dto.prefix,
+    state: oneOf(API_TOKEN_STATES, dto.state, 'active'),
+    createdAt: toDate(dto.created_at),
+    expiresAt: toDate(dto.expires_at),
+    lastUsedAt: toDate(dto.last_used_at),
+    lastUsedIp: dto.last_used_ip ?? null,
+    revokedAt: toDate(dto.revoked_at),
+    user: dto.user ? toUserSummary(dto.user) : null,
+  }
+}
+
+export function toWebhook(dto: WebhookDto): Webhook {
+  return {
+    id: dto.id,
+    name: dto.name,
+    url: dto.url,
+    events: dto.events ?? [],
+    active: dto.active,
+    lastStatus: dto.last_status ?? null,
+    lastDeliveryAt: toDate(dto.last_delivery_at),
+    consecutiveFailures: dto.consecutive_failures ?? 0,
+    createdAt: toDate(dto.created_at),
+  }
+}
+
+const DELIVERY_STATUSES: WebhookDeliveryStatus[] = ['pending', 'success', 'failed']
+
+export function toWebhookDelivery(dto: WebhookDeliveryDto): WebhookDelivery {
+  return {
+    id: dto.id,
+    webhookId: dto.webhook_id,
+    event: dto.event,
+    status: oneOf(DELIVERY_STATUSES, dto.status, 'pending'),
+    attempts: dto.attempts,
+    responseStatus: dto.response_status ?? null,
+    responseBody: dto.response_body ?? null,
+    error: dto.error ?? null,
+    durationMs: dto.duration_ms ?? null,
+    nextAttemptAt: toDate(dto.next_attempt_at),
+    deliveredAt: toDate(dto.delivered_at),
+    createdAt: toDate(dto.created_at),
   }
 }

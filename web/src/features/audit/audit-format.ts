@@ -128,9 +128,16 @@ export const AUDIT_ACTIONS = [
   'auth.password_reset',
   'auth.invite_accepted',
   'user.invited',
+  'api_token.created',
+  'api_token.revoked',
+  'webhook.created',
+  'webhook.updated',
+  'webhook.deleted',
+  'webhook.secret_rotated',
+  'webhook.disabled',
 ] as const
 
-export const AUDIT_ENTITY_TYPES = ['user', 'role', 'project', 'task_type', 'custom_field', 'status', 'priority', 'task', 'tag', 'sprint', 'doc_space', 'doc_page', 'plan_item', 'platform_settings', 'audit_log', 'email_settings'] as const
+export const AUDIT_ENTITY_TYPES = ['user', 'role', 'project', 'task_type', 'custom_field', 'status', 'priority', 'task', 'tag', 'sprint', 'doc_space', 'doc_page', 'plan_item', 'platform_settings', 'audit_log', 'email_settings', 'api_token', 'webhook'] as const
 
 export function actionLabel(t: TFunction, action: string): string {
   return t(`audit.actions.${action}`, { defaultValue: action })
