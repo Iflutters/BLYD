@@ -1,6 +1,6 @@
 <p align="center"><img src="web/public/brand/logo-light.png" width="112" alt="" /></p>
 
-<h1 align="center">BLYD Sync</h1>
+<h1 align="center">BLYD</h1>
 
 <p align="center"><strong>Sincronize projetos, tarefas e equipes.</strong></p>
 
