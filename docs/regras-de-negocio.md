@@ -256,6 +256,8 @@ Cada tipo de tarefa define, campo a campo, **quando** ele precisa estar preenchi
 
 ## 12. Timeline do projeto (expansão — Onda 1)
 
+> Desde 2026-10-01 (pedido do usuário) a Timeline das tarefas fica só no menu **Timeline**; a página do projeto não tem mais essa aba — o cronograma do projeto é o **Cronograma** da aba Gerenciamento (§14). Links antigos (`?tab=timeline`) abrem o Cronograma.
+
 ### Datas da tarefa
 - Além do **Prazo**, a tarefa tem **Início planejado**. O início não pode ser depois do prazo (no mesmo dia pode). Vale ao criar, editar e mover na timeline — inclusive quando só uma das datas muda (a outra, já salva, é considerada).
 - Na timeline, a tarefa ocupa **do início ao prazo** (dias inteiros). Com só uma das datas, aparece como uma barra de um dia. Sem nenhuma, fica na lista **Sem datas**.

@@ -36,9 +36,9 @@ export function useRelationMutations(taskId: string) {
   }
 }
 
-export function useTasksList(query: ListQuery, options?: TaskListOptions) {
+export function useTasksList(query: ListQuery, options?: TaskListOptions, enabled = true) {
   const { tasks } = useRepositories()
-  return useQuery({ queryKey: taskKeys.list(query, options), queryFn: () => tasks.list(query, options), placeholderData: keepPreviousData })
+  return useQuery({ queryKey: taskKeys.list(query, options), queryFn: () => tasks.list(query, options), placeholderData: keepPreviousData, enabled })
 }
 
 export function useTask(id: string | undefined) {

@@ -180,6 +180,7 @@ export function ProjectsPage({ view }: { view: ProjectView }) {
         emptyState={emptyState}
         actions={{
           onView: setViewing,
+          onOpen: (project) => navigate(`/projects/${project.id}`),
           onEdit: setEditing,
           canEdit: (project) => project.capabilities.edit,
           onDelete: (project) => (project.archivedAt ? setDeleting(project) : archive(project)),

@@ -45,7 +45,8 @@
     "empty": "Nothing here yet",
     "clearFilters": "Clear filters",
     "noMoreActions": "No other actions",
-    "resetColumns": "Reset columns"
+    "resetColumns": "Reset columns",
+    "openHint": "Click to preview · double-click to open"
   },
   "validation": {
     "required": "Required field",
@@ -234,7 +235,9 @@
     "searchUser": "Search user",
     "searchUserFor": "Search user “{{query}}”",
     "createProject": "Create project",
-    "projects": "Projects"
+    "projects": "Projects",
+    "searchTaskFor": "Search tasks for “{{query}}”",
+    "tasks": "Tasks"
   },
   "theme": {
     "label": "Theme",
@@ -828,7 +831,6 @@
       "history": "History",
       "settings": "Settings",
       "tasks": "Tasks",
-      "timeline": "Timeline",
       "plan": "Management"
     },
     "archivedNotice": "This project is archived and read-only. Unarchive it to edit again.",

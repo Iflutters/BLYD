@@ -445,17 +445,28 @@ describe('E2E — Quadro do projeto (Gerenciamento)', { timeout: 300000 }, () =>
     const card = blank.getByRole('button', { name: 'Abrir Reunião de kickoff' })
     const target = mario.page.getByRole('region', { name: 'Feito: 0' })
     // as últimas colunas ficam à direita (o quadro rola na horizontal): traz origem e destino para a vista
-    await card.scrollIntoViewIfNeeded()
+    // e mede cada ponto na hora do passo (o quadro pode se ajustar enquanto carrega)
+    await mario.page.waitForLoadState('networkidle')
     await target.scrollIntoViewIfNeeded()
-    const from = await card.boundingBox()
-    const to = await target.boundingBox()
-    await mario.page.mouse.move(from.x + 20, from.y + 10)
+    await card.scrollIntoViewIfNeeded()
+    const center = async (locator, dy = 0) => {
+      const box = await locator.boundingBox()
+      return { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 24) + dy }
+    }
+    const start = await center(card)
+    await mario.page.mouse.move(start.x, start.y)
     await mario.page.mouse.down()
-    await mario.page.mouse.move(from.x + 30, from.y + 22, { steps: 4 })
-    await mario.page.mouse.move(to.x + to.width / 2, to.y + 120, { steps: 18 })
+    await mario.page.mouse.move(start.x + 12, start.y + 12, { steps: 4 })
+    const end = await center(target, 100)
+    await mario.page.mouse.move(end.x, end.y, { steps: 18 })
     await mario.page.waitForTimeout(150)
+    const settle = await center(target, 104)
+    await mario.page.mouse.move(settle.x, settle.y, { steps: 2 })
     await mario.page.mouse.up()
-    await mario.page.getByRole('region', { name: 'Feito: 1' }).waitFor()
+    await mario.page.getByRole('region', { name: 'Feito: 1' }).waitFor({ timeout: 10000 }).catch(async (error) => {
+      if (process.env.DEBUG_SHOT) await mario.page.screenshot({ path: process.env.DEBUG_SHOT })
+      throw error
+    })
     const board = (await api(mario.page, 'GET', `/projects/${p}/plan`)).json.data
     const feito = board.statuses.find((x) => x.category === 'done')
     assert.equal(board.items.find((i) => i.id === kickoff.id).status_id, feito.id)

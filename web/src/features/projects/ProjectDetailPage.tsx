@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Archive, ArchiveRestore, ArrowLeft, Copy, FolderSearch, KanbanSquare, ListTodo, Pencil, Trash2 } from 'lucide-react'
@@ -26,11 +26,10 @@ import { AuditTimeline } from '@/features/audit/AuditTimeline'
 import { useCan } from '@/features/auth/session'
 import { ProjectTasksPanel } from '@/features/tasks/ProjectTasksPanel'
 import { ProjectBoard } from '@/features/plan/ProjectBoard'
-import { coverStyle } from './project-theme'
+import { PROJECT_ICON_COMPONENTS, coverHeroStyle } from './project-theme'
 import { ProjectAvatar, ProjectPriorityLabel, ProjectStatusBadge } from './project-visuals'
 import { ProjectFormDialog } from './ProjectFormDialog'
 import { ProjectMembersPanel } from './ProjectMembersPanel'
-import { TimelineView } from '@/features/timeline/TimelineView'
 import { useProject, useProjectHistory, useProjectLifecycle, useProjectMembers } from './queries'
 
 export function ProjectDetailPage() {
@@ -79,6 +78,10 @@ function ProjectDetail({ project }: { project: Project }) {
   const caps = project.capabilities
   const canViewTasks = useCan('tasks.view')
   const canViewPlan = useCan('plan.view')
+  // a aba Timeline saiu (o cronograma do projeto é o do Gerenciamento): links antigos abrem o Cronograma
+  useEffect(() => {
+    if (params.get('tab') === 'timeline') setParams(canViewPlan ? { tab: 'plan', view: 'timeline' } : {}, { replace: true })
+  }, [params, setParams, canViewPlan])
 
   function setArchived(value: boolean) {
     const mutation = value ? lifecycle.archive : lifecycle.unarchive
@@ -96,7 +99,6 @@ function ProjectDetail({ project }: { project: Project }) {
     ...(canViewTasks ? [{ value: 'tasks', label: t('projects.tabs.tasks'), content: <ProjectTasksPanel project={project} /> }] : []),
     // quadro de gestão do projeto (Gerenciamento de Projetos — módulo à parte das tarefas)
     ...(canViewPlan ? [{ value: 'plan', label: t('projects.tabs.plan'), content: <ProjectBoard project={project} /> }] : []),
-    ...(canViewTasks ? [{ value: 'timeline', label: t('projects.tabs.timeline'), content: <TimelineView projectId={project.id} /> }] : []),
     { value: 'members', label: t('projects.tabs.members', { count: project.memberCount }), content: <ProjectMembersPanel project={project} /> },
     { value: 'history', label: t('projects.tabs.history'), content: <ProjectHistory projectId={project.id} /> },
   ]
@@ -110,22 +112,23 @@ function ProjectDetail({ project }: { project: Project }) {
 
   return (
     <>
-      <Link to={archived ? '/projects/archived' : '/projects'} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-fg">
+      <Link to={archived ? '/projects/archived' : '/projects'} className="mb-2 inline-flex items-center gap-1 text-sm text-muted hover:text-fg">
         <ArrowLeft className="size-4" aria-hidden /> {t('projects.backToList')}
       </Link>
 
-      <section className="mb-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
-        <div className="h-24 sm:h-28" style={coverStyle(project.cover)} />
-        <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex min-w-0 items-end gap-4">
-            <ProjectAvatar icon={project.icon} cover={project.cover} size="lg" className="-mt-8 ring-4 ring-surface" />
-            <div className="min-w-0 pb-0.5">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-fg sm:text-2xl">{project.name}</h1>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
+      {/* cabeçalho compacto em destaque: a capa do projeto (mais escura) ao fundo, nome grande e o ícone do projeto em marca-d'água */}
+      <section className="relative mb-4 overflow-hidden rounded-2xl text-on-cover shadow-card" style={coverHeroStyle(project.cover)}>
+        <ProjectWatermark icon={project.icon} />
+        <div className="relative flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <ProjectAvatar icon={project.icon} cover={project.cover} size="lg" className="size-12 shrink-0 shadow-float ring-2 ring-on-cover/40 [&_svg]:size-6" />
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-bold tracking-tight drop-shadow-sm sm:text-3xl">{project.name}</h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => void navigator.clipboard?.writeText(project.key).then(() => notify.success(t('common.copied')))}
-                  className="inline-flex items-center gap-1 rounded font-mono text-xs text-muted hover:text-fg"
+                  className="inline-flex items-center gap-1 rounded-full bg-on-cover/15 px-2 py-0.5 font-mono text-xs font-semibold text-on-cover ring-1 ring-on-cover/25 hover:bg-on-cover/25 focus-visible:outline-2 focus-visible:outline-on-cover"
                   title={t('projects.copyKey')}
                 >
                   {project.key} <Copy className="size-3" aria-hidden />
@@ -136,15 +139,16 @@ function ProjectDetail({ project }: { project: Project }) {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
             {caps.edit && (
-              <AppButton variant="secondary" leftIcon={<Pencil />} onClick={() => setEditing(true)}>
+              <AppButton variant="secondary" size="sm" leftIcon={<Pencil />} onClick={() => setEditing(true)}>
                 {t('common.edit')}
               </AppButton>
             )}
             {caps.archive && (
               <AppButton
                 variant="secondary"
+                size="sm"
                 leftIcon={archived ? <ArchiveRestore /> : <Archive />}
                 loading={lifecycle.archive.isPending || lifecycle.unarchive.isPending}
                 onClick={() => setArchived(!archived)}
@@ -152,15 +156,13 @@ function ProjectDetail({ project }: { project: Project }) {
                 {archived ? t('projects.unarchive') : t('projects.archive')}
               </AppButton>
             )}
-            {caps.delete && (
-              <AppIconButton variant="danger" label={t('common.delete')} icon={<Trash2 />} onClick={() => setDeleting(true)} />
-            )}
+            {caps.delete && <AppIconButton size="sm" variant="secondary" label={t('common.delete')} icon={<Trash2 />} onClick={() => setDeleting(true)} />}
           </div>
         </div>
       </section>
 
       {archived && (
-        <div role="status" className="mb-6 rounded-lg border border-border bg-warning-soft px-4 py-3 text-sm text-warning-soft-fg">
+        <div role="status" className="mb-4 rounded-lg border border-border bg-warning-soft px-4 py-2 text-sm text-warning-soft-fg">
           {t('projects.archivedNotice')}
         </div>
       )}
@@ -390,4 +392,10 @@ function ProjectSettings({ project, onArchive, onDelete }: { project: Project; o
       />
     </div>
   )
+}
+
+/** Ícone do projeto grande e translúcido no canto do cabeçalho (decorativo). */
+function ProjectWatermark({ icon }: { icon: Project['icon'] }) {
+  const Icon = PROJECT_ICON_COMPONENTS[icon]
+  return <Icon aria-hidden className="pointer-events-none absolute -bottom-12 right-40 size-44 -rotate-12 text-on-cover opacity-10" />
 }

@@ -72,3 +72,19 @@ export function coverGradient(cover: ProjectCover): string {
 export function coverStyle(cover: ProjectCover): CSSProperties {
   return { backgroundImage: coverGradient(cover) }
 }
+
+/**
+ * Capa do cabeçalho do projeto: o mesmo matiz, mais escuro (texto claro com contraste AA em todas as
+ * capas), com um brilho no canto para dar profundidade.
+ */
+export function coverHeroStyle(cover: ProjectCover): CSSProperties {
+  const hue = COVER_HUE[cover]
+  const chroma = cover === 'slate' ? 0.03 : 0.15
+  return {
+    backgroundImage: [
+      `radial-gradient(circle at 88% -30%, oklch(1 0 0 / 0.22), transparent 45%)`,
+      `radial-gradient(circle at 0% 120%, oklch(0 0 0 / 0.25), transparent 50%)`,
+      `linear-gradient(120deg, oklch(0.45 ${chroma} ${hue}), oklch(0.36 ${chroma} ${hue + 30}))`,
+    ].join(', '),
+  }
+}

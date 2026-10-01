@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { AppButton } from '@/presentation/components'
@@ -12,6 +13,10 @@ export function TasksPage() {
   const { t } = useTranslation()
   const canCreate = useCan('tasks.create')
   const [creating, setCreating] = useState(false)
+  // vindo da command palette: /tasks?new=1 abre o formulário; /tasks?search=… já busca
+  const [params, setParams] = useSearchParams()
+  const creatingFromUrl = canCreate && params.get('new') === '1'
+  const search = params.get('search')
   useDocumentTitle(t('tasks.title'))
 
   return (
@@ -27,8 +32,14 @@ export function TasksPage() {
           )
         }
       />
-      <TasksTable tableId="tasks" />
-      <TaskFormDialog open={creating} onOpenChange={setCreating} />
+      <TasksTable tableId="tasks" search={search} onSearchApplied={() => setParams({}, { replace: true })} />
+      <TaskFormDialog
+        open={creating || creatingFromUrl}
+        onOpenChange={(open) => {
+          setCreating(open)
+          if (!open && params.has('new')) setParams({}, { replace: true })
+        }}
+      />
     </>
   )
 }

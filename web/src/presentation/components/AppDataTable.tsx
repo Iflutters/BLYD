@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react'
 import {
   columnPinningFeature,
   columnResizingFeature,
@@ -49,7 +49,10 @@ export interface DataTableColumn<T> {
 }
 
 export interface DataTableRowActions<T> {
+  /** Clique na linha (e o botão "Visualizar"): abre a visualização rápida. */
   onView?: (row: T) => void
+  /** Duplo clique na linha: abre a página completa (no teclado, use o "Abrir" do menu da linha). */
+  onOpen?: (row: T) => void
   onEdit?: (row: T) => void
   canEdit?: (row: T) => boolean
   onDelete?: (row: T) => void
@@ -97,6 +100,10 @@ const features = tableFeatures({
 })
 
 const ACTIONS_ID = '__actions'
+/** Espera do clique simples quando a linha também abre com duplo clique. */
+const DOUBLE_CLICK_MS = 250
+/** Clique em botão, link ou item de menu da linha não conta como clique na linha. */
+const isControl = (target: EventTarget) => !!(target as HTMLElement).closest('button, a, [role="menuitem"]')
 const EMPTY_PINNING: string[] = []
 
 function resolve<S>(updater: Updater<S>, previous: S): S {
@@ -141,6 +148,8 @@ export function AppDataTable<T extends RowData>({
 }: AppDataTableProps<T>) {
   const { t } = useTranslation()
   const { state } = tableState
+  const clickTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(clickTimer.current), [])
 
   const columnDefs = useMemo(() => {
     const helper = createColumnHelper<typeof features, T>()
@@ -393,14 +402,23 @@ export function AppDataTable<T extends RowData>({
               {!showSkeleton &&
                 !error &&
                 table.getRowModel().rows.map((row) => (
-                  // Clique na linha é atalho de mouse; no teclado a ação equivalente é o botão "Visualizar".
+                  // Clique na linha é atalho de mouse (no teclado, o botão "Visualizar"); com `onOpen`, o duplo
+                  // clique abre a página completa e o clique simples espera um instante para não abrir os dois.
                   <tr
                     key={row.id}
                     onClick={(event) => {
-                      if (!actions?.onView) return
-                      if ((event.target as HTMLElement).closest('button, a, [role="menuitem"]')) return
-                      actions.onView(row.original)
+                      if (!actions?.onView || isControl(event.target)) return
+                      const view = actions.onView
+                      if (!actions.onOpen) return view(row.original)
+                      window.clearTimeout(clickTimer.current)
+                      clickTimer.current = window.setTimeout(() => view(row.original), DOUBLE_CLICK_MS)
                     }}
+                    onDoubleClick={(event) => {
+                      if (!actions?.onOpen || isControl(event.target)) return
+                      window.clearTimeout(clickTimer.current)
+                      actions.onOpen(row.original)
+                    }}
+                    title={actions?.onOpen ? t('table.openHint') : undefined}
                     className={cn('group/row transition-colors hover:bg-surface-2', actions?.onView && 'cursor-pointer', slowFetch && 'opacity-70')}
                   >
                     {row.getVisibleCells().map((cell) => {

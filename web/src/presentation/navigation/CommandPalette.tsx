@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { FolderOpen, FolderPlus, Languages, LogOut, Monitor, Moon, Plus, Search, Sun, UserSearch } from 'lucide-react'
+import { FolderOpen, FolderPlus, Languages, ListTodo, LogOut, Monitor, Moon, Plus, Search, Sun, UserSearch } from 'lucide-react'
 import { SUPPORTED_LANGUAGES } from '@/core/i18n'
 import { AppCommandPalette, modKey, type CommandGroup } from '@/presentation/components'
 import { useHotkey } from '@/presentation/common/use-hotkey'
@@ -9,6 +9,7 @@ import { useUiStore } from '@/presentation/state/ui-store'
 import { useLogout, useSession } from '@/features/auth/session'
 import { usePreferences } from '@/features/preferences/use-preferences'
 import { useProjects } from '@/features/projects/queries'
+import { useTasksList } from '@/features/tasks/queries'
 import { useDebouncedValue } from '@/presentation/common/use-debounced-value'
 import { NAV_ITEMS, visibleNavItems, type NavItem } from './nav-items'
 
@@ -36,6 +37,14 @@ export function CommandPalette() {
     open && canViewProjects,
   )
   const projectItems = projectResults.data?.items
+  // tarefas: só com busca (código ou título), em todos os projetos que a pessoa vê, abertas ou não
+  const canViewTasks = !!current?.permissions.includes('tasks.view')
+  const taskResults = useTasksList(
+    { page: 1, perPage: 6, sort: { id: 'updated_at', direction: 'desc' }, search: debouncedSearch, filters: {} },
+    undefined,
+    open && canViewTasks && debouncedSearch.length >= 2,
+  )
+  const taskItems = debouncedSearch.length >= 2 ? taskResults.data?.items : undefined
 
   useHotkey('k', () => setOpen(!useUiStore.getState().commandPaletteOpen), { mod: true, allowInInputs: true })
 
@@ -55,9 +64,19 @@ export function CommandPalette() {
             ? [{ id: 'create-project', label: t('commandPalette.createProject'), icon: <FolderPlus />, onSelect: () => navigate('/projects?new=1') }]
             : []),
           ...(canCreateTasks
-            ? [{ id: 'create-task', label: t('commandPalette.createTask'), icon: <Plus />, hint: t('nav.soon'), disabled: true, onSelect: () => {} }]
+            ? [{ id: 'create-task', label: t('commandPalette.createTask'), icon: <Plus />, keywords: ['tarefa', 'task', 'nova'], onSelect: () => navigate('/tasks?new=1') }]
             : []),
-          { id: 'search-task', label: t('commandPalette.searchTask'), icon: <Search />, hint: t('nav.soon'), disabled: true, onSelect: () => {} },
+          ...(canViewTasks
+            ? [
+                {
+                  id: 'search-task',
+                  label: query ? t('commandPalette.searchTaskFor', { query }) : t('commandPalette.searchTask'),
+                  icon: <Search />,
+                  keywords: ['tarefa', 'task', 'buscar', query],
+                  onSelect: () => navigate(query ? `/tasks?search=${encodeURIComponent(query)}` : '/tasks'),
+                },
+              ]
+            : []),
           ...(canViewUsers
             ? [
                 {
@@ -70,6 +89,16 @@ export function CommandPalette() {
               ]
             : []),
         ],
+      },
+      {
+        heading: t('commandPalette.tasks'),
+        items: (taskItems ?? []).map((task) => ({
+          id: `task-${task.id}`,
+          label: `${task.code} · ${task.title}`,
+          icon: <ListTodo />,
+          keywords: [task.code, task.title, query],
+          onSelect: () => navigate(`/tasks/${task.id}`),
+        })),
       },
       {
         heading: t('commandPalette.projects'),
@@ -107,7 +136,7 @@ export function CommandPalette() {
         ],
       },
     ]
-  }, [permissions, search, projectItems, t, navigate, changeTheme, changeLanguage, logout])
+  }, [permissions, search, projectItems, taskItems, canViewTasks, t, navigate, changeTheme, changeLanguage, logout])
 
   return (
     <AppCommandPalette

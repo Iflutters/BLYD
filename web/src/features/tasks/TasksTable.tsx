@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ExternalLink } from 'lucide-react'
@@ -34,10 +34,13 @@ export interface TasksTableProps {
   tableId: string
   /** Lista só as tarefas deste projeto (a coluna/filtro de projeto some). */
   projectId?: string
+  /** Busca aplicada de fora (ex.: /tasks?search=… da command palette). */
+  search?: string | null
+  onSearchApplied?: () => void
 }
 
 /** Listagem padrão de tarefas (página Tarefas e aba do projeto). */
-export function TasksTable({ tableId, projectId }: TasksTableProps) {
+export function TasksTable({ tableId, projectId, search, onSearchApplied }: TasksTableProps) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const navigate = useNavigate()
@@ -46,6 +49,13 @@ export function TasksTable({ tableId, projectId }: TasksTableProps) {
   const canDelete = useCan('tasks.delete')
 
   const table = useDataTableState(tableId, { sort: { id: 'updated_at', direction: 'desc' }, filters: { category: OPEN }, columnVisibility: { category: false, tags: false } })
+  // busca vinda de fora (command palette): aplica uma vez e avisa para limpar o endereço
+  const { setSearch } = table
+  useEffect(() => {
+    if (search === null || search === undefined) return
+    setSearch(search)
+    onSearchApplied?.()
+  }, [search, setSearch, onSearchApplied])
   const tasks = useTasksList(table.query, projectId ? { projectId } : undefined)
   const statuses = useStatuses(true)
   const priorities = usePriorities(true)
@@ -181,6 +191,7 @@ export function TasksTable({ tableId, projectId }: TasksTableProps) {
         searchPlaceholder={t('tasks.searchPlaceholder')}
         actions={{
           onView: (task) => setViewing(task.id),
+          onOpen: (task) => void navigate(`/tasks/${task.id}`),
           onEdit: (task) => setEditing(task.id),
           canEdit: () => canEdit,
           onDelete: setDeleting,

@@ -45,7 +45,8 @@
     "empty": "Nada por aquí todavía",
     "clearFilters": "Limpiar filtros",
     "noMoreActions": "No hay otras acciones",
-    "resetColumns": "Restaurar columnas"
+    "resetColumns": "Restaurar columnas",
+    "openHint": "Clic para ver · doble clic para abrir"
   },
   "validation": {
     "required": "Campo obligatorio",
@@ -234,7 +235,9 @@
     "searchUser": "Buscar usuario",
     "searchUserFor": "Buscar usuario “{{query}}”",
     "createProject": "Crear proyecto",
-    "projects": "Proyectos"
+    "projects": "Proyectos",
+    "searchTaskFor": "Buscar tareas con “{{query}}”",
+    "tasks": "Tareas"
   },
   "theme": {
     "label": "Tema",
@@ -828,7 +831,6 @@
       "history": "Historial",
       "settings": "Configuración",
       "tasks": "Tareas",
-      "timeline": "Cronograma",
       "plan": "Gestión"
     },
     "archivedNotice": "Este proyecto está archivado y es de solo lectura. Desarchívelo para volver a editarlo.",

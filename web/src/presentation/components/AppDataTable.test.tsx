@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import i18n from '@/core/i18n'
 import { renderWithProviders } from '@/test/utils'
@@ -31,7 +31,7 @@ const columns: DataTableColumn<Row>[] = [
 /** Acesso ao estado da tabela a partir dos testes. */
 const handle: { api: DataTableStateApi | null } = { api: null }
 
-function Harness(props: { data?: Row[]; loading?: boolean; error?: boolean; onView?: (r: Row) => void; onEdit?: (r: Row) => void }) {
+function Harness(props: { data?: Row[]; loading?: boolean; error?: boolean; onView?: (r: Row) => void; onEdit?: (r: Row) => void; onOpen?: (r: Row) => void }) {
   const api = useDataTableState('test-table')
   useEffect(() => {
     handle.api = api
@@ -47,7 +47,7 @@ function Harness(props: { data?: Row[]; loading?: boolean; error?: boolean; onVi
       loading={props.loading}
       error={props.error ? { correlationId: 'corr-1' } : null}
       onRetry={() => {}}
-      actions={{ onView: props.onView ?? (() => {}), onEdit: props.onEdit ?? (() => {}), canEdit: (r) => r.id === '1' }}
+      actions={{ onView: props.onView ?? (() => {}), onOpen: props.onOpen, onEdit: props.onEdit ?? (() => {}), canEdit: (r) => r.id === '1' }}
     />
   )
 }
@@ -82,6 +82,19 @@ describe('AppDataTable', () => {
     renderWithProviders(<Harness onView={onView} />)
     await userEvent.click(screen.getByText('Beta'))
     expect(onView).toHaveBeenCalledWith(rows[1])
+  })
+
+  it('com "abrir": clique simples visualiza (depois de um instante); duplo clique abre a página, sem visualizar', async () => {
+    const onView = vi.fn()
+    const onOpen = vi.fn()
+    renderWithProviders(<Harness onView={onView} onOpen={onOpen} />)
+    await userEvent.dblClick(screen.getByText('Beta'))
+    expect(onOpen).toHaveBeenCalledWith(rows[1])
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    expect(onView).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByText('Alfa'))
+    await waitFor(() => expect(onView).toHaveBeenCalledWith(rows[0]))
+    expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
   it('ordenação alterna asc/desc e é persistida', async () => {

@@ -34,7 +34,7 @@
 | `AppFilterBar` | barra padrão de busca/filtros/ações |
 | `AppPagination` | contador "x–y de N", tamanho de página, anterior/próxima |
 | `AppDataTable` + `useDataTableState` | ver abaixo |
-| `AppCommandPalette` | paleta genérica (a global está em `presentation/navigation/CommandPalette.tsx`, Ctrl/⌘+K) |
+| `AppCommandPalette` | paleta genérica (a global está em `presentation/navigation/CommandPalette.tsx`, Ctrl/⌘+K: criar projeto/tarefa, buscar tarefa (resultados com código e título, em todos os projetos visíveis) e usuário, projetos, navegação e preferências) |
 
 ### Adicionados na Fase 3
 | Componente | Uso |
@@ -68,7 +68,7 @@ Da feature, reutilizáveis no Kanban: `LookupBadge` (status/prioridade), `TagBad
 O arrastar e soltar do quadro (dnd-kit, vários contêineres raia × coluna) fica em `features/kanban/KanbanBoard`: mouse, toque (segurar 200 ms) e teclado (Espaço pega/solta, setas movem, Esc cancela; Enter abre o card), com anúncios traduzidos. A área com rolagem horizontal é `relative` para que textos `sr-only` não alarguem a página.
 
 ### Timeline (`AppTimeline.tsx`)
-Gantt genérico: régua de dois níveis (`headerTiers` de `domain/timeline.ts`), grupos recolhíveis, barras (cor, progresso, atraso, conflito) que se arrastam e se esticam pelas pontas, setas de dependência que contornam as barras, faixas (sprints), marcos (losangos clicáveis), linha e célula de hoje, fins de semana. Área com rolagem própria (cabeçalho e coluna da esquerda fixos). Teclado nas barras (setas / Shift / Alt / Enter) com anúncio para leitor de tela; `onDropExternal` recebe itens arrastados de fora (`TIMELINE_DRAG_TYPE`).
+Gantt genérico (usado na Timeline das tarefas e no Cronograma do quadro): régua de dois níveis (`headerTiers` de `domain/timeline.ts`), grupos recolhíveis, barras (cor, progresso, atraso, conflito) que se arrastam e se esticam pelas pontas, setas de dependência que contornam as barras, faixas (sprints), marcos (losangos clicáveis), linha e célula de hoje, fins de semana. Área com rolagem própria (cabeçalho e coluna da esquerda fixos). Teclado nas barras (setas / Shift / Alt / Enter) com anúncio para leitor de tela; `onDropExternal` recebe itens arrastados de fora (`TIMELINE_DRAG_TYPE`). Opcionais: `baseline` na barra (traço fino da linha de base) e `summary` no grupo (período do grupo no cabeçalho).
 
 ### Conteúdo rico (`rich-text/`)
 `AppRichTextEditor` (editor não controlado: `defaultValue`, `onChange` com o JSON, `onUpload` para imagens/arquivos colados, arrastados ou escolhidos) e `AppRichTextView` (leitura; links `/docs/…` navegam na aplicação via `onNavigate`, externos abrem em outra aba com `noopener`). Mesmo conjunto de extensões nos dois (`extensions.ts`) — só o que o servidor aceita: títulos 1–4, listas, checklist, citação, código, **avisos** (`callout`, tom que se troca pelo ícone), tabelas, imagem com largura, sumário (`tableOfContents`) e marca-texto. Barra de ferramentas acessível (`role="toolbar"`, botões com `aria-pressed`; os menus devolvem o foco ao texto), menu **"/"** filtrável sem acento, link por diálogo (Ctrl/⌘ + K). O **sumário** (`tableOfContents`) lê os títulos do próprio documento (sem conteúdo salvo); vazio, explica e oferece "Adicionar título" na edição e some na leitura. Estilos do conteúdo na classe `.kb-rich` (`styles/index.css`, só tokens). Importe de `@/presentation/components/rich-text` (fora do índice geral): o TipTap vai no chunk `vendor-editor`, carregado só nas telas de documentação. `scrollToHeading` rola até um título (o "Nesta página").
@@ -123,12 +123,15 @@ const users = useUsersList(table.query)          // TanStack Query com keepPrevi
   data={users.data?.items ?? EMPTY} total={users.data?.total ?? 0}
   getRowId={(u) => u.id} table={table}
   loading={users.isPending} fetching={users.isFetching} error={…} onRetry={…}
-  actions={{ onView, onEdit, canEdit, onDelete, canDelete, deleteLabel, more }}
+  actions={{ onView, onOpen, onEdit, canEdit, onDelete, canDelete, deleteLabel, more }}
 />
 ```
-Inclui: paginação e ordenação no servidor, contador total, busca global com debounce, filtros por coluna, seleção de colunas, redimensionamento (mouse, toque e teclado), colunas fixas (desktop), estado persistido por tabela (`kamban.table.<id>`), skeleton, vazio (com "limpar filtros"), erro (com referência), ações por linha **Visualizar · Editar · Excluir · Mais**. "Visualizar" abre `AppDrawer` sem sair da página; clicar na linha também abre.
+Inclui: paginação e ordenação no servidor, contador total, busca global com debounce, filtros por coluna, seleção de colunas, redimensionamento (mouse, toque e teclado), colunas fixas (desktop), estado persistido por tabela (`kamban.table.<id>`), skeleton, vazio (com "limpar filtros"), erro (com referência), ações por linha **Visualizar · Editar · Excluir · Mais**. "Visualizar" abre `AppDrawer` sem sair da página; clicar na linha também abre. Com `onOpen` (projetos e tarefas), o **duplo clique** na linha abre a página completa — o clique simples espera 250 ms para não abrir os dois; no teclado, o "Abrir" do menu da linha.
 
 Constante `EMPTY` fora do componente: evite `?? []` inline (recria os modelos da tabela a cada render).
 
 ## Textos
 Nenhum texto fixo em componentes: tudo via `t('chave')` (`web/src/core/i18n/locales/*.json`). O teste `locales.test.ts` garante as mesmas chaves em pt-BR, en e es.
+
+### Cabeçalho do projeto
+Compacto e em destaque: a capa do projeto em versão mais escura (`coverHeroStyle`, texto `on-cover` com contraste AA em todas as capas), nome grande, chave e selos numa linha, ícone do projeto em marca-d'água e as ações à direita — sobra espaço para as abas (pedido do usuário, 2026-10-01).
